@@ -24,6 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'mangalarga = precision_landing.mangalarga:main',
+            'view_camera = precision_landing.utils.view_camera:main',
         ],
     },
 )
