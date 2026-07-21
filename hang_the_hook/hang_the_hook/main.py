@@ -1,7 +1,6 @@
 import nectar
 from nectar.vision.camera import ImageHandler
 import line_follow
-import checkpoint
 import rclpy
 from rclpy.node import Node
 
@@ -50,18 +49,6 @@ class Line(Node):
 
         ##Implemento de PID e controle de voo, alem de criação da classe
 
-
-
-        # checkpoint
-
-        passou, checkpoint_mask = checkpoint.detecta_checkpoint(frame)
-
-        if passou:
-            print("Checkpoint!", end="")
-        print("\033[?25h", end="", flush=True) # Reexibe o cursor
-        return frame
-
-        # TODO: Lógica do detecta_checkpoint
 
 def main(args=None):
     rclpy.init(args=args)
