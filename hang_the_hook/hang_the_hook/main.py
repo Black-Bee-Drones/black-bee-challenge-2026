@@ -2,35 +2,82 @@ import nectar
 from nectar.vision.camera import ImageHandler
 import line_follow
 import checkpoint
+import rclpy
+from rclpy.node import Node
 
-nectar.init()
+class Line(Node):
+    def __init__(self):
+        super().__init__('line')
+        
+        nectar.init()
+        
+        self.FRAME_WIDTH = 640
+        self.desvio = 0
 
-FRAME_WIDTH = 640
+        # Passa o self.process como callback
+        self.handler = ImageHandler(
+            image_source="webcam", 
+            image_processing_callback=self.process, 
+            show_result="Camera"
+        )
+        self.handler.run()
 
-def process(frame):
-    # linha
-    cx, cy, angle = line_follow.segue_linha(frame)
-    if cx is None:
-        print("sem linha")
-    else:
-        desvio = cx - FRAME_WIDTH // 2
-        if desvio > 15:
-            print("Corrigir pra direita")
-        elif desvio < -15:
-            print("Corrigir pra esquerda")
+    def process(self, frame):
+        # TODO: Lógica do line_follow e controle de PID
+         # linha
+
+        cx, cy, angle = line_follow.segue_linha(frame)
+
+        if cx is None:
+
+            print("sem linha")
+
         else:
+
+            self.desvio = cx - self.FRAME_WIDTH // 2
+
+        if self.desvio > 15:
+
+            print("Corrigir pra direita")
+
+        elif self.desvio < -15:
+
+            print("Corrigir pra esquerda")
+
+        else:
+
             print("Reto.")
-##Implemento de PID e controle de voo, alem de criação da classe
+
+        ##Implemento de PID e controle de voo, alem de criação da classe
 
 
-    # checkpoint
-    passou, checkpoint_mask = checkpoint.detecta_checkpoint(frame)
-    if passou:
-        print("Checkpoint!")
-    return frame
 
-handler = ImageHandler(image_source="webcam", image_processing_callback=process, show_result="Camera")
+        # checkpoint
 
-handler.run()
-nectar.spin()
-nectar.shutdown()
+        passou, checkpoint_mask = checkpoint.detecta_checkpoint(frame)
+
+        if passou:
+            print("Checkpoint!")
+        return frame
+
+
+        
+        # TODO: Lógica do detecta_checkpoint
+        
+        
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = MeuRoboNode()
+
+    try:
+        rclpy.spin(node) 
+    except KeyboardInterrupt:
+        print("Parando...")
+    finally:
+        nectar.shutdown()
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
