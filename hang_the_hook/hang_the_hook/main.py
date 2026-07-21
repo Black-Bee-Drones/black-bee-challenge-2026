@@ -8,16 +8,16 @@ from rclpy.node import Node
 class Line(Node):
     def __init__(self):
         super().__init__('line')
-        
+
         nectar.init()
-        
+
         self.FRAME_WIDTH = 640
         self.desvio = 0
 
         # Passa o self.process como callback
         self.handler = ImageHandler(
-            image_source="webcam", 
-            image_processing_callback=self.process, 
+            image_source="webcam",
+            image_processing_callback=self.process,
             show_result="Camera"
         )
         self.handler.run()
@@ -57,21 +57,18 @@ class Line(Node):
         passou, checkpoint_mask = checkpoint.detecta_checkpoint(frame)
 
         if passou:
-            print("Checkpoint!")
+            print("Checkpoint!", end="")
+        print("\033[?25h", end="", flush=True) # Reexibe o cursor
         return frame
 
-
-        
         # TODO: Lógica do detecta_checkpoint
-        
-        
 
 def main(args=None):
     rclpy.init(args=args)
     node = Line()
 
     try:
-        rclpy.spin(node) 
+        rclpy.spin(node)
     except KeyboardInterrupt:
         print("Parando...")
     finally:
@@ -80,4 +77,5 @@ def main(args=None):
         rclpy.shutdown()
 
 if __name__ == '__main__':
+    print(f"\033[{10}F\033[J", end="", flush=True)
     main()
