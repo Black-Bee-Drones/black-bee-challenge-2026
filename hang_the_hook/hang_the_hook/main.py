@@ -68,7 +68,7 @@ class Line(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = MeuRoboNode()
+    node = Line()
 
     try:
         rclpy.spin(node) 
