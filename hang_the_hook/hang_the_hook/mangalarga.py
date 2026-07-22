@@ -73,16 +73,27 @@ def main():
     
     set_ros_loggers()
     
-    hang_the_hook_sm = HangTheHookSM()
+    mangalarga_sm = HangTheHookSM()
+    viewer = yasmin.visualization.StateMachineViewer(mangalarga_sm)
+    viewer.start()
     
     try:
-        hang_the_hook_sm.execute()
+        status = mangalarga_sm()
+        print (f"State machine finished with status: {status}")
+        
     except KeyboardInterrupt:
-        print("Parando por interrupção de teclado...")
-        if hang_the_hook_sm.is_running():
-            hang_the_hook_sm.cancel_state()   
+        print("Stopping by keyboard interrupt...")
+        try:
+            mangalarga_sm.set_outcome("END")
+        except KeyError:
+            print("Drone not initialized yet, nothing to land.")   
             
-    if rclpy.ok():
+    except Exception as e:
+        print(f"State machine finished with exception: {e}")
+        mangalarga_sm.set_outcome("END")
+        
+    finally:    
+        viewer.stop()
         rclpy.shutdown()
         
 if __name__ == "__main__":
