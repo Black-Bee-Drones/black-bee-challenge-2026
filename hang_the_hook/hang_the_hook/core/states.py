@@ -48,8 +48,6 @@ class Initialize(State):
             drone = DroneFactory.create("mavros", config, node._executor)
             blackboard["drone"] = drone
             drone.delay(1)
-            
-            return SUCCEED
         
             if SIM_MODE:
                 cam_config = ROSConfig(
