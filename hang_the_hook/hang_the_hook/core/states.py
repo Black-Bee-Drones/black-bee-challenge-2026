@@ -9,9 +9,9 @@ from yasmin import Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
-from nectarefa.constants import (
+from core.constants import (
     RTL_ALTITUDE,
-    TAKEOFFHEIGHT,
+    TAKEOFF_HEIGHT,
     SIM_MODE,
 )
 
@@ -50,6 +50,32 @@ class Initialize(State):
             drone.delay(1)
             
             return SUCCEED
+        
+            if SIM_MODE:
+                cam_config = ROSConfig(
+                    topic=IMAGE_SOURCE,
+                    compressed=SIM_IMAGE_COMPRESSED,
+                )
+            else:
+                cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
+                
+            camera = ImageHandler(
+                node=node,
+                image_source=IMAGE_SOURCE,
+                config=cam_config,
+            )
+            camera.open()
+            frame = camera.take_photo()
+            if frame is None:
+                yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
+                return ABORT
+            t_cam = time.perf_counter() - t_c0
+            yasmin.YASMIN_LOG_INFO(
+                f"Camera ready. Frame shape: {frame.shape} ({t_cam:.2f}s)"
+            )
+            blackboard["camera"] = camera
+
+            return SUCCEED
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Init error {e}")
             return ABORT
@@ -66,14 +92,14 @@ class Takeoff(State):
         drone: MavrosDrone = blackboard["drone"]
 
         try:
-            yasmin.YASMIN_LOG_INFO(f"Taking off to {TAKEOFFHEIGHT}m...")
+            yasmin.YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
             drone.set_home()
             drone.arm()
-            drone.takeoff(TAKEOFFHEIGHT)
+            drone.takeoff(TAKEOFF_HEIGHT)
             drone.delay(3)
 
             reached = drone.move_to(
-                z=TAKEOFFHEIGHT,
+                z=TAKEOFF_HEIGHT,
                 reference=MoveReference.TAKEOFF,
                 timeout=30.0,
                 precision=0.3,
