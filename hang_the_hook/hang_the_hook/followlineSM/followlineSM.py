@@ -4,11 +4,20 @@ from yasmin import State, StateMachine, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros import set_ros_loggers
 
-from states import FollowLine, CheckPoint, EndFL, CheckEndFL
+from states import FollowLine, CheckPoint, EndFL, CheckEndFL, SetupFollowLine
 
 class FollowLineSM(StateMachine):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
+        
+        self.add_state(
+            "SETUP_FOLLOW_LINE",
+            SetupFollowLine(),
+            transitions={
+                SUCCEED: "LINE_FOLLOW",
+                ABORT: ABORT
+            }
+        )
         
         self.add_state(
             "LINE_FOLLOW",
