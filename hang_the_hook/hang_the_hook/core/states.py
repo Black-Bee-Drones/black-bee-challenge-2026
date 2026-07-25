@@ -13,6 +13,9 @@ from core.constants import (
     RTL_ALTITUDE,
     TAKEOFF_HEIGHT,
     SIM_MODE,
+    IMAGE_WIDTH,
+    IMAGE_HEIGHT,
+    IMAGE_SOURCE,
 )
 
 from nectar.control import(
