@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'mangalarga = precision_landing.mangalarga:main',
             'view_camera = precision_landing.utils.view_camera:main',
+            'take_photos = precision_landing.utils.take_photos:main',
         ],
     },
 )
