@@ -29,10 +29,10 @@ class FollowLineSM(StateMachine):
         )
 
         self.add_state(
-            "FOLLOW_BLUE_LINE"
+            "FOLLOW_BLUE_LINE",
             FollowBlueLine(),
             transitions={
-                SUCCEED: "SEARCH_BLUE_LINE"
+                SUCCEED: "SEARCH_BLUE_LINE",
                 ABORT: ABORT
             }
         )

@@ -1,9 +1,10 @@
 import math
+from hang_the_hook.core.constants import ANGLE_KD, ANGLE_KI, ANGLE_KP, CX_KD, CX_KI, CX_KP, FRAME_WIDTH, FRAME_HEIGHT
 import nectar
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision import LineDetector, RotatedRect, ColorSpace
 from nectar.control import PIDController, AltitudeSource, MavrosDrone
-
+from line_follow import segue_linha
 import cv2
 
 import yasmin
@@ -13,7 +14,7 @@ from yasmin_ros.yasmin_node import YasminNode
 
 from datetime import datetime
 
-from followlineSM.constants import (
+from hang_the_hook.followlineSM.constants import (
     CENTER_VARIATION
 )
 
@@ -89,7 +90,7 @@ class SearchBlueLine(State):
                 if counterblue == 5:
                     counterblue = 0
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    cv2.imwrite("../images/{now}.png", resultb)
+                    cv2.imwrite(f"../images/{now}.png", resultb)
                     Blackboard["angle_blue"] = angleb
                     Blackboard["width_blue"] = wb
                     Blackboard["height_blue"] = hb
@@ -101,6 +102,46 @@ class SearchBlueLine(State):
             return SUCCEED
         except Exception as e:
             print(f"Blue line searching failed: {e}")
+            return ABORT
+        finally:
+            handler.stop()
+
+class FollowBlueLine(State):
+    def __init__(self):
+        super().__init__(outcomes=[SUCCEED, ABORT])
+        self.blackboard = Blackboard()
+        self.node = YasminNode.get_instance()
+
+        self.pid_cx = PIDController(kp=CX_KP, ki=CX_KI, kd=CX_KD, setpoint = FRAME_WIDTH // 2)                                                                               
+        self.pid_angle = PIDController(kp=ANGLE_KP, ki=ANGLE_KI, kd=ANGLE_KD, setpoint= 0.0)
+
+
+    def execute(self, Blackboard: Blackboard):
+        try:
+            handler = Blackboard["image_handler"]
+
+            if not handler:
+                print("Image handler not initialized.")
+                return ABORT
+
+            while True:
+                frame = handler.take_photo()
+                cx, cy, angle = segue_linha(frame)
+
+                if cx is None:
+                    # perdeu a linha -> volta pra SEARCH_BLUE_LINE
+                    return SUCCEED
+
+                
+                #TODO: Logic PID
+                '''
+                vx = self.pid_cx.update(cx)      
+                vyaw = self.pid_angle.update(angle)
+                '''
+
+
+        except Exception as e:
+            print(f"Follow blue line failed: {e}")
             return ABORT
         finally:
             handler.stop()

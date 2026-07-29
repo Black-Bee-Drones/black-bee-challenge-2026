@@ -9,7 +9,7 @@ from yasmin import Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
-from core.constants import (
+from hang_the_hook.core.constants import (
     RTL_ALTITUDE,
     TAKEOFF_HEIGHT,
     SIM_MODE,
