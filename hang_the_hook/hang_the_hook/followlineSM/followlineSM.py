@@ -9,7 +9,7 @@ from states import FollowBlueLine, SearchBlueLine, CheckPoint, EndFL, CheckEndFL
 class FollowLineSM(StateMachine):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
-        
+
         self.add_state(
             "SETUP_FOLLOW_LINE",
             SetupFollowLine(),
@@ -18,7 +18,7 @@ class FollowLineSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "SEARCH_BLUE_LINE",
             SearchBlueLine(),
@@ -27,7 +27,7 @@ class FollowLineSM(StateMachine):
                 ABORT: "CHECK_END_FOLLOW_LINE"
             }
         )
-        
+
         self.add_state(
             "FOLLOW_BLUE_LINE"
             FollowBlueLine(),
@@ -36,7 +36,7 @@ class FollowLineSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "CHECK_POINT",
             CheckPoint(),
@@ -54,7 +54,7 @@ class FollowLineSM(StateMachine):
                 ABORT: "CHECK_END_FOLLOW_LINE"
             }
         )
-        
+
         self.add_state(
             "CHECK_END_FOLLOW_LINE",
             CheckEndFL(),
@@ -63,6 +63,6 @@ class FollowLineSM(StateMachine):
                 ABORT: "LINE_FOLLOW"
             }
         )
-        
+
         # --- MISSING PART: Define the initial state ---
         self.set_start_state("LINE_FOLLOW")

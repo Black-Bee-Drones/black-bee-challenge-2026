@@ -11,7 +11,7 @@ from hookSM import hookSM
 class HangTheHookSM(StateMachine):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT, "END"])
-        
+
         self.add_state(
             "INITIALIZE",
             Initialize(),
@@ -20,7 +20,7 @@ class HangTheHookSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "TAKEOFF",
             Takeoff(),
@@ -29,7 +29,7 @@ class HangTheHookSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "FOLLOW_LINE",
             FollowLineSM(),
@@ -38,7 +38,7 @@ class HangTheHookSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "HOOK",
             hookSM(),
@@ -47,7 +47,7 @@ class HangTheHookSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "RTL",
             RTL(),
@@ -56,7 +56,7 @@ class HangTheHookSM(StateMachine):
                 ABORT: ABORT
             }
         )
-        
+
         self.add_state(
             "END",
             End(),
@@ -67,34 +67,34 @@ class HangTheHookSM(StateMachine):
         )
 
         self.set_start_state("INITIALIZE")
-        
+
 def main():
     rclpy.init()
-    
+
     set_ros_loggers()
-    
+
     mangalarga_sm = HangTheHookSM()
     viewer = yasmin.visualization.StateMachineViewer(mangalarga_sm)
     viewer.start()
-    
+
     try:
         status = mangalarga_sm()
         print (f"State machine finished with status: {status}")
-        
+
     except KeyboardInterrupt:
         print("Stopping by keyboard interrupt...")
         try:
             mangalarga_sm.set_outcome("END")
         except KeyError:
-            print("Drone not initialized yet, nothing to land.")   
-            
+            print("Drone not initialized yet, nothing to land.")
+
     except Exception as e:
         print(f"State machine finished with exception: {e}")
         mangalarga_sm.set_outcome("END")
-        
-    finally:    
+
+    finally:
         viewer.stop()
         rclpy.shutdown()
-        
+
 if __name__ == "__main__":
-    main()     
+    main()

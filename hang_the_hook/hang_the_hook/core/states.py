@@ -34,10 +34,10 @@ from nectar.ai.segmentation import Segmentor
 from nectar.ai.detection import PerClassConfidenceFilter
 
 class Initialize(State):
-    
+
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
-        
+
     def execute(self, blackboard: Blackboard):
         try:
             node = YasminNode.get_instance()
@@ -51,7 +51,7 @@ class Initialize(State):
             drone = DroneFactory.create("mavros", config, node._executor)
             blackboard["drone"] = drone
             drone.delay(1)
-        
+
             if SIM_MODE:
                 cam_config = ROSConfig(
                     topic=IMAGE_SOURCE,
@@ -59,7 +59,7 @@ class Initialize(State):
                 )
             else:
                 cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
-                
+
             camera = ImageHandler(
                 node=node,
                 image_source=IMAGE_SOURCE,
@@ -80,11 +80,11 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Init error {e}")
             return ABORT
-            
+
 class Takeoff(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED,ABORT])
-        
+
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
             yasmin.YASMIN_LOG_ERROR("Drone not available.")
@@ -116,7 +116,7 @@ class Takeoff(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Takeoff failed: {e}")
             return ABORT
-        
+
 class ReturnToLaunch(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
@@ -141,7 +141,7 @@ class ReturnToLaunch(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"RTL failed: {e}")
             return ABORT
-        
+
 class End(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
@@ -163,4 +163,3 @@ class End(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Landing failed: {e}")
             return ABORT
-

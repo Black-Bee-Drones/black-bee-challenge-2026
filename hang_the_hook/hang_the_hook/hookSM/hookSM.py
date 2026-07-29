@@ -3,7 +3,12 @@ import yasmin
 from yasmin import State, StateMachine, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from states import Align, Descend, Hook, EndHook
+from states import(
+    Align,
+    Descend,
+    Hook,
+    EndHook,
+)
 
 class hookSM(StateMachine):
     def __init__(self):
@@ -14,7 +19,7 @@ class hookSM(StateMachine):
             Align(),
             transitions={
                 SUCCEED: "DESCEND",
-                ABORT: ABORT          
+                ABORT: ABORT
             }
         )
         self.add_state(
@@ -22,7 +27,7 @@ class hookSM(StateMachine):
             Descend(),
             transitions={
                 SUCCEED: "DROP_HOOK",
-                ABORT: "ALIGN"        
+                ABORT: "ALIGN"
             }
         )
         self.add_state(
@@ -30,15 +35,15 @@ class hookSM(StateMachine):
             Hook(),
             transitions={
                 SUCCEED: "END_HOOK",
-                ABORT: "ALIGN"        
+                ABORT: "ALIGN"
             }
         )
         self.add_state(
             "END_HOOK",
             EndHook(),
             transitions={
-                SUCCEED: SUCCEED,     
-                ABORT: ABORT          
+                SUCCEED: SUCCEED,
+                ABORT: ABORT
             }
         )
 

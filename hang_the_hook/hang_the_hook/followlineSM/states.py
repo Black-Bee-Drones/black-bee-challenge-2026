@@ -24,7 +24,7 @@ class SetupLineDetection(State):
         self.linedetector = None
         self.hosedetector = None
         self.handler = None
-        self.node = YasminNode.get_instance() 
+        self.node = YasminNode.get_instance()
 
     def execute(self, Blackboard: Blackboard):
         try:
@@ -49,12 +49,12 @@ class SetupLineDetection(State):
         except Exception as e:
             print(f"Setup failed: {e}")
             return ABORT
-        
+
 class SearchBlueLine(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.blackboard = Blackboard()
-        self.node = YasminNode.get_instance() 
+        self.node = YasminNode.get_instance()
 
     def execute(self, Blackboard: Blackboard):
         try:
@@ -64,7 +64,6 @@ class SearchBlueLine(State):
             counterblue = 0
             oldcxb = 0
             oldcyb = 0
-            
 
             if not linedetector or not handler:
                 print("One or more detectors or image handler not initialized.")
@@ -77,32 +76,31 @@ class SearchBlueLine(State):
             while True:
                 frame = handler.take_photo()
                 resultb, _, cxb, cyb, angleb, wb, hb = linedetector.detect_line(frame, draw=True)
-                
+
                 #Skips if no line detected
                 if not resultb or cxb is None or cyb is None:
                     continue
-                
+
                 distanceb = math.dist((cxb,cyb),(oldcxb,oldcyb))
-                
+
                 if (distanceb < CENTER_VARIATION):
                     counterblue = counterblue + 1
-                    
+
                 if counterblue == 5:
                     counterblue = 0
-                    now = datetime.now().strftime("%Y%m%d_%H%M%S")                    
+                    now = datetime.now().strftime("%Y%m%d_%H%M%S")
                     cv2.imwrite("../images/{now}.png", resultb)
                     Blackboard["angle_blue"] = angleb
                     Blackboard["width_blue"] = wb
                     Blackboard["height_blue"] = hb
                     break
-                
+
                 oldcxb = cxb
                 oldcyb = cyb
-                
+
             return SUCCEED
         except Exception as e:
             print(f"Blue line searching failed: {e}")
             return ABORT
         finally:
             handler.stop()
-            
