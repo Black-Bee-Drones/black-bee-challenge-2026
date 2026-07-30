@@ -6,6 +6,8 @@ from nectar.vision import LineDetector, RotatedRect, ColorSpace
 from nectar.control import PIDController, AltitudeSource, MavrosDrone
 from line_follow import segue_linha
 import cv2
+from nectar.control import DroneFactory, MavrosConfig, PoseSource
+from nectar.control.types import MoveReference
 
 import yasmin
 from yasmin import State, Blackboard
@@ -25,6 +27,7 @@ class SetupLineDetection(State):
         self.linedetector = None
         self.hosedetector = None
         self.handler = None
+        self.drone = None
         self.node = YasminNode.get_instance()
 
     def execute(self, Blackboard: Blackboard):
@@ -33,6 +36,9 @@ class SetupLineDetection(State):
             self.linedetector = LineDetector(color="blue", estimation_method=RotatedRect, color_space=ColorSpace.HSV)
             self.hosedetector = LineDetector(color="red", estimation_method=RotatedRect, color_space=ColorSpace.HSV)
 
+            config = MavrosConfig(pose_source=PoseSource.VISION)
+            self.drone = DroneFactory.create("mavros",config)
+            
             # Set up the image handler with the webcam as the source
             self.handler = ImageHandler(
                 image_source="webcam",
@@ -45,6 +51,7 @@ class SetupLineDetection(State):
             Blackboard["line_detector"] = self.linedetector
             Blackboard["hose_detector"] = self.hosedetector
             Blackboard["image_handler"] = self.handler
+            Blackboard["drone"] = self.drone
 
             return SUCCEED
         except Exception as e:
@@ -119,6 +126,7 @@ class FollowBlueLine(State):
     def execute(self, Blackboard: Blackboard):
         try:
             handler = Blackboard["image_handler"]
+            drone = Blackboard["drone"]
 
             if not handler:
                 print("Image handler not initialized.")
@@ -132,11 +140,16 @@ class FollowBlueLine(State):
                     # perdeu a linha -> volta pra SEARCH_BLUE_LINE
                     return SUCCEED
 
-                
                 #TODO: Logic PID
                 '''
                 vx = self.pid_cx.update(cx)      
                 vyaw = self.pid_angle.update(angle)
+
+                ^^^^^^^^^^^^ essas funções já fizeram a conversão pro ideal (meio da imagem e 0 graus, que é o setpoint), falta transformar essas variáveis de velocidade em movimentação no drone.
+
+                drone.move_velocity(vx=vx, vy=0.0, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
+                
+                ^^^^^algo assim, eu acho [a gente tem o retorno de cy tbm, talvez dê pra fazer algo com ele]
                 '''
 
 
