@@ -74,12 +74,13 @@ class PackageDelivery(StateMachine):
         )
 
         # This state must have different outcomes.
-        # 'SUCCEED' and 'ABORT' are both placeholders, change later.
         self.add_state(
             "WAIT",
             Wait(),
             transitions={SUCCEED: SUCCEED, ABORT: ABORT}
         )
+
+        self.set_start_state("INITIALIZE")
 
 
 def main():
