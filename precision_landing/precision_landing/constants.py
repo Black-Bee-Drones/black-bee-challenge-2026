@@ -9,3 +9,5 @@ IMAGE_WIDTH = 640 #NOTE: Need to be certain about this ones
 IMAGE_HEIGHT = 640
 
 TAKEOFF_HEIGHT = 5 #Meters, can change this later
+
+FIND_TIME = 210 #seconds (3 min and 30 sec)
