@@ -3,11 +3,14 @@ INSTANCIAR OS ESTADOS BASICOS: INIT, TAKEOFF, LAND, END
 '''
 import rclpy
 
+import time
 import yasmin
 from yasmin import State
 from yasmin import Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
+
+from cv_bridge import CvBridge
 
 from hang_the_hook.core.constants import (
     RTL_ALTITUDE,
@@ -16,6 +19,7 @@ from hang_the_hook.core.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
     IMAGE_SOURCE,
+    SIM_IMAGE_COMPRESSED,
 )
 
 from nectar.control import(
@@ -30,8 +34,6 @@ from nectar.control import(
 
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
-from nectar.ai.segmentation import Segmentor
-from nectar.ai.detection import PerClassConfidenceFilter
 
 class Initialize(State):
 
@@ -40,18 +42,21 @@ class Initialize(State):
 
     def execute(self, blackboard: Blackboard):
         try:
+            # Instantiate Yasmin Node
             node = YasminNode.get_instance()
             yasmin.YASMIN_LOG_INFO("Initializing drone...")
 
+            # Nectar config
             config = (
-                SITL_GAZEBO_CONFIG
-                if SIM_MODE
-                else MavrosConfig(pose_source=PoseSource.GPS)
+                SITL_GAZEBO_CONFIG if SIM_MODE else MavrosConfig(pose_source=PoseSource.GPS)
             )
             drone = DroneFactory.create("mavros", config, node._executor)
             blackboard["drone"] = drone
-            drone.delay(1)
 
+            # Camera timer, counts init time
+            t_c0 = time.perf_counter()
+
+            # Camera config
             if SIM_MODE:
                 cam_config = ROSConfig(
                     topic=IMAGE_SOURCE,
@@ -60,23 +65,26 @@ class Initialize(State):
             else:
                 cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
 
+            # Camera Init
             camera = ImageHandler(
-                node=node,
                 image_source=IMAGE_SOURCE,
                 config=cam_config,
             )
             camera.open()
-            frame = camera.take_photo()
+            frame = camera.take_photo(timeout_sec=15)
             if frame is None:
                 yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
+
             t_cam = time.perf_counter() - t_c0
+
+            # SUCCEEDED logs
             yasmin.YASMIN_LOG_INFO(
-                f"Camera ready. Frame shape: {frame.shape} ({t_cam:.2f}s)"
+                f"Camera ready. Frame shape: {frame.shape} \n Init time: ({t_cam:.2f}s)"
             )
             blackboard["camera"] = camera
-
             return SUCCEED
+
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Init error {e}")
             return ABORT
@@ -158,6 +166,10 @@ class End(State):
             drone.land()
             drone.delay(3)
             yasmin.YASMIN_LOG_INFO("Landing complete.")
+
+            if "camera" in blackboard:
+                blackboard["camera"].close()
+
             return SUCCEED
 
         except Exception as e:

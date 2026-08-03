@@ -1,6 +1,6 @@
 import rclpy
 import yasmin
-from yasmin import StateMachine
+from yasmin import StateMachine, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros import set_ros_loggers
 
@@ -68,17 +68,39 @@ class HangTheHookSM(StateMachine):
 
         self.set_start_state("INITIALIZE")
 
+'''
+YASMIN VIEWER SETUP
+
+Install dependency (ubuntu / debian):
+sudo apt install ros-$ROS_DISTRO-yasmin ros-$ROS_DISTRO-yasmin-ros ros-$ROS_DISTRO-yasmin-viewer
+
+Run viewer node:
+ros2 run yasmin_viewer yasmin_viewer_node
+
+Access web visualization:
+http://localhost:5000/
+
+Tip:
+To run node across different IP addresses using ros parameters
+ros2 run yasmin_viewer yasmin_viewer_node --ros-args -p host:=127.0.0.1 -p port:=5032
+'''
+
+# TODO: finish to setup the viewer and polish the main()
 def main():
     rclpy.init()
 
     set_ros_loggers()
 
     mangalarga_sm = HangTheHookSM()
+
+    mangalarga_blackboard = Blackboard()
+
+
     viewer = yasmin.visualization.StateMachineViewer(mangalarga_sm)
     viewer.start()
 
     try:
-        status = mangalarga_sm()
+        status = mangalarga_sm(blackboard=mangalarga_blackboard)
         print (f"State machine finished with status: {status}")
 
     except KeyboardInterrupt:

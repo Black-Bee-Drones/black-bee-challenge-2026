@@ -11,10 +11,13 @@ from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
+'''
+All the setup can be inherited from followlineSM blackboards
+'''
 class Align(State):
 
     def __init__(self):
-        ...
+        super().__init__(outcomes=[SUCCEED, ABORT])
 
 class Descend(State):
 
