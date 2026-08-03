@@ -2,7 +2,8 @@
 SIM_MODE = True
 
 CAMERA_SOURCE = '/down_camera'
-PHOTOS_FOLDER = '' #Folder where we will save the frames for later processing
+PHOTOS_FOLDER = '' #Folder where we will save the images for the dataset
+FRAMES_FOLDER = '' #Folder to save the frames that we will process with Yolo
 
 IMAGE_WIDTH = 640 #NOTE: Need to be certain about this ones
 IMAGE_HEIGHT = 640

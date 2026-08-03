@@ -21,7 +21,7 @@ from constants import (
     CAMERA_SOURCE,
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
-    PHOTOS_FOLDER,
+    FRAMES_FOLDER,
 )
 
 class Initialize(State):
@@ -70,7 +70,7 @@ class Initialize(State):
             return ABORT
 
     def camera_callback(self, image):
-        photos_folder = PHOTOS_FOLDER
+        photos_folder = FRAMES_FOLDER
 
         os.makedirs(photos_folder, exist_ok=True)
 
