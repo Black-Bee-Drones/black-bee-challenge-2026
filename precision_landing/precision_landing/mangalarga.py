@@ -8,10 +8,10 @@ from yasmin_ros.basic_outcomes import SUCCEED, FAIL, TIMEOUT, ABORT
 from precision_landing.states import (
     Initialize,
     Takeoff,
-    Find,
     Precision_landing,
     Land,
 )
+from precision_landing.findSM.findSM import FindSM
 
 class PL(StateMachine):
     def __init__(self):
@@ -30,8 +30,8 @@ class PL(StateMachine):
         )
 
         self.add_state(
-            "FIND",
-            Find(),
+            "FIND_SM",
+            FindSM(),
             transitions={SUCCEED:"PRECISION_LANDING", ABORT:"LAND"},
         )
 
