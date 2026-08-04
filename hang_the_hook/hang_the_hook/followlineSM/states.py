@@ -1,5 +1,22 @@
-from math import dist as math_dist
-from hang_the_hook.core.constants import(
+import math
+import nectar
+from nectar.vision import ImageHandler, OpenCVConfig
+from nectar.vision import LineDetector, RotatedRect, ColorSpace
+from nectar.control import PIDController, AltitudeSource, MavrosDrone
+from line_follow import segue_linha
+import cv2
+from nectar.control import DroneFactory, MavrosConfig, PoseSource
+from nectar.control.types import MoveReference
+
+import yasmin
+from yasmin import State, Blackboard
+from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin_ros.yasmin_node import YasminNode
+
+from datetime import datetime
+
+from followlineSM.constants import (
+    CENTER_VARIATION,
     ANGLE_KD,
     ANGLE_KI,
     ANGLE_KP,
@@ -7,38 +24,10 @@ from hang_the_hook.core.constants import(
     CX_KI,
     CX_KP,
     FRAME_WIDTH,
-    FRAME_HEIGHT,
-    IMAGE_SOURCE
+    MIN_BLUE_FRAMES,
+    MIN_RED_FRAMES,
+    FOWARD_SPEED_BLUE_LINE,
 )
-
-from hang_the_hook.followlineSM.constants import (
-    CENTER_VARIATION
-)
-
-from nectar.vision import(
-    ImageHandler,
-    OpenCVConfig,
-    LineDetector,
-    RotatedRect,
-    ColorSpace,
-)
-
-from nectar.control import(
-    PIDController,
-    AltitudeSource,
-    MavrosDrone,
-    MavlinkDrone,
-)
-
-from hang_the_hook.utils.line_follow import segue_linha
-from cv2 import imwrite as cv2_imwrite
-
-from yasmin import State, Blackboard
-from yasmin_ros.basic_outcomes import SUCCEED, ABORT
-from yasmin_ros.yasmin_node import YasminNode
-
-from datetime import datetime
-
 
 class SetupLineDetection(State):
     def __init__(self):
@@ -114,7 +103,7 @@ class SearchBlueLine(State):
                 if (distanceb < CENTER_VARIATION):
                     counterblue = counterblue + 1
 
-                if counterblue == 5:
+                if counterblue == MIN_BLUE_FRAMES:
                     counterblue = 0
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
                     cv2_imwrite(f"../images/{now}.png", resultb)
@@ -138,14 +127,37 @@ class FollowBlueLine(State):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.node = YasminNode.get_instance()
 
-        self.pid_cx = PIDController(kp=CX_KP, ki=CX_KI, kd=CX_KD, setpoint = FRAME_WIDTH // 2)
-        self.pid_angle = PIDController(kp=ANGLE_KP, ki=ANGLE_KI, kd=ANGLE_KD, setpoint= 0.0)
+        self.pid_cx = PIDController(
+            kp=CX_KP, 
+            ki=CX_KI, 
+            kd=CX_KD, 
+            setpoint = FRAME_WIDTH // 2
+            output_limits=(-1.0, 1.0)
+            integral_limits=(-0.5, 0.5)
+            output_deadband=0.0
+        )
+                                                                                       
+        self.pid_angle = PIDController(
+            kp=ANGLE_KP, 
+            ki=ANGLE_KI, 
+            kd=ANGLE_KD, 
+            setpoint= 0.0
+            output_limits=(-1.0, 1.0)
+            integral_limits=(-0.5, 0.5)
+            output_deadband=0.0
+        )
+        
+        self.hosedetector = None
 
 
     def execute(self, blackboard: Blackboard):
         try:
-            handler = blackboard["image_handler"]
-            drone = blackboard["drone"]
+            self.hosedetector = Blackboard["hose_detector"]
+            handler = Blackboard["image_handler"]
+            drone = Blackboard["drone"]
+            counterred = 0
+            oldcxr = 0
+            oldcyr = 0
 
             if not handler:
                 print("Image handler not initialized.")
@@ -160,17 +172,23 @@ class FollowBlueLine(State):
                     return SUCCEED
 
                 #TODO: Logic PID
-                '''
-                vx = self.pid_cx.update(cx)
+                
+                vx = self.pid_cx.update(cx)      
                 vyaw = self.pid_angle.update(angle)
-
-                ^^^^^^^^^^^^ essas funções já fizeram a conversão pro ideal (meio da imagem e 0 graus, que é o setpoint), falta transformar essas variáveis de velocidade em movimentação no drone.
-
-                drone.move_velocity(vx=vx, vy=0.0, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
-                ^^^^^algo assim, eu acho [a gente tem o retorno de cy tbm, talvez dê pra fazer algo com ele]
-                '''
-
-
+                
+                drone.move_velocity(vx=vx, vy=FOWARD_SPEED_BLUE_LINE, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
+                
+                result, _, newcxh, newcyh, _, _, _ = self.hosedetector.detect_line(frame, draw=True)
+                dist = math.dist((newcxh,newcyh),(oldcxr,oldcyr))
+                if (dist < CENTER_VARIATION):
+                    counterred = counterred + 1
+                if counterred == MIN_RED_FRAMES:
+                    counterred = 0
+                    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    cv2.imwrite(f"../images/{now}.png", result)
+                    break
+                
+            return SUCCEED
         except Exception as e:
             print(f"Follow blue line failed: {e}")
             return ABORT
