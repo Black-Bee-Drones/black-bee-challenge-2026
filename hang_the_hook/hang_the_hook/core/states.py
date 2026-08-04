@@ -1,16 +1,18 @@
 '''
 INSTANCIAR OS ESTADOS BASICOS: INIT, TAKEOFF, LAND, END
 '''
-import rclpy
 
 import time
 import yasmin
-from yasmin import State
-from yasmin import Blackboard
+from yasmin import(
+    State,
+    Blackboard,
+    YASMIN_LOG_INFO,
+    YASMIN_LOG_ERROR,
+    YASMIN_LOG_WARN
+)
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
-
-from cv_bridge import CvBridge
 
 from hang_the_hook.core.constants import (
     RTL_ALTITUDE,
@@ -44,7 +46,7 @@ class Initialize(State):
         try:
             # Instantiate Yasmin Node
             node = YasminNode.get_instance()
-            yasmin.YASMIN_LOG_INFO("Initializing drone...")
+            YASMIN_LOG_INFO("Initializing drone...")
 
             # Nectar config
             config = (
@@ -73,20 +75,20 @@ class Initialize(State):
             camera.open()
             frame = camera.take_photo(timeout_sec=15)
             if frame is None:
-                yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
+                YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
 
             t_cam = time.perf_counter() - t_c0
 
             # SUCCEEDED logs
-            yasmin.YASMIN_LOG_INFO(
+            YASMIN_LOG_INFO(
                 f"Camera ready. Frame shape: {frame.shape} \n Init time: ({t_cam:.2f}s)"
             )
             blackboard["camera"] = camera
             return SUCCEED
 
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"Init error {e}")
+            YASMIN_LOG_ERROR(f"Init error {e}")
             return ABORT
 
 class Takeoff(State):
@@ -95,13 +97,13 @@ class Takeoff(State):
 
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("Drone not available.")
+            YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
         drone: MavrosDrone = blackboard["drone"]
 
         try:
-            yasmin.YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
+            YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
             drone.set_home()
             drone.arm()
             drone.takeoff(TAKEOFF_HEIGHT)
@@ -115,14 +117,14 @@ class Takeoff(State):
             )
 
             if not reached:
-                yasmin.YASMIN_LOG_WARN("Takeoff move_to timed out, continuing.")
+                YASMIN_LOG_WARN("Takeoff move_to timed out, continuing.")
 
             drone.delay(1)
-            yasmin.YASMIN_LOG_INFO("Takeoff complete.")
+            YASMIN_LOG_INFO("Takeoff complete.")
             return SUCCEED
 
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"Takeoff failed: {e}")
+            YASMIN_LOG_ERROR(f"Takeoff failed: {e}")
             return ABORT
 
 class ReturnToLaunch(State):
@@ -131,7 +133,7 @@ class ReturnToLaunch(State):
 
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("Drone not available.")
+            YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
         drone: MavrosDrone = blackboard["drone"]

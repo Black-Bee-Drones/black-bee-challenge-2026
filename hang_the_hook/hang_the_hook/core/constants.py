@@ -11,7 +11,7 @@ Image Handler constants
 '''
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 480
-SIM_IMAGE_COMPRESSED = True
+SIM_IMAGE_COMPRESSED = False
 
 '''
 "webcam" -> in-built camera of personal machine

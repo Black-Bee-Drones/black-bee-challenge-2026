@@ -1,20 +1,17 @@
-import rclpy
-import yasmin
-from yasmin import State, StateMachine, Blackboard
+from yasmin import StateMachine
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
-from yasmin_ros import set_ros_loggers
 
-from states import FollowBlueLine, SearchBlueLine, CheckPoint, EndFL, CheckEndFL, SetupFollowLine
+from states import SetupLineDetection, SearchBlueLine, FollowBlueLine
 
 class FollowLineSM(StateMachine):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.add_state(
-            "SETUP_FOLLOW_LINE",
-            SetupFollowLine(),
+            "SETUP_LINE_DETECTION",
+            SetupLineDetection(),
             transitions={
-                SUCCEED: "LINE_FOLLOW",
+                SUCCEED: "SEARCH_BLUE_LINE",
                 ABORT: ABORT
             }
         )
@@ -32,37 +29,9 @@ class FollowLineSM(StateMachine):
             "FOLLOW_BLUE_LINE",
             FollowBlueLine(),
             transitions={
-                SUCCEED: "SEARCH_BLUE_LINE",
+                SUCCEED: SUCCEED,
                 ABORT: ABORT
             }
         )
 
-        self.add_state(
-            "CHECK_POINT",
-            CheckPoint(),
-            transitions={
-                SUCCEED: "LINE_FOLLOW",
-                ABORT: "CHECK_END_FOLLOW_LINE"
-            }
-        )
-
-        self.add_state(
-            "END_FOLLOW_LINE",
-            EndFL(),
-            transitions={
-                SUCCEED: SUCCEED,
-                ABORT: "CHECK_END_FOLLOW_LINE"
-            }
-        )
-
-        self.add_state(
-            "CHECK_END_FOLLOW_LINE",
-            CheckEndFL(),
-            transitions={
-                SUCCEED: "END_FOLLOW_LINE",
-                ABORT: "LINE_FOLLOW"
-            }
-        )
-
-        # --- MISSING PART: Define the initial state ---
-        self.set_start_state("LINE_FOLLOW")
+        self.set_start_state("SETUP_LINE_DETECTION")

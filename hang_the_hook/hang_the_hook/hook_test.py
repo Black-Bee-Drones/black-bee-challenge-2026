@@ -1,8 +1,20 @@
-import rclpy
+from rclpy import(
+    init as rclpy_init,
+    ok as rclpy_ok,
+    shutdown as rclpy_shutdown,
+)
+
+from nectar import(
+    init as nectar_init,
+    is_initialized as nectar_ok,
+    shutdown as nectar_shutdown,
+)
+
+from traceback import print_exc
 
 from yasmin import StateMachine, Blackboard
+from yasmin_ros import set_ros_loggers as yasmin_set_ros_loggers
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
-from yasmin_ros import set_ros_loggers
 from yasmin_viewer import YasminViewerPub
 
 from core.states import(
@@ -22,7 +34,7 @@ from hookSM.states import(
 class HookTest(StateMachine):
 
     def __init__(self):
-        super().__init__(outcomes=[SUCCEED, ABORT, "END"])
+        super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.add_state(
             "INITIALIZE",
@@ -37,11 +49,28 @@ class HookTest(StateMachine):
             "TAKEOFF",
             Takeoff(),
             transitions={
-                SUCCEED: SUCCEED,
+                SUCCEED: "RETURN_TO_LAUNCH",
                 ABORT: ABORT
             }
         )
 
+        self.add_state(
+            "RETURN_TO_LAUNCH",
+            ReturnToLaunch(),
+            transitions={
+                SUCCEED: "END",
+                ABORT: "RETURN_TO_LAUNCH"
+            }
+        )
+
+        self.add_state(
+            "END",
+            End(),
+            transitions={
+                SUCCEED: SUCCEED,
+                ABORT: "END"
+            }
+        )
 '''
 YASMIN VIEWER SETUP
 
@@ -60,35 +89,39 @@ ros2 run yasmin_viewer yasmin_viewer_node --ros-args -p host:=127.0.0.1 -p port:
 '''
 
 def main():
-    rclpy.init()
-
-    set_ros_loggers()
-
-    hooktest_sm = HookTest()
-
-    # Intercept the ctrl+c signal to cleanly shutdown the state machine
-    hooktest_sm.set_sigint_handler(True)
-
-    # Initialize a fresh Blackboard specifically for the hook test sequence
-    hook_blackboard = Blackboard()
-
-    # Keep the viewer alive, even though the object is never called
-    _ = YasminViewerPub(hooktest_sm, "HOOKTEST_FSM")
 
     try:
-        outcome = hooktest_sm(blackboard=hook_blackboard)
-        print (f"State machine finished with status: {outcome}")
+        rclpy_init()
+        nectar_init()
+
+        yasmin_set_ros_loggers()
+
+        hook_test_sm = HookTest()
+
+        # Initialize a fresh Blackboard specifically for the hook_test sequence
+        hook_test_blackboard = Blackboard()
+
+        # Keep the viewer alive, even though the object is never called
+        _ = YasminViewerPub(hook_test_sm, "HOOK_TEST_FSM")
+
+        outcome = hook_test_sm(blackboard=hook_test_blackboard)
+        print (f"Hook_test finished with status: {outcome}")
 
     except KeyboardInterrupt:
         print("Stopping by keyboard interrupt...")
-        hooktest_sm.cancel_state()
+        hook_test_sm.cancel_state()
 
     except Exception as e:
-        print(f"State machine finished with exception: {e}")
+        print(f"Hook_test finished with exception: {e}")
+        print_exc()
 
     finally:
-        if rclpy.ok():
-            rclpy.shutdown()
+        if nectar_ok():
+            nectar_shutdown()
+
+        if rclpy_ok():
+            rclpy_shutdown()
 
 if __name__ == "__main__":
     main()
+

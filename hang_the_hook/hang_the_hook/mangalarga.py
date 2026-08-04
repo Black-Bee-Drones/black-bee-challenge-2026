@@ -1,11 +1,24 @@
-import rclpy
-import yasmin
-from yasmin import StateMachine, Blackboard
-from yasmin_ros.basic_outcomes import SUCCEED, ABORT
-from yasmin_ros import set_ros_loggers
+from rclpy import(
+    init as rclpy_init,
+    ok as rclpy_ok,
+    shutdown as rclpy_shutdown,
+)
 
-from core.states import Initialize, Takeoff, End, RTL
-from followlineSM import FollowLineSM
+from nectar import(
+    init as nectar_init,
+    is_initialized as nectar_ok,
+    shutdown as nectar_shutdown,
+)
+
+from traceback import print_exc
+
+from yasmin import StateMachine, Blackboard
+from yasmin_ros import set_ros_loggers as yasmin_set_ros_loggers
+from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin_viewer import YasminViewerPub
+
+from core.states import Initialize, Takeoff, ReturnToLaunch, End
+from hang_the_hook.followlineSM.followlineSM import FollowLineSM
 from hookSM import hookSM
 
 class HangTheHookSM(StateMachine):
@@ -40,23 +53,12 @@ class HangTheHookSM(StateMachine):
         )
 
         self.add_state(
-            "HOOK",
-            hookSM(),
+            'RETURN_TO_LAUNCH',
+            ReturnToLaunch(),
             transitions={
-                SUCCEED: "RTL",
-                ABORT: ABORT
+                SUCCEED: 'END',
             }
         )
-
-        self.add_state(
-            "RTL",
-            RTL(),
-            transitions={
-                SUCCEED: "END",
-                ABORT: ABORT
-            }
-        )
-
         self.add_state(
             "END",
             End(),
@@ -85,38 +87,39 @@ To run node across different IP addresses using ros parameters
 ros2 run yasmin_viewer yasmin_viewer_node --ros-args -p host:=127.0.0.1 -p port:=5032
 '''
 
-# TODO: finish to setup the viewer and polish the main()
-def main():
-    rclpy.init()
-
-    set_ros_loggers()
-
-    mangalarga_sm = HangTheHookSM()
-
-    mangalarga_blackboard = Blackboard()
-
-
-    viewer = yasmin.visualization.StateMachineViewer(mangalarga_sm)
-    viewer.start()
+def mangalarga():
 
     try:
-        status = mangalarga_sm(blackboard=mangalarga_blackboard)
-        print (f"State machine finished with status: {status}")
+        rclpy_init()
+        nectar_init()
+
+        yasmin_set_ros_loggers()
+
+        mangalarga_sm = HangTheHookSM()
+
+        # Initialize a fresh Blackboard specifically for the mangalarga sequence
+        mangalarga_blackboard = Blackboard()
+
+        # Keep the viewer alive, even though the object is never called
+        _ = YasminViewerPub(mangalarga_sm, "MANGALARGA_FSM")
+
+        outcome = mangalarga_sm(blackboard=mangalarga_blackboard)
+        print (f"Mangalarga finished with status: {outcome}")
 
     except KeyboardInterrupt:
         print("Stopping by keyboard interrupt...")
-        try:
-            mangalarga_sm.set_outcome("END")
-        except KeyError:
-            print("Drone not initialized yet, nothing to land.")
+        mangalarga_sm.cancel_state()
 
     except Exception as e:
-        print(f"State machine finished with exception: {e}")
-        mangalarga_sm.set_outcome("END")
+        print(f"Mangalarga finished with exception: {e}")
+        print_exc()
 
     finally:
-        viewer.stop()
-        rclpy.shutdown()
+        if nectar_ok():
+            nectar_shutdown()
+
+        if rclpy_ok():
+            rclpy_shutdown()
 
 if __name__ == "__main__":
-    main()
+    mangalarga()
