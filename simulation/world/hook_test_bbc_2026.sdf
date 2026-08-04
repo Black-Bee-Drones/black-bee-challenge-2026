@@ -218,6 +218,7 @@
       <pose degrees="true">0 0 0.195 0 0 0</pose>
     </include>
 
+    <!-- TODO (Issue #1): Replace hardcoded absolute path with model:// or package:// URI-->
     <include>
       <uri>file:///home/mrangh/gazebo_models/hook_test</uri>
       <name>MyModel</name>

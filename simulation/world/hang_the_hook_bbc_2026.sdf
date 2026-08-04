@@ -220,6 +220,7 @@
       <pose degrees="true">0 0 0.195 0 0 0</pose>
     </include>
 
+    <!-- TODO (Issue #1): Replace hardcoded absolute path with model:// or package:// URI-->
     <include>
       <uri>file:///home/mrangh/gazebo_models/hang_the_hook_bbc2026</uri>
       <name>World_Hook</name>
