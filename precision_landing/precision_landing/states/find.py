@@ -10,7 +10,7 @@ from nectar.control import MavrosDrone
 from nectar.vision import ImageHandler
 
 from constants import (
-    FIND_TIME,
+    SEARCH_TIME,
 )
 
 class Find(State):
@@ -37,7 +37,7 @@ class Find(State):
             camera.start() #Start the ImageHandler
 
             start_time = self.node.get_clock().now() #gets the start time of the state
-            time = Duration(seconds=FIND_TIME) #gets the max time in seconds before TIMEOUT
+            time = Duration(seconds=SEARCH_TIME) #gets the max time in seconds before TIMEOUT
 
             while (self.node.get_clock().now() - start_time) < time: #Executes the State for a max of 3min and 30sec
                 frame = camera.take_photo()
