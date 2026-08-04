@@ -1,14 +1,19 @@
-import nectar
+from nectar import(
+    init as nectar_init,
+    shutdown as nectar_shutdown,
+)
 from nectar.vision.camera import ImageHandler
-import line_follow
-import rclpy
+from hang_the_hook.utils.line_follow import segue_linha
+from rclpy import(
+    init as rclpy_init,
+    spin as rclpy_spin,
+    shutdown as rclpy_shutdown,
+)
 from rclpy.node import Node
 
 class Line(Node):
     def __init__(self):
         super().__init__('line')
-
-        nectar.init()
 
         self.FRAME_WIDTH = 640
         self.desvio = 0
@@ -25,7 +30,7 @@ class Line(Node):
         # TODO: Lógica do line_follow e controle de PID
          # linha
 
-        cx, cy, angle = line_follow.segue_linha(frame)
+        cx, cy, angle = segue_linha(frame)
 
         if cx is None:
 
@@ -51,17 +56,19 @@ class Line(Node):
 
 
 def main(args=None):
-    rclpy.init(args=args)
+    rclpy_init(args=args)
+    nectar_init()
+
     node = Line()
 
     try:
-        rclpy.spin(node)
+        rclpy_spin(node)
     except KeyboardInterrupt:
         print("Parando...")
     finally:
-        nectar.shutdown()
+        nectar_shutdown()
         node.destroy_node()
-        rclpy.shutdown()
+        rclpy_shutdown()
 
 if __name__ == '__main__':
     print(f"\033[{10}F\033[J", end="", flush=True)

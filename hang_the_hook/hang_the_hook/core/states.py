@@ -1,9 +1,5 @@
-'''
-INSTANCIAR OS ESTADOS BASICOS: INIT, TAKEOFF, LAND, END
-'''
+from time import perf_counter as time_perf_counter
 
-import time
-import yasmin
 from yasmin import(
     State,
     Blackboard,
@@ -56,7 +52,7 @@ class Initialize(State):
             blackboard["drone"] = drone
 
             # Camera timer, counts init time
-            t_c0 = time.perf_counter()
+            t_c0 = time_perf_counter()
 
             # Camera config
             if SIM_MODE:
@@ -78,7 +74,7 @@ class Initialize(State):
                 YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
 
-            t_cam = time.perf_counter() - t_c0
+            t_cam = time_perf_counter() - t_c0
 
             # SUCCEEDED logs
             YASMIN_LOG_INFO(
@@ -139,7 +135,7 @@ class ReturnToLaunch(State):
         drone: MavrosDrone = blackboard["drone"]
 
         try:
-            yasmin.YASMIN_LOG_INFO(f"Returning to launch at {RTL_ALTITUDE}m...")
+            YASMIN_LOG_INFO(f"Returning to launch at {RTL_ALTITUDE}m...")
             drone.rtl(
                 altitude=RTL_ALTITUDE,
                 method=RTLMethod.NAVIGATE,
@@ -149,7 +145,7 @@ class ReturnToLaunch(State):
             return SUCCEED
 
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"RTL failed: {e}")
+            YASMIN_LOG_ERROR(f"RTL failed: {e}")
             return ABORT
 
 class End(State):
@@ -158,16 +154,16 @@ class End(State):
 
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("Drone not available.")
+            YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
         drone: MavrosDrone = blackboard["drone"]
 
         try:
-            yasmin.YASMIN_LOG_INFO("Landing...")
+            YASMIN_LOG_INFO("Landing...")
             drone.land()
             drone.delay(3)
-            yasmin.YASMIN_LOG_INFO("Landing complete.")
+            YASMIN_LOG_INFO("Landing complete.")
 
             if "camera" in blackboard:
                 blackboard["camera"].close()
@@ -175,5 +171,5 @@ class End(State):
             return SUCCEED
 
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"Landing failed: {e}")
+            YASMIN_LOG_ERROR(f"Landing failed: {e}")
             return ABORT

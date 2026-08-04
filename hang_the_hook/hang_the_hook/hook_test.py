@@ -24,7 +24,7 @@ from core.states import(
     ReturnToLaunch
 )
 
-from hookSM.states import(
+from hang_the_hook.hookSM.states import(
     Align,
     Descend,
     Hook,
@@ -88,7 +88,7 @@ To run node across different IP addresses using ros parameters
 ros2 run yasmin_viewer yasmin_viewer_node --ros-args -p host:=127.0.0.1 -p port:=5032
 '''
 
-def main():
+def hook_test():
 
     try:
         rclpy_init()
@@ -123,5 +123,5 @@ def main():
             rclpy_shutdown()
 
 if __name__ == "__main__":
-    main()
+    hook_test()
 

@@ -1,4 +1,4 @@
-import math
+from math import dist as math_dist
 from hang_the_hook.core.constants import(
     ANGLE_KD,
     ANGLE_KI,
@@ -15,13 +15,23 @@ from hang_the_hook.followlineSM.constants import (
     CENTER_VARIATION
 )
 
-from nectar.vision import ImageHandler, OpenCVConfig
-from nectar.vision import LineDetector, RotatedRect, ColorSpace
-from nectar.control import PIDController, AltitudeSource, MavrosDrone, MavlinkDrone
-from line_follow import segue_linha
-import cv2
-from nectar.control import DroneFactory, MavrosConfig, PoseSource
-from nectar.control.types import MoveReference
+from nectar.vision import(
+    ImageHandler,
+    OpenCVConfig,
+    LineDetector,
+    RotatedRect,
+    ColorSpace,
+)
+
+from nectar.control import(
+    PIDController,
+    AltitudeSource,
+    MavrosDrone,
+    MavlinkDrone,
+)
+
+from hang_the_hook.utils.line_follow import segue_linha
+from cv2 import imwrite as cv2_imwrite
 
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
@@ -99,7 +109,7 @@ class SearchBlueLine(State):
                 if not resultb or cxb is None or cyb is None:
                     continue
 
-                distanceb = math.dist((cxb,cyb),(oldcxb,oldcyb))
+                distanceb = math_dist((cxb,cyb),(oldcxb,oldcyb))
 
                 if (distanceb < CENTER_VARIATION):
                     counterblue = counterblue + 1
@@ -107,7 +117,7 @@ class SearchBlueLine(State):
                 if counterblue == 5:
                     counterblue = 0
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    cv2.imwrite(f"../images/{now}.png", resultb)
+                    cv2_imwrite(f"../images/{now}.png", resultb)
                     blackboard["angle_blue"] = angleb
                     blackboard["width_blue"] = wb
                     blackboard["height_blue"] = hb
