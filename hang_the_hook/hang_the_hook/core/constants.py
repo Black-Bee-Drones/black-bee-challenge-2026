@@ -1,3 +1,5 @@
+from nectar.control import PIDController, PIDConfig
+
 SIM_MODE = True
 
 '''
@@ -28,11 +30,14 @@ FRAME_HEIGHT = 980
 '''
 PID constants
 '''
-# Center X
-CX_KP = 0.01
-CX_KI = 0.0
-CX_KD = 0.002
-# Line angulation
-ANGLE_KP = 0.02
-ANGLE_KI = 0.0
-ANGLE_KD = 0.001
+# PID gains
+KP = 0.01
+KI = 0.0
+KD = 0.002
+# Base PID
+BASE_PID_DICT = {
+    "kp": KP, "ki": KI, "kd": KD,
+    "setpoint": 0.0,
+    "output_min": -0.3, "output_max": 0.3,
+    "integral_min": -0.3, "integral_max": 0.3,
+}

@@ -1,14 +1,10 @@
+from traceback import print_exc
+
 from math import dist as math_dist
 from hang_the_hook.core.constants import(
-    ANGLE_KD,
-    ANGLE_KI,
-    ANGLE_KP,
-    CX_KD,
-    CX_KI,
-    CX_KP,
     FRAME_WIDTH,
     FRAME_HEIGHT,
-    IMAGE_SOURCE
+    IMAGE_SOURCE,
 )
 
 from hang_the_hook.followlineSM.constants import (
@@ -43,40 +39,21 @@ from datetime import datetime
 class SetupLineDetection(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
-        self.linedetector: LineDetector
-        self.hosedetector: LineDetector
-        self.handler: ImageHandler
-        self.drone: MavrosDrone | MavlinkDrone
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
         try:
-            # Initialize the line linedetector with the desired color and color space
-            # LineDetector runs @staticmethods at estimation_method, so parameterize the class or a object of it have no difference at all
-            # However, IntelliSense becomes a nuisance if you don't parameterize the instance
-            self.linedetector = LineDetector(color="blue", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
-            self.hosedetector = LineDetector(color="red", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+            line_detector: LineDetector = blackboard["line_detect"]
+            camera: ImageHandler = blackboard["camera"]
 
-            # blackboard is shared across submachines, so there is no need to instantiate a new drone
-            self.drone = blackboard["drone"]
-
-            # Set up the image handler with IMAGE_SOURCE as the source
-            self.handler = ImageHandler(
-                image_source=IMAGE_SOURCE,
-                config=OpenCVConfig(width=1280, height=720),
-                image_processing_callback=lambda frame: self.linedetector.detect_line(frame),
-                show_result="Camera View",
-            )
-
-            # Store the linedetector and handler in the Blackboard for later use
-            blackboard["line_detector"] = self.linedetector
-            blackboard["hose_detector"] = self.hosedetector
-            blackboard["image_handler"] = self.handler
+            camera.image_processing_callback = lambda frame: line_detector.detect_line(frame)
 
             return SUCCEED
 
         except Exception as e:
             print(f"Setup failed: {e}")
+            print_exc()
+
             return ABORT
 
 class SearchBlueLine(State):
@@ -88,21 +65,21 @@ class SearchBlueLine(State):
         try:
             # Retrieve the line linedetector and image handler from the Blackboard
             linedetector = blackboard["line_linedetector"]
-            handler = blackboard["image_handler"]
+            camera: ImageHandler = blackboard["camera"]
             counterblue = 0
             oldcxb = 0
             oldcyb = 0
 
-            if not linedetector or not handler:
+            if not linedetector or not camera:
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
 
             # Start the image handler to process frames and detect lines
-            handler.start()
+            camera.start()
 
             # Main loop for line following
             while True:
-                frame = handler.take_photo()
+                frame = camera.take_photo()
                 resultb, _, cxb, cyb, angleb, wb, hb = linedetector.detect_line(frame, draw=True)
 
                 #Skips if no line detected
@@ -131,21 +108,19 @@ class SearchBlueLine(State):
             print(f"Blue line searching failed: {e}")
             return ABORT
         finally:
-            handler.stop()
+            camera.stop()
 
 class FollowBlueLine(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.node = YasminNode.get_instance()
 
-        self.pid_cx = PIDController(kp=CX_KP, ki=CX_KI, kd=CX_KD, setpoint = FRAME_WIDTH // 2)
-        self.pid_angle = PIDController(kp=ANGLE_KP, ki=ANGLE_KI, kd=ANGLE_KD, setpoint= 0.0)
-
-
     def execute(self, blackboard: Blackboard):
         try:
-            handler = blackboard["image_handler"]
-            drone = blackboard["drone"]
+            pid_cx: PIDController = blackboard["pid_cx"]
+            pid_angle: PIDController = blackboard["pid_angle"]
+            handler: ImageHandler = blackboard["camera"]
+            drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
 
             if not handler:
                 print("Image handler not initialized.")
