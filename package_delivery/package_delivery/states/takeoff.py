@@ -4,7 +4,7 @@ from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
-from nectar.control import MavrosDrone
+from nectar.control import MavlinkDrone
 
 from package_delivery.constants import Config
 
@@ -16,7 +16,7 @@ class Takeoff(State):
         self.config = config
 
     def execute(self, blackboard: Blackboard):
-        drone: MavrosDrone = blackboard.get('drone')
+        drone: MavlinkDrone = blackboard.get('drone')
 
         yasmin.YASMIN_LOG_INFO(
             f'Taking off to altitude: {self.config.takeoff_altitude} m...')

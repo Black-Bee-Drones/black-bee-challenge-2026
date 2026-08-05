@@ -18,8 +18,9 @@ class Config:
     drone_type: str = 'mavlink'
     connection_string: str = 'udp:127.0.0.1:14551'
     
-    # Takeoff
+    # Takeoff and Land
     takeoff_altitude: float = safe_altitude
+    rtl_altitude: float = 1.2   # meters
     
     # Center
     center_threshold_xy: float = 0.2  # meters
