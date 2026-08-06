@@ -147,6 +147,7 @@ class FollowBlueLine(State):
 
                 if cx is None:
                     # perdeu a linha -> volta pra SEARCH_BLUE_LINE
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
                     return ABORT
 
                 #TODO: Logic PID
@@ -162,12 +163,18 @@ class FollowBlueLine(State):
                 else:
                     hose_counter = 0
 
+                
+                blackboard["hose_counter"] = hose_counter
+                
                 if hose_counter >= FRAMES_TO_CONFIRM_HOSE:
                     print("Hose detected! Stopping line following.")
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
                     return SUCCEED
 
         except Exception as e:
             print(f"Follow blue line failed: {e}")
+            try:
+                drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
+            except Exception:
+                pass
             return ABORT
-        finally:
-            camera.stop()
