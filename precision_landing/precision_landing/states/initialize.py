@@ -15,8 +15,10 @@ from nectar.control import (
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
+from nectar.ai import Detector
+#TODO: create the detector and save it in the blackboard
 
-from constants import (
+from precision_landing.constants import (
     SIM_MODE,
     CAMERA_SOURCE,
     IMAGE_WIDTH,
@@ -46,7 +48,6 @@ class Initialize(State):
                 cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
 
             camera = ImageHandler(
-                node=node,
                 image_source=CAMERA_SOURCE,
                 config=cam_config,
                 image_processing_callback=self.camera_callback,
@@ -72,9 +73,9 @@ class Initialize(State):
     def camera_callback(self, image):
         photos_folder = FRAMES_FOLDER
 
-        os.makedirs(photos_folder, exist_ok=True)
+        #os.makedirs(photos_folder, exist_ok=True)
 
-        raw_path = os.path.join(photos_folder, 'image.png')
-        cv2.imwrite(raw_path, image)
+        #raw_path = os.path.join(photos_folder, 'frame.png')
+        #cv2.imwrite(raw_path, image)
 
         return image

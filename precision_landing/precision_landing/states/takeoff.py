@@ -4,7 +4,7 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
 from nectar.control import MavrosDrone
 
-from constants import (
+from precision_landing.constants import (
     TAKEOFF_HEIGHT,
 )
 
@@ -17,7 +17,7 @@ class Takeoff(State):
             yasmin.YASMIN_LOG_ERROR("Drone not available...")
             return ABORT
 
-        drone: MavrosDrone = blackboard["drone"]
+        drone: MavrosDrone  = blackboard["drone"]
 
         try:
             yasmin.YASMIN_LOG_INFO("Starting TAKEOFF...")
@@ -25,7 +25,7 @@ class Takeoff(State):
             drone.set_home() #Sets the current gps position as 'home'
             drone.arm()
             drone.takeoff(TAKEOFF_HEIGHT, max_retries=3, timeout=30.0, precision=0.2)
-            drone.delay(1)
+            drone.delay(2)
             
             yasmin.YASMIN_LOG_INFO("TAKEOFF completed.")
 
