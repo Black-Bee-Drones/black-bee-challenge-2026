@@ -20,6 +20,7 @@ from hang_the_hook.core.constants import (
     IMAGE_SOURCE,
     SIM_IMAGE_COMPRESSED,
     BASE_PID_DICT,
+    KP, KI, KD,
 )
 
 from nectar.control import(
@@ -92,7 +93,7 @@ class Initialize(State):
             linedetector = LineDetector(
                 color="blue",
                 estimation_method=RotatedRect(),
-                color_space=ColorSpace.HSV
+                color_space=ColorSpace.HSV,
                 )
 
             hosedetector = LineDetector(
@@ -104,6 +105,7 @@ class Initialize(State):
             # ---- PID ----
             pid_config = PIDConfig.from_dict(BASE_PID_DICT)
             pid_cx, pid_cy, pid_angle = (PIDController(**asdict(pid_config)) for _ in range(3))
+            pid_cx = PIDController(ki=KI)
 
             # ---- Blackboard ----
             blackboard["drone"]       = drone
@@ -130,7 +132,7 @@ class Takeoff(State):
             YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
-        drone: MavrosDrone | MavlinkDrone= blackboard["drone"]
+        drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
@@ -155,18 +157,21 @@ class Takeoff(State):
 
         except Exception as e:
             YASMIN_LOG_ERROR(f"Takeoff failed: {e}")
+            print_exc()
             return ABORT
 
 class ReturnToLaunch(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
+        drone: MavrosDrone | MavlinkDrone
+
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
             YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
-        drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+        drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Returning to launch at {RTL_ALTITUDE}m...")
@@ -186,12 +191,14 @@ class End(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
+        drone: MavrosDrone | MavlinkDrone
+
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
             YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
-        drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+        drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO("Landing...")

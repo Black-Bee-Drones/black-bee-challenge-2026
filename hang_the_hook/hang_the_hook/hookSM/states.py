@@ -30,26 +30,17 @@ class FindRedLine(State):
         super().__init__(outcomes=[SUCCEED,ABORT])
 
         self.drone: MavrosDrone | MavlinkDrone
-        self.altitude: float
+        self.altitude: float | None
         self.camera: ImageHandler
 
-        self.hosedetector = LineDetector(color="red", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+        self.hosedetector: LineDetector
         self.hose: Tuple[float, float, float]
-        self.cx: float
-        self.cy: float
-        self.angle: float
-
-        self.pid_cx = PIDController(KP, KI,KD, output_deadband= PID_DEADBAND)
-        self.pid_cy = PIDController(KP, KI,KD, output_deadband= PID_DEADBAND)
-        self.pid_angle = PIDController(KP, KI,KD, output_deadband= PID_DEADBAND)
 
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
-        self.drone, self.camera = blackboard["drone"], blackboard["camera"]
-
-        blackboard["pid_cx"], blackboard["pid_cy"], blackboard["pid_angle"] = \
-            self.pid_cx, self.pid_cy, self.pid_angle
+        self.drone = blackboard["drone"]
+        self.camera = blackboard["camera"]
 
         frame = self.camera.take_photo()
         if frame is not None:
@@ -58,7 +49,8 @@ class FindRedLine(State):
             return SUCCEED
         else:
             self.altitude = self.drone.get_altitude()
-            self.drone.move_to(z= self.altitude + 0.5)
+            if self.altitude is not None:
+                self.drone.move_to(z= self.altitude + 0.5)
             return ABORT
 
 

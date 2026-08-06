@@ -17,7 +17,7 @@ from yasmin_ros import set_ros_loggers as yasmin_set_ros_loggers
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_viewer import YasminViewerPub
 
-from core.states import Initialize, Takeoff, ReturnToLaunch, End
+from hang_the_hook.core.states import Initialize, Takeoff, ReturnToLaunch, End
 from hang_the_hook.followlineSM.followlineSM import FollowLineSM
 from hookSM import hookSM
 
