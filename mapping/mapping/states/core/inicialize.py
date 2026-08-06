@@ -12,11 +12,11 @@ from nectar.control import DroneFactory, MavrosConfig, MavlinkConfig, PoseSource
 from nectar.vision import ImageHandler, Aruco, ROSConfig
 
 
-from config import Config
+from mapping import Config
 
 class Inicialize(State):
     
-    def __int__(self, config : Config):
+    def __init__(self, config: Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         
         self.config = config
@@ -31,54 +31,59 @@ class Inicialize(State):
         #Start Time
         
         try:
-            yasmin.YASMIN_LOG_INFO('    Inicializing Start Time...')
+            yasmin.YASMIN_LOG_INFO('Inicializing Start Time...')
             self.start_time = self.node.get_clock().now()
             
             blackboard.set('Start_time', self.start_time)
-            yasmin.YASMIN_LOG_INFO('    \033[32mSUCCESSFUL START TIME\033[0m!')
+            yasmin.YASMIN_LOG_INFO('\033[32mSUCCESSFUL START TIME\033[0m!')
             
         except KeyboardInterrupt:
-            yasmin.YASMIN_LOG_INFO('    \033[31mExecution interrupted by user!\033[0m')
+            yasmin.YASMIN_LOG_INFO('\033[31mExecution interrupted by user!\033[0m')
             return ABORT
         
         except Exception as error:
-            yasmin.YASMIN_LOG_INFO(f'   \033[31mSTART TIME FAILED: {error}\033[0m')
+            yasmin.YASMIN_LOG_INFO(f'\033[31mSTART TIME FAILED: {error}\033[0m')
             return ABORT
         
         #Drone 
         
         try: 
-            yasmin.YASMIN_LOG_INFO(f'    Inicializing Drone Config ("{self.config.drone_type}")...')
+            yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
             if self.config.drone_type == 'mavros':
                 drone_config = MavrosConfig(
                     pose_source=PoseSource.VISION,
+                    start_driver=False,
                     connection_string=self.config.conection_string
                 )
             
             elif self.config.drone_type == 'mavlink':
                 drone_config = MavlinkConfig(
-                    pose_source=PoseSource.VISION,
+                    pose_source=PoseSource.GPS,
                     connection_string=self.config.conection_string
                 )
             
             else:
-                yasmin.YASMIN_LOG_INFO('    \033[31m Invalid Drone Type!\033[0m')
+                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type!\033[0m')
                 return ABORT
 
             
             drone = DroneFactory.create(self.config.drone_type, drone_config)
             
             blackboard.set('drone', drone)
-            yasmin.YASMIN_LOG_INFO('    \033[32mSuccessful Drone Configuration!\033[0m')
+            yasmin.YASMIN_LOG_INFO('\033[32mSuccessful Drone Configuration!\033[0m')
             
             
         except KeyboardInterrupt:
-            yasmin.YASMIN_LOG_INFO('    \033[31mExecution interrupted by user!\033[0m')
+            yasmin.YASMIN_LOG_INFO('\033[31mExecution interrupted by user!\033[0m')
             return ABORT
         
         except Exception as error:
-            yasmin.YASMIN_LOG_INFO(f'   \033[31mDRONE FACTORY FAILED: {error}\033[0m')
+            yasmin.YASMIN_LOG_INFO(f'\033[31mDRONE FACTORY FAILED: {error}\033[0m')
             return ABORT
+        
+        
+        yasmin.YASMIN_LOG_INFO('\033[32mInicialize Successfully Completed!\033[0m')
+        return SUCCEED
         
         
         
