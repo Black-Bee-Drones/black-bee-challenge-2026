@@ -9,7 +9,7 @@ import nectar
 from nectar.control import MavrosDrone
 from nectar.vision import ImageHandler
 
-from constants import (
+from precision_landing.constants import (
     SEARCH_TIME,
 )
 

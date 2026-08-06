@@ -1,9 +1,10 @@
 from nectar.vision import(
     ImageHandler,
+    Aruco,
 )
-
 from nectar.control import(
     MavrosDrone,
+    MoveReference,
 )
 
 from rclpy.duration import Duration
@@ -17,6 +18,9 @@ from precision_landing.constants import(
     SEARCH_TIME,
     FIND_TIME,
     MAX_ALTITUDE,
+    MARKER_DICT,
+    ARUCO_SIZE,
+    WAYPOINTS,
 )
 
 
@@ -41,11 +45,14 @@ class Search(State): #Sub-state that will only move around the arena until it de
             if not camera:
                 yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
                 return ABORT
+            camera.open()
+            camera.run()
 
-            camera.start() #start the ImageHandler
+            aruco = Aruco(marker_dict=MARKER_DICT, tag_size=ARUCO_SIZE)
 
             start_time = self.node.get_clock().now() #gets the start time of the state
             search_time = Duration(seconds=SEARCH_TIME) #gets the max time in seconds before TIMEOUT
+            idx = 0
 
             while (self.node.get_clock().now() - start_time) < search_time: #Executes this sub-state for a max of 2min
 
@@ -56,49 +63,33 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     return ABORT
 
                 frame = camera.take_photo()
+                bbox, aruco_id = aruco.detect(frame, draw=True)
 
-                #TODO: the drone will be moving in an X shape until an ArUco is in the FOV
+                if aruco_id is not None:
+                    blackboard["Aruco_ID"] = aruco_id
+                    blackboard["Bbox"] = bbox
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
+                    yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
+                    yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
+                    yasmin.YASMIN_LOG_INFO(f"Bbox of ARUCO: {bbox}")
+
+                    #TODO: Make the drone move closer to the aruco to make it easier to detect the shape
+                    #TODO: detect the aruco base shape with DART
+
+                    return SUCCEED
+
+                if idx < len(WAYPOINTS):
+                    x, y = WAYPOINTS[idx]
+                    drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
+                    idx += 1
+                else:
+                    yasmin.YASMIN_LOG_INFO("FAILED, didn't find the ArUco")
+                    return FAIL
 
             return TIMEOUT
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"SEARCH SUB-STATE FAILED: {e}")
-            return ABORT
-
-
-
-class GetTargetBase(State):
-    def __init__(self):
-        super().__init__(outcomes=[SUCCEED, ABORT, FAIL, TIMEOUT])
-        self.node = YasminNode.get_instance()
-    
-    def execute(self, blackboard: Blackboard):
-        try:
-            drone: MavrosDrone = blackboard["drone"]
-            
-            camera: ImageHandler = blackboard["camera"]
-                                
-            if not camera:
-                yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
-                return ABORT
-            camera.start()
-            
-            while True:
-            
-                if drone.get_altitude() >= MAX_ALTITUDE: #Aborts if the drone gets past 6m of altitude
-                    yasmin.YASMIN_LOG_ERROR('Failed: limit altitude reached.')
-                    drone.move_velocity(0.0, 0.0, 0.0, 0.0)
-                    drone.delay(1.0)
-                    return ABORT
-            
-                frame = camera.take_photo()
-
-                #TODO: Get the ArUco ID and the base shape and save them into the blackboard
-            
-            return TIMEOUT
-
-        except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"GET_TARGET_BASE SUB-STATE FAILED: {e}")
             return ABORT
 
 
@@ -117,7 +108,9 @@ class FindTargetBase(State):
             if not camera:
                 yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
                 return ABORT
-            camera.start()
+
+            camera.open()
+            camera.run()
 
             start_time = self.node.get_clock().now() #gets the start time of the state
             find_time = Duration(seconds=FIND_TIME) #gets the max time in seconds before TIMEOUT
@@ -133,6 +126,7 @@ class FindTargetBase(State):
                 frame = camera.take_photo()
         
                 #TODO: Detect if there's an equivalent base with the ID and shape we saved before
+                #NOTE: Use Lipedras' DART for the detection for this sub-state
                     
             return TIMEOUT
         

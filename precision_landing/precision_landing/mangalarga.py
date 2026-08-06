@@ -11,7 +11,9 @@ from precision_landing.states import (
     Precision_landing,
     Land,
 )
-from precision_landing.findSM.findSM import FindSM
+from precision_landing.findSM import (
+    FindSM,
+)
 
 class PL(StateMachine):
     def __init__(self):
@@ -26,20 +28,19 @@ class PL(StateMachine):
         self.add_state(
             "TAKEOFF",
             Takeoff(),
-            transitions={SUCCEED:"FIND", ABORT:"LAND"},
+            transitions={SUCCEED:"FIND_SM", ABORT:"LAND"},
         )
 
         self.add_state(
             "FIND_SM",
             FindSM(),
-            transitions={SUCCEED:"PRECISION_LANDING", ABORT:"LAND"},
+            transitions={SUCCEED:"LAND", ABORT:"LAND"},
         )
 
-        self.add_state(
-            "PRECISION_LANDING",
-            Precision_landing(),
-            transitions={SUCCEED:SUCCEED, ABORT:"LAND"},
-        )
+        #self.add_state(
+            #Precision_landing(),
+            #transitions={SUCCEED:SUCCEED, ABORT:"LAND"},
+        #)
 
         self.add_state(
             "LAND",
