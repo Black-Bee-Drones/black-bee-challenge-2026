@@ -9,7 +9,6 @@ from hang_the_hook.core.constants import(
 
 from hang_the_hook.followlineSM.constants import (
     CENTER_VARIATION,
-    HOSE_AREA,
     HOSE_COUNTER,
     FRAMES_TO_CONFIRM_HOSE
 )
@@ -27,6 +26,7 @@ from nectar.control import(
     AltitudeSource,
     MavrosDrone,
     MavlinkDrone,
+    MoveReference
 )
 
 from hang_the_hook.utils.line_follow import segue_linha
@@ -55,6 +55,8 @@ class SetupLineDetection(State):
             camera: ImageHandler = blackboard["camera"]
 
             camera.image_processing_callback = lambda frame: line_detector.detect_line(frame)
+
+            blackboard["hose_counter"] = HOSE_COUNTER
 
             return SUCCEED
 
@@ -131,7 +133,8 @@ class FollowBlueLine(State):
             drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
             linedetector: LineDetector = blackboard["line_detect"]
             hosedetector: LineDetector = blackboard["hose_detect"]
-
+            hose_counter = blackboard["hose_counter"]
+            
             if not camera:
                 print("Image handler not initialized.")
                 return ABORT
@@ -147,26 +150,19 @@ class FollowBlueLine(State):
                     return ABORT
 
                 #TODO: Logic PID
-                '''
-                vx = self.pid_cx.update(cx)
-                vyaw = self.pid_angle.update(angle)
-
-                ^^^^^^^^^^^^ essas funções já fizeram a conversão pro ideal (meio da imagem e 0 graus, que é o setpoint), falta transformar essas variáveis de velocidade em movimentação no drone.
-
+                vx = pid_cx.update(cx)
+                vyaw = pid_angle.update(angle)
                 drone.move_velocity(vx=vx, vy=0.0, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
-                ^^^^^algo assim, eu acho [a gente tem o retorno de cy tbm, talvez dê pra fazer algo com ele]
-                '''
 
+                
                 _, _, hose_cx, _, _, _, _ = hosedetector.detect_line(frame, draw=True)
 
                 if hose_cx is not None:
-                        HOSE_COUNTER += 1
-                    else:
-                        HOSE_COUNTER = 0
+                        hose_counter += 1
                 else:
-                    HOSE_COUNTER = 0
+                    hose_counter = 0
 
-                if HOSE_COUNTER >= FRAMES_TO_CONFIRM_HOSE:
+                if hose_counter >= FRAMES_TO_CONFIRM_HOSE:
                     print("Hose detected! Stopping line following.")
                     return SUCCEED
 
