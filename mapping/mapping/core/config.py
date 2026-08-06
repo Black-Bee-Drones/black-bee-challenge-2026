@@ -6,6 +6,7 @@ class Config:
     
     #Drone
     drone_type : str = 'mavlink'
+    conection_string: str = 'TODO: add the protocol, the address, and the port'
     
     
     #SIMULATION
