@@ -8,7 +8,10 @@ from hang_the_hook.core.constants import(
 )
 
 from hang_the_hook.followlineSM.constants import (
-    CENTER_VARIATION
+    CENTER_VARIATION,
+    HOSE_AREA,
+    HOSE_COUNTER,
+    FRAMES_TO_CONFIRM_HOSE
 )
 
 from nectar.vision import(
@@ -43,7 +46,12 @@ class SetupLineDetection(State):
 
     def execute(self, blackboard: Blackboard):
         try:
-            line_detector: LineDetector = blackboard["line_detect"]
+            line_detector = LineDetector(color="blue", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+            blackboard["line_detect"] = line_detector
+
+            hose_detector = LineDetector(color="red", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+            blackboard["hose_detect"] = hose_detector
+
             camera: ImageHandler = blackboard["camera"]
 
             camera.image_processing_callback = lambda frame: line_detector.detect_line(frame)
@@ -64,7 +72,7 @@ class SearchBlueLine(State):
     def execute(self, blackboard: Blackboard):
         try:
             # Retrieve the line linedetector and image handler from the Blackboard
-            linedetector = blackboard["line_linedetector"]
+            linedetector = blackboard["line_detect"]
             camera: ImageHandler = blackboard["camera"]
             counterblue = 0
             oldcxb = 0
@@ -119,20 +127,24 @@ class FollowBlueLine(State):
         try:
             pid_cx: PIDController = blackboard["pid_cx"]
             pid_angle: PIDController = blackboard["pid_angle"]
-            handler: ImageHandler = blackboard["camera"]
+            camera: ImageHandler = blackboard["camera"]
             drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+            linedetector: LineDetector = blackboard["line_detect"]
+            hosedetector: LineDetector = blackboard["hose_detect"]
 
-            if not handler:
+            if not camera:
                 print("Image handler not initialized.")
                 return ABORT
 
+            camera.start()
+
             while True:
-                frame = handler.take_photo()
-                cx, cy, angle = segue_linha(frame)
+                frame = camera.take_photo()
+                resultb, _, cx, cy, angle, w, h = linedetector.detect_line(frame, draw=True)
 
                 if cx is None:
                     # perdeu a linha -> volta pra SEARCH_BLUE_LINE
-                    return SUCCEED
+                    return ABORT
 
                 #TODO: Logic PID
                 '''
@@ -145,9 +157,23 @@ class FollowBlueLine(State):
                 ^^^^^algo assim, eu acho [a gente tem o retorno de cy tbm, talvez dê pra fazer algo com ele]
                 '''
 
+                _, _, hose_cx, _, _, hose_w, hose_h = hosedetector.detect_line(frame, draw=True)
+
+                if hose_cx is not None:
+                    pixel_area = hose_w * hose_h
+                    if pixel_area > HOSE_AREA:
+                        HOSE_COUNTER += 1
+                    else:
+                        HOSE_COUNTER = 0
+                else:
+                    HOSE_COUNTER = 0
+
+                if HOSE_COUNTER >= FRAMES_TO_CONFIRM_HOSE:
+                    print("Hose detected! Stopping line following.")
+                    return SUCCEED
 
         except Exception as e:
             print(f"Follow blue line failed: {e}")
             return ABORT
         finally:
-            handler.stop()
+            camera.stop()
