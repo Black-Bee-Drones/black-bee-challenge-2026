@@ -1,4 +1,11 @@
 from dataclasses import dataclass
+from enum import Enum
+
+
+class LandingMode(str, Enum):
+    LAND = 'LAND',
+    RTL = 'RTL'
+
 
 
 @dataclass(frozen=True)
@@ -12,6 +19,13 @@ class Config:
     #SIMULATION
     SIM_MODE : bool = True
     
+    
+    ###TAKEOFF###
+    takeoff_altitude = 5.6 #meters
+    
+    
+    ###LAND###
+    landing_mode : LandingMode = LandingMode.LAND
 
 
 @dataclass(frozen=True)

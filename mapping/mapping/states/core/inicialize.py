@@ -77,7 +77,7 @@ class Inicialize(State):
             return ABORT
         
         except Exception as error:
-            yasmin.YASMIN_LOG_INFO(f'   \033[31mSTART TIME FAILED: {error}\033[0m')
+            yasmin.YASMIN_LOG_INFO(f'   \033[31mDRONE FACTORY FAILED: {error}\033[0m')
             return ABORT
         
         
