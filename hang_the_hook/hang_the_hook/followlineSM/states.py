@@ -157,11 +157,9 @@ class FollowBlueLine(State):
                 ^^^^^algo assim, eu acho [a gente tem o retorno de cy tbm, talvez dê pra fazer algo com ele]
                 '''
 
-                _, _, hose_cx, _, _, hose_w, hose_h = hosedetector.detect_line(frame, draw=True)
+                _, _, hose_cx, _, _, _, _ = hosedetector.detect_line(frame, draw=True)
 
                 if hose_cx is not None:
-                    pixel_area = hose_w * hose_h
-                    if pixel_area > HOSE_AREA:
                         HOSE_COUNTER += 1
                     else:
                         HOSE_COUNTER = 0
