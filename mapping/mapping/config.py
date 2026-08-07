@@ -1,33 +1,31 @@
+import yaml
 from dataclasses import dataclass
 from enum import Enum
 
-
 class LandingMode(str, Enum):
-    LAND = 'LAND',
+    LAND = 'LAND'
     RTL = 'RTL'
-
-
 
 @dataclass(frozen=True)
 class Config:
-    
-    #Drone
-    drone_type: str = 'mavlink'
-    conection_string: str = 'tcp:127.0.0.1:5760' #add the protocol, the address, and the port
-    
-    
-    #SIMULATION
-    #SIM_MODE: bool = True
-    
-    
-    ###TAKEOFF###
-    takeoff_altitude = 1.6 #meters
-    
-    
-    ###LAND###
-    landing_mode: LandingMode = LandingMode.LAND
+    drone_type: str
+    conection_string: str
+    sim_mode: bool
+    takeoff_altitude: float
+    landing_mode: LandingMode
 
+    @classmethod
+    def load(cls, filepath="config.yml"):
+        with open(filepath, "r") as f:
+            data = yaml.safe_load(f)
 
-@dataclass(frozen=True)
-class SITLConfig(Config):
-    conection_string: str = 'tcp:127.0.0.1:5760'
+        return cls(
+            drone_type=data["drone"]["type"],
+            conection_string=data["drone"]["connection_string"],
+            sim_mode=data["simulation"]["mode"],
+            takeoff_altitude=data["takeoff"]["altitude"],
+            landing_mode=LandingMode(data["land"]["mode"])
+        )
+
+# Para usar no código:
+# config = Config.load()

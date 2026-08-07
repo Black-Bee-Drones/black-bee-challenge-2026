@@ -1,0 +1,12 @@
+drone:
+  type: "mavlink"
+  connection_string: "tcp:127.0.0.1:5760"
+
+simulation:
+  mode: true
+
+takeoff:
+  altitude: 1.6
+
+land:
+  mode: "LAND"
