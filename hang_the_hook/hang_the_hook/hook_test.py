@@ -17,7 +17,7 @@ from yasmin_ros import set_ros_loggers as yasmin_set_ros_loggers
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_viewer import YasminViewerPub
 
-from core.states import(
+from hang_the_hook.core.states import(
     Initialize,
     Takeoff,
     End,
@@ -124,4 +124,3 @@ def hook_test():
 
 if __name__ == "__main__":
     hook_test()
-

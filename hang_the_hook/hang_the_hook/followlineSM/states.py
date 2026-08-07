@@ -1,9 +1,10 @@
+from traceback import print_exc
+
 import math
 import nectar
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision import LineDetector, RotatedRect, ColorSpace
 from nectar.control import PIDController, AltitudeSource, MavrosDrone
-from line_follow import segue_linha
 import cv2
 from nectar.control import DroneFactory, MavrosConfig, PoseSource
 from nectar.control.types import MoveReference
@@ -17,13 +18,42 @@ from datetime import datetime
 
 from followlineSM.constants import (
     CENTER_VARIATION,
-    ANGLE_KD,
-    ANGLE_KI,
-    ANGLE_KP,
-    CX_KD,
-    CX_KI,
-    CX_KP,
     FRAME_WIDTH,
+    FRAME_HEIGHT,
+    IMAGE_SOURCE,
+)
+
+from hang_the_hook.followlineSM.constants import (
+    CENTER_VARIATION,
+    HOSE_COUNTER,
+    FRAMES_TO_CONFIRM_HOSE
+)
+
+from nectar.vision import(
+    ImageHandler,
+    OpenCVConfig,
+    LineDetector,
+    RotatedRect,
+    ColorSpace,
+)
+
+from nectar.control import(
+    PIDController,
+    AltitudeSource,
+    MavrosDrone,
+    MavlinkDrone,
+    MoveReference
+)
+
+from hang_the_hook.utils.line_follow import segue_linha
+from cv2 import imwrite as cv2_imwrite
+
+from yasmin import State, Blackboard
+from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin_ros.yasmin_node import YasminNode
+
+from datetime import datetime
+
     MIN_BLUE_FRAMES,
     MIN_RED_FRAMES,
     FOWARD_SPEED_BLUE_LINE,
@@ -32,40 +62,28 @@ from followlineSM.constants import (
 class SetupLineDetection(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
-        self.linedetector: LineDetector
-        self.hosedetector: LineDetector
-        self.handler: ImageHandler
-        self.drone: MavrosDrone | MavlinkDrone
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
         try:
-            # Initialize the line linedetector with the desired color and color space
-            # LineDetector runs @staticmethods at estimation_method, so parameterize the class or a object of it have no difference at all
-            # However, IntelliSense becomes a nuisance if you don't parameterize the instance
-            self.linedetector = LineDetector(color="blue", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
-            self.hosedetector = LineDetector(color="red", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+            line_detector = LineDetector(color="blue", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+            blackboard["line_detect"] = line_detector
 
-            # blackboard is shared across submachines, so there is no need to instantiate a new drone
-            self.drone = blackboard["drone"]
+            hose_detector = LineDetector(color="red", estimation_method=RotatedRect(), color_space=ColorSpace.HSV)
+            blackboard["hose_detect"] = hose_detector
 
-            # Set up the image handler with IMAGE_SOURCE as the source
-            self.handler = ImageHandler(
-                image_source=IMAGE_SOURCE,
-                config=OpenCVConfig(width=1280, height=720),
-                image_processing_callback=lambda frame: self.linedetector.detect_line(frame),
-                show_result="Camera View",
-            )
+            camera: ImageHandler = blackboard["camera"]
 
-            # Store the linedetector and handler in the Blackboard for later use
-            blackboard["line_detector"] = self.linedetector
-            blackboard["hose_detector"] = self.hosedetector
-            blackboard["image_handler"] = self.handler
+            camera.image_processing_callback = lambda frame: line_detector.detect_line(frame)
+
+            blackboard["hose_counter"] = HOSE_COUNTER
 
             return SUCCEED
 
         except Exception as e:
             print(f"Setup failed: {e}")
+            print_exc()
+
             return ABORT
 
 class SearchBlueLine(State):
@@ -76,22 +94,22 @@ class SearchBlueLine(State):
     def execute(self, blackboard: Blackboard):
         try:
             # Retrieve the line linedetector and image handler from the Blackboard
-            linedetector = blackboard["line_linedetector"]
-            handler = blackboard["image_handler"]
+            linedetector = blackboard["line_detect"]
+            camera: ImageHandler = blackboard["camera"]
             counterblue = 0
             oldcxb = 0
             oldcyb = 0
 
-            if not linedetector or not handler:
+            if not linedetector or not camera:
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
 
             # Start the image handler to process frames and detect lines
-            handler.start()
+            camera.start()
 
             # Main loop for line following
             while True:
-                frame = handler.take_photo()
+                frame = camera.take_photo()
                 resultb, _, cxb, cyb, angleb, wb, hb = linedetector.detect_line(frame, draw=True)
 
                 #Skips if no line detected
@@ -120,7 +138,7 @@ class SearchBlueLine(State):
             print(f"Blue line searching failed: {e}")
             return ABORT
         finally:
-            handler.stop()
+            camera.stop()
 
 class FollowBlueLine(State):
     def __init__(self):
@@ -152,45 +170,54 @@ class FollowBlueLine(State):
 
     def execute(self, blackboard: Blackboard):
         try:
-            self.hosedetector = Blackboard["hose_detector"]
-            handler = Blackboard["image_handler"]
-            drone = Blackboard["drone"]
-            counterred = 0
-            oldcxr = 0
-            oldcyr = 0
-
-            if not handler:
+            pid_cx: PIDController = blackboard["pid_cx"]
+            pid_angle: PIDController = blackboard["pid_angle"]
+            camera: ImageHandler = blackboard["camera"]
+            drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+            linedetector: LineDetector = blackboard["line_detect"]
+            hosedetector: LineDetector = blackboard["hose_detect"]
+            hose_counter = blackboard["hose_counter"]
+            
+            if not camera:
                 print("Image handler not initialized.")
                 return ABORT
 
+            camera.start()
+
             while True:
-                frame = handler.take_photo()
-                cx, cy, angle = segue_linha(frame)
+                frame = camera.take_photo()
+                resultb, _, cx, cy, angle, w, h = linedetector.detect_line(frame, draw=True)
 
                 if cx is None:
                     # perdeu a linha -> volta pra SEARCH_BLUE_LINE
-                    return SUCCEED
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
+                    return ABORT
 
                 #TODO: Logic PID
+                vx = pid_cx.update(cx)
+                vyaw = pid_angle.update(angle)
+                drone.move_velocity(vx=vx, vy=0.0, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
+
                 
-                vx = self.pid_cx.update(cx)      
-                vyaw = self.pid_angle.update(angle)
+                _, _, hose_cx, _, _, _, _ = hosedetector.detect_line(frame, draw=True)
+
+                if hose_cx is not None:
+                        hose_counter += 1
+                else:
+                    hose_counter = 0
+
                 
-                drone.move_velocity(vx=vx, vy=FOWARD_SPEED_BLUE_LINE, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
+                blackboard["hose_counter"] = hose_counter
                 
-                result, _, newcxh, newcyh, _, _, _ = self.hosedetector.detect_line(frame, draw=True)
-                dist = math.dist((newcxh,newcyh),(oldcxr,oldcyr))
-                if (dist < CENTER_VARIATION):
-                    counterred = counterred + 1
-                if counterred == MIN_RED_FRAMES:
-                    counterred = 0
-                    now = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    cv2.imwrite(f"../images/{now}.png", result)
-                    break
-                
-            return SUCCEED
+                if hose_counter >= FRAMES_TO_CONFIRM_HOSE:
+                    print("Hose detected! Stopping line following.")
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
+                    return SUCCEED
+
         except Exception as e:
             print(f"Follow blue line failed: {e}")
+            try:
+                drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
+            except Exception:
+                pass
             return ABORT
-        finally:
-            handler.stop()

@@ -3,7 +3,7 @@ import yasmin
 from yasmin import State, StateMachine, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from states import(
+from hang_the_hook.hookSM.states import(
     Align,
     Descend,
     Hook,

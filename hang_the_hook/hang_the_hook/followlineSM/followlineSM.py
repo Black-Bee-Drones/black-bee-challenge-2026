@@ -1,7 +1,7 @@
 from yasmin import StateMachine
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from states import SetupLineDetection, SearchBlueLine, FollowBlueLine
+from hang_the_hook.followlineSM.states import SetupLineDetection, SearchBlueLine, FollowBlueLine
 
 class FollowLineSM(StateMachine):
     def __init__(self):
@@ -29,8 +29,8 @@ class FollowLineSM(StateMachine):
             "FOLLOW_BLUE_LINE",
             FollowBlueLine(),
             transitions={
-                SUCCEED: SUCCEED,
-                ABORT: ABORT
+                SUCCEED: "ALIGN",      ##ver com o marco isso aq dps    
+                ABORT: "SEARCH_BLUE_LINE"
             }
         )
 

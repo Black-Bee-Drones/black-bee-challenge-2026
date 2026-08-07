@@ -1,4 +1,5 @@
-from time import perf_counter as time_perf_counter
+from dataclasses import dataclass, asdict
+from traceback import print_exc
 
 from yasmin import(
     State,
@@ -18,19 +19,32 @@ from hang_the_hook.core.constants import (
     IMAGE_HEIGHT,
     IMAGE_SOURCE,
     SIM_IMAGE_COMPRESSED,
+    BASE_PID_DICT,
+    KP, KI, KD,
 )
 
 from nectar.control import(
     DroneFactory,
     MavrosConfig,
+    MavlinkConfig,
     MavrosDrone,
+    MavlinkDrone,
     PoseSource,
     MoveReference,
     RTLMethod,
+    PIDController,
+    PIDConfig,
     SITL_GAZEBO_CONFIG,
 )
 
-from nectar.vision import ImageHandler, OpenCVConfig
+from nectar.vision import(
+    ImageHandler,
+    CameraFactory,
+    OpenCVConfig,
+    LineDetector,
+    RotatedRect,
+    ColorSpace,
+)
 from nectar.vision.camera import ROSConfig
 
 class Initialize(State):
@@ -40,21 +54,18 @@ class Initialize(State):
 
     def execute(self, blackboard: Blackboard):
         try:
-            # Instantiate Yasmin Node
+            # ---- Yasmin ----
             node = YasminNode.get_instance()
             YASMIN_LOG_INFO("Initializing drone...")
 
-            # Nectar config
+            # ---- Nectar ----
             config = (
-                SITL_GAZEBO_CONFIG if SIM_MODE else MavrosConfig(pose_source=PoseSource.GPS)
+                SITL_GAZEBO_CONFIG if SIM_MODE
+                else MavrosConfig(pose_source=PoseSource.GPS)
             )
             drone = DroneFactory.create("mavros", config, node._executor)
-            blackboard["drone"] = drone
 
-            # Camera timer, counts init time
-            t_c0 = time_perf_counter()
-
-            # Camera config
+            # ---- Camera ----
             if SIM_MODE:
                 cam_config = ROSConfig(
                     topic=IMAGE_SOURCE,
@@ -63,28 +74,53 @@ class Initialize(State):
             else:
                 cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
 
-            # Camera Init
             camera = ImageHandler(
                 image_source=IMAGE_SOURCE,
                 config=cam_config,
             )
+
             camera.open()
             frame = camera.take_photo(timeout_sec=15)
             if frame is None:
                 YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
 
-            t_cam = time_perf_counter() - t_c0
-
-            # SUCCEEDED logs
             YASMIN_LOG_INFO(
-                f"Camera ready. Frame shape: {frame.shape} \n Init time: ({t_cam:.2f}s)"
+                f"Camera {type(camera)} ready. Frame shape: {frame.shape}."
             )
-            blackboard["camera"] = camera
+
+            # ---- Line Detector ----
+            linedetector = LineDetector(
+                color="blue",
+                estimation_method=RotatedRect(),
+                color_space=ColorSpace.HSV,
+                )
+
+            hosedetector = LineDetector(
+                color="red",
+                estimation_method=RotatedRect(),
+                color_space=ColorSpace.HSV
+                )
+
+            # ---- PID ----
+            pid_config = PIDConfig.from_dict(BASE_PID_DICT)
+            pid_cx, pid_cy, pid_angle = (PIDController(**asdict(pid_config)) for _ in range(3))
+            pid_cx = PIDController(ki=KI)
+
+            # ---- Blackboard ----
+            blackboard["drone"]       = drone
+            blackboard["camera"]      = camera
+            blackboard["line_detect"] = linedetector
+            blackboard["hose_detect"] = hosedetector
+            blackboard["pid_cx"]      = pid_cx
+            blackboard["pid_cy"]      = pid_cy
+            blackboard["pid_angle"]   = pid_angle
+
             return SUCCEED
 
         except Exception as e:
             YASMIN_LOG_ERROR(f"Init error {e}")
+            print_exc()
             return ABORT
 
 class Takeoff(State):
@@ -96,7 +132,7 @@ class Takeoff(State):
             YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
-        drone: MavrosDrone = blackboard["drone"]
+        drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
@@ -121,18 +157,21 @@ class Takeoff(State):
 
         except Exception as e:
             YASMIN_LOG_ERROR(f"Takeoff failed: {e}")
+            print_exc()
             return ABORT
 
 class ReturnToLaunch(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
+        drone: MavrosDrone | MavlinkDrone
+
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
             YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
-        drone: MavrosDrone = blackboard["drone"]
+        drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Returning to launch at {RTL_ALTITUDE}m...")
@@ -152,12 +191,14 @@ class End(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
+        drone: MavrosDrone | MavlinkDrone
+
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard:
             YASMIN_LOG_ERROR("Drone not available.")
             return ABORT
 
-        drone: MavrosDrone = blackboard["drone"]
+        drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO("Landing...")
