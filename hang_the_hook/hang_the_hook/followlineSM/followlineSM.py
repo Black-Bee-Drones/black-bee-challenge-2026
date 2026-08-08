@@ -1,8 +1,8 @@
-from constants import FOUND_RED, FOUND_BLUE
+from hang_the_hook.followlineSM.constants import FOUND_RED, FOUND_BLUE
 from yasmin import StateMachine
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from hang_the_hook.followlineSM.states import SetupLineDetection, SearchBlueLine, FollowBlueLine
+from hang_the_hook.followlineSM.states import SearchBlueLine, FollowBlueLine
 
 class FollowLineSM(StateMachine):
     def __init__(self):

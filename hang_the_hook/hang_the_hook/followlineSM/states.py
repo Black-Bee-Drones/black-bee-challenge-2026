@@ -28,19 +28,6 @@ from nectar.control import (
     MoveReference,
 )
 
-from followlineSM.constants import (
-    CENTER_VARIATION,
-    CX_KD,
-    FOUND_BLUE,
-    FOUND_RED,
-    FRAME_WIDTH,
-    FRAME_HEIGHT,
-    IMAGE_SOURCE,
-    MIN_BLUE_FRAMES,
-    MIN_RED_FRAMES,
-    FOWARD_SPEED_BLUE_LINE
-)
-
 from hang_the_hook.followlineSM.constants import (
     CENTER_VARIATION,
     ANGLE_KD,
