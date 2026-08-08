@@ -19,7 +19,7 @@ from yasmin_viewer import YasminViewerPub
 
 from hang_the_hook.core.states import Initialize, Takeoff, ReturnToLaunch, End
 from hang_the_hook.followlineSM.followlineSM import FollowLineSM
-from hookSM import hookSM
+from hang_the_hook.hookSM.hookSM import hookSM
 
 class HangTheHookSM(StateMachine):
     def __init__(self):
