@@ -48,6 +48,15 @@ class HangTheHookSM(StateMachine):
             FollowLineSM(),
             transitions={
                 SUCCEED: "HOOK",
+                ABORT: ABORT,
+            }
+        )
+        
+        self.add_state(
+            "HOOK",
+            hookSM(),
+            transitions={
+                SUCCEED: "RETURN_TO_LAUNCH",
                 ABORT: ABORT
             }
         )
