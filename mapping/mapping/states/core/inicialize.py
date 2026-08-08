@@ -38,11 +38,11 @@ class Inicialize(State):
             yasmin.YASMIN_LOG_INFO('\033[32mSUCCESSFUL START TIME\033[0m!')
 
         except KeyboardInterrupt:
-            yasmin.YASMIN_LOG_INFO('\033[31mExecution interrupted by user!\033[0m')
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user!')
             return ABORT
 
         except Exception as error:
-            yasmin.YASMIN_LOG_INFO(f'\033[31mSTART TIME FAILED: {error}\033[0m')
+            yasmin.YASMIN_LOG_ERROR(f'START TIME FAILED: {error}')
             return ABORT
 
         #Drone
@@ -74,11 +74,11 @@ class Inicialize(State):
 
 
         except KeyboardInterrupt:
-            yasmin.YASMIN_LOG_INFO('\033[31mExecution interrupted by user!\033[0m')
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user!')
             return ABORT
 
         except Exception as error:
-            yasmin.YASMIN_LOG_INFO(f'\033[31mDRONE FACTORY FAILED: {error}\033[0m')
+            yasmin.YASMIN_LOG_ERROR(f'[31mDRONE FACTORY FAILED: {error}')
             return ABORT
 
 
