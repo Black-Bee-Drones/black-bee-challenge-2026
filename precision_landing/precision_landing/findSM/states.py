@@ -72,8 +72,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                 bbox, aruco_id = aruco.detect(frame, draw=True)
 
                 if aruco_id is not None:
-                    blackboard["Aruco_ID"] = aruco_id
-                    blackboard["Bbox"] = bbox
+                    blackboard["aruco_id"] = aruco_id
                     drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
                     yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
                     yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
@@ -86,7 +85,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     frame = camera.take_photo()
 
                     blackboard["aruco_shape"] = self.get_aruco_shape(frame, bbox)
-                    #TODO: detect the aruco base shape with YOLO
+                    yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {blackboard["aruco_shape"]}")
 
                     return SUCCEED
 
@@ -104,8 +103,28 @@ class Search(State): #Sub-state that will only move around the arena until it de
             yasmin.YASMIN_LOG_ERROR(f"SEARCH SUB-STATE FAILED: {e}")
             return ABORT
 
-    def get_aruco_shape(self, frame, bbox): #TODO: function to detect the shape around the aruco
-        pass
+    def get_aruco_shape(self, frame, bbox):
+        #NOTE: Not sure this function works, if not we need to instantiate the detector object inside each class
+        aruco_shapes = []
+        for s in frame.filter_by_class(['triangle', 'hexagon', 'star']): #NOTE: Possible error here
+            if(abs(self.bbox_center(bbox)[0]-s.center[0])<=s.width/2)and(abs(self.bbox_center(bbox)[1]-s.center[1])<=s.height/2):
+                aruco_shapes.append(s)
+
+        if aruco_shapes:
+            aruco_shape = max(
+                aruco_shapes,
+                key=lambda shape: (shape.center[0]-self.bbox_center(bbox)[0])**2 + (shape.center[1]-self.bbox_center(bbox)[1])**2
+            )
+            return aruco_shape
+        return None
+
+    def bbox_center(self, bbox):
+        sup_left = bbox[0]
+        inf_right = bbox[2]
+
+        cx = (sup_left[0] + inf_right[0]) / 2
+        cy = (sup_left[1] + inf_right[1]) / 2
+        return(cx, cy)
 
 
 
@@ -141,6 +160,8 @@ class FindTargetBase(State):
                     return ABORT
                     
                 frame = camera.take_photo()
+
+                
         
                 #TODO: Detect if there's an equivalent base with the ID and shape we saved before
                 #NOTE: Use Lipedras' DART for the detection for this sub-state
