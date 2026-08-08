@@ -65,6 +65,19 @@ class Initialize(State):
                 else MavrosConfig(pose_source=PoseSource.GPS)
             )
             drone = DroneFactory.create("mavros", config, node._executor)
+            
+            # ---- Line Detector ----
+            linedetector = LineDetector(
+                color="blue",
+                estimation_method=RotatedRect(),
+                color_space=ColorSpace.HSV,
+            )
+            
+            hosedetector = LineDetector(
+                color="red",
+                estimation_method=RotatedRect(),
+                color_space=ColorSpace.LAB
+            )
 
             # ---- Camera ----
             if SIM_MODE:
@@ -95,38 +108,18 @@ class Initialize(State):
                 color="blue_line",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV,
-                )
+            )
 
             hosedetector = LineDetector(
                 color="red_hose",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV
-                )
+            )
 
             # ---- PID ----
-            pid_cx = PIDController(
-                kp=KP, ki=KI, kd=KD,
-                setpoint=0.0,
-                output_limits=(-0.3, 0.3),
-                integral_limits=(-0.3, 0.3),
-                output_deadband=0.3
-                )
-
-            pid_cy = PIDController(
-                kp=KP, ki=KI, kd=KD,
-                setpoint=0.0,
-                output_limits=(-0.3, 0.3),
-                integral_limits=(-0.3, 0.3),
-                output_deadband=0.3
-                )
-
-            pid_angle = PIDController(
-                kp=KP, ki=KI, kd=KD,
-                setpoint=0.0,
-                output_limits=(-0.3, 0.3),
-                integral_limits=(-0.3, 0.3),
-                output_deadband=0.3
-                )
+            pid_config = PIDConfig.from_yaml("pid_config.yaml")
+            pid_cx, pid_cy, pid_angle = (PIDController(**asdict(pid_config)) for _ in range(3))
+            pid_cx = PIDController(ki=KI)
 
             # ---- Blackboard ----
             blackboard["drone"]       = drone
