@@ -34,10 +34,3 @@ PID constants
 KP = 0.01
 KI = 0.0
 KD = 0.002
-# Base PID
-BASE_PID_DICT = {
-    "kp": KP, "ki": KI, "kd": KD,
-    "setpoint": 0.0,
-    "output_min": -0.3, "output_max": 0.3,
-    "integral_min": -0.3, "integral_max": 0.3,
-}

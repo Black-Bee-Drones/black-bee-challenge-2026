@@ -11,6 +11,8 @@ from yasmin import(
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
+from hang_the_hook.utils.check_blackboard import blackboard_check
+
 from hang_the_hook.core.constants import (
     RTL_ALTITUDE,
     TAKEOFF_HEIGHT,
@@ -19,7 +21,6 @@ from hang_the_hook.core.constants import (
     IMAGE_HEIGHT,
     IMAGE_SOURCE,
     SIM_IMAGE_COMPRESSED,
-    BASE_PID_DICT,
     KP, KI, KD,
 )
 
@@ -91,21 +92,41 @@ class Initialize(State):
 
             # ---- Line Detector ----
             linedetector = LineDetector(
-                color="blue",
+                color="blue_line",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV,
                 )
 
             hosedetector = LineDetector(
-                color="red",
+                color="red_hose",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV
                 )
 
             # ---- PID ----
-            pid_config = PIDConfig.from_dict(BASE_PID_DICT)
-            pid_cx, pid_cy, pid_angle = (PIDController(**asdict(pid_config)) for _ in range(3))
-            pid_cx = PIDController(ki=KI)
+            pid_cx = PIDController(
+                kp=KP, ki=KI, kd=KD,
+                setpoint=0.0,
+                output_limits=(-0.3, 0.3),
+                integral_limits=(-0.3, 0.3),
+                output_deadband=0.3
+                )
+
+            pid_cy = PIDController(
+                kp=KP, ki=KI, kd=KD,
+                setpoint=0.0,
+                output_limits=(-0.3, 0.3),
+                integral_limits=(-0.3, 0.3),
+                output_deadband=0.3
+                )
+
+            pid_angle = PIDController(
+                kp=KP, ki=KI, kd=KD,
+                setpoint=0.0,
+                output_limits=(-0.3, 0.3),
+                integral_limits=(-0.3, 0.3),
+                output_deadband=0.3
+                )
 
             # ---- Blackboard ----
             blackboard["drone"]       = drone
@@ -127,21 +148,27 @@ class Takeoff(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED,ABORT])
 
-    def execute(self, blackboard: Blackboard):
-        if "drone" not in blackboard:
-            YASMIN_LOG_ERROR("Drone not available.")
-            return ABORT
+        self.drone: MavrosDrone | MavlinkDrone
 
-        drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+    def execute(self, blackboard: Blackboard):
+        if not blackboard_check(
+                    blackboard=blackboard,
+                    args=(
+                        'drone',
+                        )
+                    ):
+                    return ABORT
+
+        self.drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
-            drone.set_home()
-            drone.arm()
-            drone.takeoff(TAKEOFF_HEIGHT)
-            drone.delay(3)
+            self.drone.set_home()
+            self.drone.arm()
+            self.drone.takeoff(TAKEOFF_HEIGHT)
+            self.drone.delay(3)
 
-            reached = drone.move_to(
+            reached = self.drone.move_to(
                 z=TAKEOFF_HEIGHT,
                 reference=MoveReference.TAKEOFF,
                 timeout=30.0,
@@ -151,7 +178,7 @@ class Takeoff(State):
             if not reached:
                 YASMIN_LOG_WARN("Takeoff move_to timed out, continuing.")
 
-            drone.delay(1)
+            self.drone.delay(1)
             YASMIN_LOG_INFO("Takeoff complete.")
             return SUCCEED
 
@@ -164,23 +191,27 @@ class ReturnToLaunch(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
-        drone: MavrosDrone | MavlinkDrone
+        self.drone: MavrosDrone | MavlinkDrone
 
     def execute(self, blackboard: Blackboard):
-        if "drone" not in blackboard:
-            YASMIN_LOG_ERROR("Drone not available.")
-            return ABORT
+        if not blackboard_check(
+                    blackboard=blackboard,
+                    args=(
+                        'drone',
+                        )
+                    ):
+                    return ABORT
 
-        drone = blackboard["drone"]
+        self.drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Returning to launch at {RTL_ALTITUDE}m...")
-            drone.rtl(
+            self.drone.rtl(
                 altitude=RTL_ALTITUDE,
                 method=RTLMethod.NAVIGATE,
                 land=False,
             )
-            drone.delay(2)
+            self.drone.delay(2)
             return SUCCEED
 
         except Exception as e:
@@ -191,19 +222,23 @@ class End(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
-        drone: MavrosDrone | MavlinkDrone
+        self.drone: MavrosDrone | MavlinkDrone
 
     def execute(self, blackboard: Blackboard):
-        if "drone" not in blackboard:
-            YASMIN_LOG_ERROR("Drone not available.")
-            return ABORT
+        if not blackboard_check(
+                    blackboard=blackboard,
+                    args=(
+                        'drone',
+                        )
+                    ):
+                    return ABORT
 
-        drone = blackboard["drone"]
+        self.drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO("Landing...")
-            drone.land()
-            drone.delay(3)
+            self.drone.land()
+            self.drone.delay(3)
             YASMIN_LOG_INFO("Landing complete.")
 
             if "camera" in blackboard:
