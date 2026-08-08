@@ -118,7 +118,7 @@ class SearchBlueLine(State):
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
                     cv2.imwrite(f"../images/{now}.png", resultBlue)
                     blackboard["angle_blue"] = angleBlue
-                    blackboard["center_x_blue"] = cxBlue     #X axis in image is Y axis in drone frame
+                    blackboard["center_y_blue"] = cyBlue     #X axis in image is Y axis in drone frame
                     break
                 
                 oldcxBlue = cxBlue
@@ -140,11 +140,11 @@ class FollowBlueLine(State):
 
     def execute(self, blackboard: Blackboard):
         try:
-            pid_cy: PIDController = blackboard["pid_cx"]
+            pid_cy: PIDController = blackboard["pid_cy"]
             pid_angle: PIDController = blackboard["pid_angle"]
             drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
             angle: float = blackboard["angle_blue"]
-            cY: float = blackboard["center_x_blue"]
+            cY: float = blackboard["center_y_blue"]
 
             if not drone:
                 print("Drone not initialized.")
@@ -164,11 +164,13 @@ class FollowBlueLine(State):
             pid_cy.set_setpoint(cY)
 
             while (True):
-                vx = pid_cy.update(-dy)
+                vy = pid_cy.update(-dy)
                 vyaw = pid_angle.update(-dyaw)
-                drone.move_velocity(vx=vx, vy=0.0, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
-                if(vx == 0.0 and vyaw == 0.0):
+                drone.move_velocity(vx=FOWARD_SPEED_BLUE_LINE, vy=vy, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
+                if(vy == 0.0 and vyaw == 0.0):
                     break
+                
+            return SUCCEED
 
         except Exception as e:
             print(f"Follow blue line failed: {e}")
