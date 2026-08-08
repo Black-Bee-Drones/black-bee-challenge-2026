@@ -34,13 +34,14 @@ class PL(StateMachine):
         self.add_state(
             "FIND_SM",
             FindSM(),
-            transitions={SUCCEED:"LAND", ABORT:"LAND"},
+            transitions={SUCCEED:"PRECISION_LANDING", FAIL:"FIND_SM", TIMEOUT:"LAND", ABORT:"LAND"},
         )
 
-        #self.add_state(
-            #Precision_landing(),
-            #transitions={SUCCEED:SUCCEED, ABORT:"LAND"},
-        #)
+        self.add_state(
+            "PRECISION_LANDING",
+            Precision_landing(),
+            transitions={SUCCEED:SUCCEED, ABORT:"LAND"},
+        )
 
         self.add_state(
             "LAND",

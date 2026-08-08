@@ -1,4 +1,5 @@
 import os
+import datetime
 import cv2
 
 import yasmin
@@ -23,12 +24,19 @@ from precision_landing.constants import (
     CAMERA_SOURCE,
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
-    FRAMES_FOLDER,
+    DETECTOR_MODEL_SOURCE,
+    DETECTOR_CONFIDENCE_THRESHOLD,
 )
 
 class Initialize(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
+
+        self.node = YasminNode.get_instance()
+
+        timestamp = self.node.get_clock().now().nanoseconds / 1e9
+        now = datetime.datetime.fromtimestamp(timestamp)
+        self.photos_folder = now.strftime('bouncing-%Y-%m-%d-%H-%M')
 
     def execute(self, blackboard: Blackboard):
         try:
@@ -65,17 +73,45 @@ class Initialize(State):
             )
             blackboard["camera"] = camera
 
+            try:
+                self.detector = Detector( #Creates the detector
+                    model_source= DETECTOR_MODEL_SOURCE,
+                    confidence_threshold= DETECTOR_CONFIDENCE_THRESHOLD,
+                )
+
+                yasmin.YASMIN_LOG_INFO("Loading the Detector...")
+                self.detector.load()
+
+                blackboard["detector"] = self.detector
+                yasmin.YASMIN_LOG_INFO("Detector succesfully loaded.")
+
+            except Exception as e:
+                yasmin.YASMIN_LOG_ERROR(f"Detector failed: {e}")
+                return ABORT
+
             return SUCCEED
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Initialization failed: {e}")
             return ABORT
 
-    def camera_callback(self, image):
-        photos_folder = FRAMES_FOLDER
+    def camera_callback(self, image, blackboard: Blackboard): #Runs everytime we call camera.take_photo()
+        if (blackboard["use_detector"]): #Prevents using the detector when we don't need
+            os.makedirs(self.photos_folder, exist_ok=True)
+            
+            timestamp = self.node.get_clock().now().nanoseconds
+            
+            os.makedirs(os.path.join(self.photos_folder, 'images'), exist_ok=True)
+            raw_path = os.path.join(self.photos_folder, 'images', f'{timestamp}.png') #Saves the frames in a folder
+            cv2.imwrite(raw_path, image)
+            
+            result = self.detector.detect(image) #Runs the detector on the frame
+            result.image = image
+            
+            annotated = self.detector.draw_detections(image, result) #Annotates the frames
+            os.makedirs(os.path.join(self.photos_folder, 'annotated'), exist_ok=True)
+            ann_path = os.path.join(self.photos_folder, 'annotated', f'{timestamp}-annotated.png') #Saves the annotaded frames
+            cv2.imwrite(ann_path, annotated)
 
-        #os.makedirs(photos_folder, exist_ok=True)
-
-        #raw_path = os.path.join(photos_folder, 'frame.png')
-        #cv2.imwrite(raw_path, image)
-
-        return image
+            return result
+        else:
+            return image
