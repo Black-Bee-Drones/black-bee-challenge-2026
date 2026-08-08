@@ -10,7 +10,7 @@ import nectar
 
 from mapping import (
     Config,
-    SITLConfig,
+    #SITLConfig,
     MappingSM
     
 )
@@ -20,7 +20,7 @@ from mapping import (
 def main(args=None):
     
     #config = SITLConfig()
-    config = Config()
+    config = Config.load()
     
     rclpy.init(args=args)
     set_ros_loggers()

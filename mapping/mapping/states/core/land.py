@@ -10,13 +10,8 @@ from nectar.control import MavrosDrone, MavlinkDrone
 
 
 class Land(State):
-<<<<<<< Updated upstream
 
     def __init__(self, config : Config):
-=======
-    
-    def __init__(self, config: Config):
->>>>>>> Stashed changes
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
