@@ -1,4 +1,4 @@
-CENTER_VARIATION = 30
+CENTER_VARIATION = 10
 ANGLE_KD = 0.1
 ANGLE_KI = 0.01
 ANGLE_KP = 1.0
@@ -12,3 +12,7 @@ MIN_RED_FRAMES = 10
 FOWARD_SPEED_BLUE_LINE = 0.5
 FRAMES_TO_CONFIRM_HOSE = 5
 HOSE_COUNTER = 0
+
+# New outcomes for the FollowLineSM state machine
+FOUND_RED = "found_red"
+FOUND_BLUE = "found_blue"
