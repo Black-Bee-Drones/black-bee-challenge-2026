@@ -1,4 +1,3 @@
-from traceback import print_exc
 from datetime import datetime
 
 from math import dist as math_dist
@@ -80,38 +79,35 @@ class SearchBlueLine(State):
                 #Skips if no line detected
                 if not resultBlue or cxBlue is None or cyBlue is None:
                     counterBlue = 0
-                    continue
-                
+                else:
+                    distanceBlue = math_dist((cxBlue, cyBlue), (oldcxBlue, oldcyBlue))
+                    if distanceBlue < CENTER_VARIATION:
+                        counterBlue += 1
+                    oldcxBlue = cxBlue
+                    oldcyBlue = cyBlue
+
                 if not resultRed or cxRed is None or cyRed is None:
                     counterRed = 0
+                else:
+                    distanceRed = math_dist((cxRed, cyRed), (oldcxRed, oldcyRed))
+                    if distanceRed < CENTER_VARIATION:
+                        counterRed += 1
+                    oldcxRed = cxRed
+                    oldcyRed = cyRed
 
-                distanceBlue = math_dist((cxBlue,cyBlue),(oldcxBlue,oldcyBlue))
-                distanceRed = math_dist((cxRed,cyRed),(oldcxRed,oldcyRed))
-
-                if (distanceBlue < CENTER_VARIATION):
-                    counterBlue += 1
-                    
-                if (distanceRed < CENTER_VARIATION):
-                    counterRed += 1
-
-                if counterRed == MIN_RED_FRAMES:
+                if counterRed >= MIN_RED_FRAMES:
                     counterRed = 0
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
                     cv2.imwrite(f"../images/{now}.png", resultRed)
                     return FOUND_RED
-                
-                if counterBlue == MIN_BLUE_FRAMES:
+
+                if counterBlue >= MIN_BLUE_FRAMES:
                     counterBlue = 0
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
                     cv2.imwrite(f"../images/{now}.png", resultBlue)
                     blackboard["angle_blue"] = angleBlue
                     blackboard["center_y_blue"] = cyBlue     #X axis in image is Y axis in drone frame
                     break
-                
-                oldcxBlue = cxBlue
-                oldcyBlue = cyBlue
-                oldcxRed = cxRed
-                oldcyRed = cyRed
 
             return FOUND_BLUE
         except Exception as e:
@@ -126,43 +122,59 @@ class FollowBlueLine(State):
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
+        drone: MavrosDrone | MavlinkDrone = None
         try:
             pid_cy: PIDController = blackboard["pid_cy"]
             pid_angle: PIDController = blackboard["pid_angle"]
-            drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+            drone = blackboard["drone"]
+            linedetector: LineDetector = blackboard["line_detect"]
+            camera: ImageHandler = blackboard["camera"]
             angle: float = blackboard["angle_blue"]
             cY: float = blackboard["center_y_blue"]
 
             if not drone:
                 print("Drone not initialized.")
                 return ABORT
-            
+
             if not pid_cy or not pid_angle:
                 print("PID controllers not initialized.")
                 return ABORT
-            
-            if cY is None or cY is None or angle is None:
+
+            if cY is None or angle is None:
                 print("Blue line parameters not available.")
                 return ABORT
-            
-            dy = cY - (FRAME_WIDTH / 2)
-            dyaw = angle
-            
-            pid_cy.set_setpoint(cY)
 
-            while (True):
+            pid_cy.set_setpoint(FRAME_WIDTH / 2)
+
+            camera.start()
+            while True:
+                frame = camera.take_photo()
+                result, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=False)
+
+                if result and cxBlue is not None and cyBlue is not None:
+                    dy = cxBlue - (FRAME_WIDTH / 2)
+                    dyaw = angleBlue
+                else:
+                    # No line detected: stop lateral/yaw corrections
+                    dy = 0.0
+                    dyaw = 0.0
+
                 vy = pid_cy.update(-dy)
                 vyaw = pid_angle.update(-dyaw)
                 drone.move_velocity(vx=FOWARD_SPEED_BLUE_LINE, vy=vy, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
-                if(vy == 0.0 and vyaw == 0.0):
+
+                if abs(vy) < 0.01 and abs(vyaw) < 0.01:
                     break
-                
+
             return SUCCEED
 
         except Exception as e:
             print(f"Follow blue line failed: {e}")
-            try:
-                drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
-            except Exception:
-                pass
+            if drone:
+                try:
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
+                except Exception:
+                    pass
             return ABORT
+        finally:
+            camera.stop()
