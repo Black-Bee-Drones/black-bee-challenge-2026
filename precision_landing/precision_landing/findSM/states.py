@@ -72,7 +72,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                 bbox, aruco_id = aruco.detect(frame, draw=True)
 
                 if aruco_id is not None:
-                    blackboard["aruco_id"] = aruco_id
+                    blackboard["aruco_id"] = str(aruco_id)
                     drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
                     yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
                     yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
@@ -150,6 +150,8 @@ class FindTargetBase(State):
 
             start_time = self.node.get_clock().now() #gets the start time of the state
             find_time = Duration(seconds=FIND_TIME) #gets the max time in seconds before TIMEOUT
+
+            idx = 0
             
             while (self.node.get_clock().now() - start_time) < find_time:
                     
@@ -161,10 +163,19 @@ class FindTargetBase(State):
                     
                 frame = camera.take_photo()
 
-                
-        
-                #TODO: Detect if there's an equivalent base with the ID and shape we saved before
-                #NOTE: Use Lipedras' DART for the detection for this sub-state
+                for s in frame.filter_by_class([blackboard["aruco_shape"]]): #NOTE: Also incertain about this one, need to test
+                    for n in frame.filter_by_class([blackboard["aruco_id"]]):
+                        if (abs(n.center[0] - s.center[0]) <= s.width/2) and (abs(n.center[1] - s.center[1]) <= s.height/2):
+                            #Verify if there's a base with the aruco_id inside the aruco_shape we want
+                            return SUCCEED
+
+                if idx < len(WAYPOINTS):
+                    x, y = WAYPOINTS[idx]
+                    drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
+                    idx += 1
+                else:
+                    yasmin.YASMIN_LOG_INFO("FAILED, didn't find the equivalent base")
+                    return FAIL
                     
             return TIMEOUT
         
