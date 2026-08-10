@@ -94,6 +94,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     x, y = WAYPOINTS[idx]
                     drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
                     idx += 1
+                    drone.delay(0.5)
                 else:
                     yasmin.YASMIN_LOG_INFO("FAILED, didn't find the ArUco")
                     return FAIL
@@ -164,18 +165,20 @@ class FindTargetBase(State):
                     
                 for _ in range(2):
                     frame = camera.take_photo()
-                    
-                    for s in frame.filter_by_class([blackboard["aruco_shape"]]): #NOTE: Also incertain about this one, need to test
+
+                    #NOTE: Also incertain about this one, need to test
+                    for s in frame.filter_by_class([blackboard["aruco_shape"]]):
                         for n in frame.filter_by_class([blackboard["aruco_id"]]):
                             if (abs(n.center[0] - s.center[0]) <= s.width/2) and (abs(n.center[1] - s.center[1]) <= s.height/2):
                                 #Verify if there's a base with the aruco_id inside the aruco_shape we want
-                                yasmin.YASMIN_LOG_INFO("DETECTED TARGET BASE...")
+                                yasmin.YASMIN_LOG_INFO("DETECTED TARGET BASE")
                                 return SUCCEED
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
                     drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
                     idx += 1
+                    drone.delay(0.5)
                 else:
                     yasmin.YASMIN_LOG_INFO("FAILED, didn't find the equivalent base")
                     return FAIL

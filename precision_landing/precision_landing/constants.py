@@ -1,7 +1,8 @@
+# File that will have all the constants we will use in the task
+
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
-# File that will have all the constants we will use in the task
 SIM_MODE = True
 
 CAMERA_SOURCE = '/down_camera'
