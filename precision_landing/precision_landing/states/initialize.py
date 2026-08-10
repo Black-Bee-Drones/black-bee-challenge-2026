@@ -17,7 +17,6 @@ from nectar.control import (
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
 from nectar.ai import Detector
-#TODO: create the detector and save it in the blackboard
 
 from precision_landing.constants import (
     SIM_MODE,
@@ -40,14 +39,13 @@ class Initialize(State):
 
     def execute(self, blackboard: Blackboard):
         try:
-            node = YasminNode.get_instance()
             yasmin.YASMIN_LOG_INFO("Initializing Drone...")
 
             config = (
                 SITL_GAZEBO_CONFIG if SIM_MODE
                 else MavrosConfig(pose_source=PoseSource.GPS, expect_lidar=True)
             )
-            drone = DroneFactory.create("mavros", config, node._executor)
+            drone = DroneFactory.create("mavros", config, self.node._executor)
             blackboard["drone"] = drone
 
             if SIM_MODE:
