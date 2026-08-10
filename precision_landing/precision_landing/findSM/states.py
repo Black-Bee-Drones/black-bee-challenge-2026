@@ -68,26 +68,27 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     drone.delay(1.0)
                     return ABORT
 
-                frame = camera.take_photo()
-                bbox, aruco_id = aruco.detect(frame, draw=True)
-
-                if aruco_id is not None:
-                    blackboard["aruco_id"] = str(aruco_id)
-                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
-                    yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
-                    yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
-                    yasmin.YASMIN_LOG_INFO(f"Bbox of ARUCO: {bbox}")
-
-                    yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
-                    drone.move_to(yaw=yaw_angle)
-                    drone.move_to(x=1.5, MoveReference = MoveReference.BODY) # Moves the drone a little bit closer to the aruco
-                    blackboard["use_detector"] = True
+                for _ in range(2): #Repeats the detection 2 times for security
                     frame = camera.take_photo()
-
-                    blackboard["aruco_shape"] = self.get_aruco_shape(frame, bbox)
-                    yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {blackboard["aruco_shape"]}")
-
-                    return SUCCEED
+                    bbox, aruco_id = aruco.detect(frame, draw=True)
+                    
+                    if aruco_id is not None:
+                        blackboard["aruco_id"] = str(aruco_id)
+                        drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
+                        yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
+                        yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
+                        yasmin.YASMIN_LOG_INFO(f"Bbox of ARUCO: {bbox}")
+                    
+                        yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
+                        drone.move_to(yaw=yaw_angle)
+                        drone.move_to(x=1.5, MoveReference = MoveReference.BODY) # Moves the drone a little bit closer to the aruco
+                        blackboard["use_detector"] = True
+                        frame = camera.take_photo()
+                    
+                        blackboard["aruco_shape"] = self.get_aruco_shape(frame, bbox)
+                        yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {blackboard["aruco_shape"]}")
+                    
+                        return SUCCEED
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
@@ -161,13 +162,14 @@ class FindTargetBase(State):
                     drone.delay(1.0)
                     return ABORT
                     
-                frame = camera.take_photo()
-
-                for s in frame.filter_by_class([blackboard["aruco_shape"]]): #NOTE: Also incertain about this one, need to test
-                    for n in frame.filter_by_class([blackboard["aruco_id"]]):
-                        if (abs(n.center[0] - s.center[0]) <= s.width/2) and (abs(n.center[1] - s.center[1]) <= s.height/2):
-                            #Verify if there's a base with the aruco_id inside the aruco_shape we want
-                            return SUCCEED
+                for _ in range(2):
+                    frame = camera.take_photo()
+                    
+                    for s in frame.filter_by_class([blackboard["aruco_shape"]]): #NOTE: Also incertain about this one, need to test
+                        for n in frame.filter_by_class([blackboard["aruco_id"]]):
+                            if (abs(n.center[0] - s.center[0]) <= s.width/2) and (abs(n.center[1] - s.center[1]) <= s.height/2):
+                                #Verify if there's a base with the aruco_id inside the aruco_shape we want
+                                return SUCCEED
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
