@@ -107,7 +107,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
     def get_aruco_shape(self, frame, bbox):
         #NOTE: Not sure this function works, if not we need to instantiate the detector object inside each class
         aruco_shapes = []
-        for s in frame.filter_by_class(['triangle', 'hexagon', 'star']): #NOTE: Possible error here
+        for s in frame.filter_by_class(['Triangle', 'Hexagon', 'Star']): #NOTE: Possible error here
             if(abs(self.bbox_center(bbox)[0]-s.center[0])<=s.width/2)and(abs(self.bbox_center(bbox)[1]-s.center[1])<=s.height/2):
                 aruco_shapes.append(s)
 
@@ -116,7 +116,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                 aruco_shapes,
                 key=lambda shape: (shape.center[0]-self.bbox_center(bbox)[0])**2 + (shape.center[1]-self.bbox_center(bbox)[1])**2
             )
-            return aruco_shape
+            return str(aruco_shape)
         return None
 
     def bbox_center(self, bbox):
@@ -169,6 +169,7 @@ class FindTargetBase(State):
                         for n in frame.filter_by_class([blackboard["aruco_id"]]):
                             if (abs(n.center[0] - s.center[0]) <= s.width/2) and (abs(n.center[1] - s.center[1]) <= s.height/2):
                                 #Verify if there's a base with the aruco_id inside the aruco_shape we want
+                                yasmin.YASMIN_LOG_INFO("DETECTED TARGET BASE...")
                                 return SUCCEED
 
                 if idx < len(WAYPOINTS):
