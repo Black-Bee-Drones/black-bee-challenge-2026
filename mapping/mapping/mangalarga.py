@@ -20,7 +20,7 @@ from mapping import (
 def main(args=None):
     
     #config = SITLConfig()
-    config = Config.load()
+    config = Config()
     
     rclpy.init(args=args)
     set_ros_loggers()

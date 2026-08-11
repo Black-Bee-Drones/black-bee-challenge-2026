@@ -37,9 +37,6 @@ class Takeoff(State):
             drone.takeoff(self.config.takeoff_altitude)
             drone.delay(3)
 
-            # drone.set_home()
-            # drone.arm()
-            # drone.takeoff(self.config.takeoff_altitude)
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_INFO('    \033[31mExecution interrupted by user!\033[0m')

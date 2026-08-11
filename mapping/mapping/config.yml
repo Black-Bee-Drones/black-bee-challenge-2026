@@ -10,3 +10,13 @@ takeoff:
 
 land:
   mode: "LAND"
+
+camera:
+  down_source: "ros"
+  #front_source : "c920"
+  down_ros_topic: "/down_camera"
+  #id : 6
+
+image: 
+  width: 640
+  height: 640
