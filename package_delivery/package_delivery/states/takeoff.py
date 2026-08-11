@@ -4,7 +4,7 @@ from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
-from nectar.control import MavlinkDrone
+from nectar.control import MavrosDrone, MavlinkDrone
 
 from package_delivery.constants import Config
 
@@ -16,7 +16,15 @@ class Takeoff(State):
         self.config = config
 
     def execute(self, blackboard: Blackboard):
-        drone: MavlinkDrone = blackboard.get('drone')
+        if self.config.drone_type == 'mavros':
+            drone : MavrosDrone = blackboard.get('drone')
+        
+        elif self.config.drone_type == 'mavlink':
+            drone : MavlinkDrone = blackboard.get('drone')
+        
+        else:
+            yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
+            return ABORT
 
         yasmin.YASMIN_LOG_INFO(
             f'Taking off to altitude: {self.config.takeoff_altitude} m...')

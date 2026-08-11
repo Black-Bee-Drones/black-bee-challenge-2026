@@ -3,7 +3,7 @@ import yasmin
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from nectar.control import MavlinkDrone
+from nectar.control import MavrosDrone, MavlinkDrone
 
 from package_delivery.constants import Config
 
@@ -13,10 +13,15 @@ class Land(State):
 
 
     def execute(self, blackboard: Blackboard):
-        if ('drone' not in blackboard) or not blackboard['drone']:
-            yasmin.YASMIN_LOG_ERROR('drone not available.')
+        if self.config.drone_type == 'mavros':
+            drone : MavrosDrone = blackboard.get('drone')
+
+        elif self.config.drone_type == 'mavlink':
+            drone : MavlinkDrone = blackboard.get('drone')
+        
+        else:
+            yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT
-        drone: MavlinkDrone = blackboard['drone']
 
         yasmin.YASMIN_LOG_INFO('Landing...')
 

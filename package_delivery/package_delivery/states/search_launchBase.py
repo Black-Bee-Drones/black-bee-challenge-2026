@@ -1,7 +1,7 @@
 import yasmin
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
-from nectar.control import MavrosDrone, MoveReference
+from nectar.control import MavrosDrone, MavlinkDrone, MoveReference
 from package_delivery.constants import Config
 
 
@@ -12,7 +12,16 @@ class SearchLaunchBase(State):
         self._i_base = 0
 
     def execute(self, blackboard: Blackboard):
-        drone: MavrosDrone = blackboard.get('drone')
+        if self.config.drone_type == 'mavros':
+            drone : MavrosDrone = blackboard.get('drone')
+
+        elif self.config.drone_type == 'mavlink':
+            drone : MavlinkDrone = blackboard.get('drone')
+        
+        else:
+            yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
+            return ABORT
+
 
         target = self.config.launch_bases[self._i_base]
         self._i_base += 1
