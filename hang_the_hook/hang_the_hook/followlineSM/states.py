@@ -51,6 +51,7 @@ class SearchBlueLine(State):
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
+        camera = None
         try:
             # Retrieve the line linedetector and image handler from the Blackboard
             linedetector: LineDetector = blackboard["line_detect"]
@@ -63,7 +64,7 @@ class SearchBlueLine(State):
             oldcxRed = 0
             oldcyRed = 0
 
-            if not linedetector or not camera:
+            if not linedetector or not camera or not hosedetector:
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
 
@@ -83,6 +84,8 @@ class SearchBlueLine(State):
                     distanceBlue = math_dist((cxBlue, cyBlue), (oldcxBlue, oldcyBlue))
                     if distanceBlue < CENTER_VARIATION:
                         counterBlue += 1
+                    else: 
+                        counterBlue=0
                     oldcxBlue = cxBlue
                     oldcyBlue = cyBlue
 
@@ -114,7 +117,8 @@ class SearchBlueLine(State):
             print(f"Blue line searching failed: {e}")
             return ABORT
         finally:
-            camera.close()
+            if camera:
+                camera.close()
 
 class FollowBlueLine(State):
     def __init__(self):
@@ -123,6 +127,7 @@ class FollowBlueLine(State):
 
     def execute(self, blackboard: Blackboard):
         drone: MavrosDrone | MavlinkDrone = None
+        camera = None
         try:
             pid_cy: PIDController = blackboard["pid_cy"]
             pid_angle: PIDController = blackboard["pid_angle"]
@@ -177,4 +182,5 @@ class FollowBlueLine(State):
                     pass
             return ABORT
         finally:
-            camera.close()
+            if camera:
+                camera.close()
