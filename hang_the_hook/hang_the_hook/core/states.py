@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, asdict
 from traceback import print_exc
 
@@ -21,7 +22,9 @@ from hang_the_hook.core.constants import (
     IMAGE_HEIGHT,
     IMAGE_SOURCE,
     SIM_IMAGE_COMPRESSED,
-    KP, KI, KD,
+    PID_X_KP, PID_X_KI, PID_X_KD, PID_X_OUTPUT_LIMITS, PID_X_INTEGRAL_LIMITS,
+    PID_Y_KP, PID_Y_KI, PID_Y_KD, PID_Y_OUTPUT_LIMITS, PID_Y_INTEGRAL_LIMITS,
+    PID_YAW_KP, PID_YAW_KI, PID_YAW_KD, PID_YAW_OUTPUT_LIMITS, PID_YAW_INTEGRAL_LIMITS,
 )
 
 from nectar.control import(
@@ -47,6 +50,7 @@ from nectar.vision import(
     ColorSpace,
 )
 from nectar.vision.camera import ROSConfig
+from nectar.vision.algorithms.color import ColorDetector
 
 class Initialize(State):
 
@@ -66,18 +70,6 @@ class Initialize(State):
             )
             drone = DroneFactory.create("mavros", config, node._executor)
             
-            # ---- Line Detector ----
-            linedetector = LineDetector(
-                color="blue",
-                estimation_method=RotatedRect(),
-                color_space=ColorSpace.HSV,
-            )
-            
-            hosedetector = LineDetector(
-                color="red",
-                estimation_method=RotatedRect(),
-                color_space=ColorSpace.LAB
-            )
 
             # ---- Camera ----
             if SIM_MODE:
@@ -103,23 +95,36 @@ class Initialize(State):
                 f"Camera {type(camera)} ready. Frame shape: {frame.shape}."
             )
 
-            # ---- Line Detector ----
+            # ---- Line Detector (linha azul — preset HSV do Nectar) ----
             linedetector = LineDetector(
-                color="blue_line",
+                color="blue",
                 estimation_method=RotatedRect(),
-                color_space=ColorSpace.HSV,
+                color_space=ColorSpace.LAB,
             )
 
+            # ---- Hose Detector (mangueira vermelha — preset LAB do Nectar) ----
             hosedetector = LineDetector(
-                color="red_hose",
+                color="red",
                 estimation_method=RotatedRect(),
-                color_space=ColorSpace.HSV
+                color_space=ColorSpace.LAB,
             )
 
             # ---- PID ----
-            pid_config = PIDConfig.from_yaml("pid_config.yaml")
-            pid_cx, pid_cy, pid_angle = (PIDController(**asdict(pid_config)) for _ in range(3))
-            pid_cx = PIDController(ki=KI)
+            pid_cx = PIDController(
+                kp=PID_X_KP, ki=PID_X_KI, kd=PID_X_KD,
+                output_limits=PID_X_OUTPUT_LIMITS,
+                integral_limits=PID_X_INTEGRAL_LIMITS,
+            )
+            pid_cy = PIDController(
+                kp=PID_Y_KP, ki=PID_Y_KI, kd=PID_Y_KD,
+                output_limits=PID_Y_OUTPUT_LIMITS,
+                integral_limits=PID_Y_INTEGRAL_LIMITS,
+            )
+            pid_angle = PIDController(
+                kp=PID_YAW_KP, ki=PID_YAW_KI, kd=PID_YAW_KD,
+                output_limits=PID_YAW_OUTPUT_LIMITS,
+                integral_limits=PID_YAW_INTEGRAL_LIMITS,
+            )
 
             # ---- Blackboard ----
             blackboard["drone"]       = drone
@@ -165,6 +170,13 @@ class Takeoff(State):
                 z=TAKEOFF_HEIGHT,
                 reference=MoveReference.TAKEOFF,
                 timeout=30.0,
+                precision=0.3,
+            )
+
+            reached = self.drone.move_to(
+                x=0.3,
+                reference=MoveReference.BODY,
+                timeout=10.0,
                 precision=0.3,
             )
 
