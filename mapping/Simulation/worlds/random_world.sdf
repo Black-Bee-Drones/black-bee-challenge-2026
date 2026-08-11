@@ -1,0 +1,235 @@
+<?xml version="1.0" ?>
+
+<sdf version="1.9">
+
+    <world name="empty_world">
+
+        <physics name="1" type="ignored">
+            <max_step_size>0.001</max_step_size>
+            <real_time_factor>1</real_time_factor>
+        </physics>
+
+        <!-- Fundo -->
+        <scene>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <background>0.75 0.85 0.95 1</background>
+        </scene>
+
+
+        <!--ILUMINAÇÃO-->
+
+        <light name="sun"
+            type="directional">
+
+            <cast_shadows>true</cast_shadows>
+
+            <pose>0 0 10 0 0 0</pose>
+
+            <diffuse>1 1 1 1</diffuse>
+
+            <specular>0.2 0.2 0.2 1</specular>
+
+            <direction>-0.5 0.5 -1</direction>
+
+        </light>
+
+        <!--CHÃO-->
+
+        <model name="ground">
+
+            <static>true</static>
+
+            <link name="ground_link">
+
+                <collision name="collision">
+
+                    <geometry>
+
+                        <plane>
+                            <normal>0 0 1</normal>
+                            <size>20 20</size>
+                        </plane>
+
+                    </geometry>
+
+                </collision>
+
+                <visual name="visual">
+
+                    <geometry>
+
+                        <plane>
+                            <normal>0 0 1</normal>
+                            <size>100 100</size>
+                        </plane>
+
+                    </geometry>
+
+                    <!--TEXTURA-->
+                    <material>
+                        <ambient>0.2 0.8 0.2 1</ambient>
+                        <diffuse>0.2 0.8 0.2 1</diffuse>
+                        <specular>0.1 0.1 0.1 1</specular>
+                    </material>
+
+                    <!-- <material>
+                        <pbr>
+                            <metal>
+                                <albedo_map>textures/grass_texture.png</albedo_map>
+                                <roughness>1.0</roughness>
+                            </metal>
+                        </pbr>
+                    </material> -->
+
+                </visual>
+
+            </link>
+
+        </model>
+
+        <!-- RANDOM_BASES -->
+
+        <include>
+
+            <name>base_azul</name>
+
+            <uri>model://base_azul</uri>
+
+            <pose>
+                0 0 0.05
+                1.5708 0 0
+            </pose>
+
+        </include>
+
+
+    
+        <include>
+
+            <name>random_base_0</name>
+
+            <uri>model://base_estrela3</uri>
+
+            <pose>
+                -3.8380442326832567 -1.7460475624871021 0.05
+                1.5708 0 2.808187480713731
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_1</name>
+
+            <uri>model://base_estrela4</uri>
+
+            <pose>
+                6.406551590157202 5.167295923102403 0.05
+                1.5708 0 1.3106416803687913
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_2</name>
+
+            <uri>model://base_estrela5</uri>
+
+            <pose>
+                5.40451982630117 8.69664777202081 0.05
+                1.5708 0 5.696272175970519
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_3</name>
+
+            <uri>model://base_hexagono3</uri>
+
+            <pose>
+                -6.385916736755066 -6.070268474349902 0.05
+                1.5708 0 1.360715949477915
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_4</name>
+
+            <uri>model://base_hexagono4</uri>
+
+            <pose>
+                9.010562768910297 -1.877499219925042 0.05
+                1.5708 0 3.649504813313258
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_5</name>
+
+            <uri>model://base_hexagono5</uri>
+
+            <pose>
+                2.3939001049521913 -2.7453765013937534 0.05
+                1.5708 0 0.8713803505757579
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_6</name>
+
+            <uri>model://base_triangulo3</uri>
+
+            <pose>
+                -3.462077693122411 4.971547748941482 0.05
+                1.5708 0 3.6757765022304785
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_7</name>
+
+            <uri>model://base_triangulo4</uri>
+
+            <pose>
+                7.070554702654064 -0.7023015720866699 0.05
+                1.5708 0 0.5620834510453696
+            </pose>
+
+        </include>
+
+
+        <include>
+
+            <name>random_base_8</name>
+
+            <uri>model://base_triangulo5</uri>
+
+            <pose>
+                -7.0449894781603435 -3.5606472205482316 0.05
+                1.5708 0 0.4622023946162435
+            </pose>
+
+        </include>
+
+
+</world>
+
+</sdf>
