@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from math import dist as math_dist
+from math import dist as math_dist, isnan as math_isnan
 import cv2
 import nectar
 import yasmin
@@ -68,7 +68,7 @@ class SearchBlueLine(State):
                 return ABORT
 
             # Start the image handler to process frames and detect lines
-            camera.start()
+            camera.open()
 
             # Main loop for line following
             while True:
@@ -77,7 +77,7 @@ class SearchBlueLine(State):
                 resultRed, _, cxRed, cyRed, _, _, _ = hosedetector.detect_line(frame, draw=True)
 
                 #Skips if no line detected
-                if not resultBlue or cxBlue is None or cyBlue is None:
+                if cxBlue is None or math_isnan(cxBlue) or cyBlue is None or math_isnan(cyBlue):
                     counterBlue = 0
                 else:
                     distanceBlue = math_dist((cxBlue, cyBlue), (oldcxBlue, oldcyBlue))
@@ -86,7 +86,7 @@ class SearchBlueLine(State):
                     oldcxBlue = cxBlue
                     oldcyBlue = cyBlue
 
-                if not resultRed or cxRed is None or cyRed is None:
+                if cxRed is None or math_isnan(cxRed) or cyRed is None or math_isnan(cyRed):
                     counterRed = 0
                 else:
                     distanceRed = math_dist((cxRed, cyRed), (oldcxRed, oldcyRed))
@@ -114,7 +114,7 @@ class SearchBlueLine(State):
             print(f"Blue line searching failed: {e}")
             return ABORT
         finally:
-            camera.stop()
+            camera.close()
 
 class FollowBlueLine(State):
     def __init__(self):
@@ -145,22 +145,22 @@ class FollowBlueLine(State):
                 return ABORT
 
             pid_cy.set_setpoint(FRAME_WIDTH / 2)
+            pid_angle.set_setpoint(0.0)
 
-            camera.start()
+            camera.open()
             while True:
                 frame = camera.take_photo()
                 result, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=False)
 
-                if result and cxBlue is not None and cyBlue is not None:
-                    dy = cxBlue - (FRAME_WIDTH / 2)
-                    dyaw = angleBlue
+                if cxBlue is not None and not math_isnan(cxBlue) and cyBlue is not None and not math_isnan(cyBlue):
+                    vy = pid_cy.update(cxBlue)
+                    vyaw = pid_angle.update(angleBlue)
+                    self.node.get_logger().info(f"Blue line detected: {cxBlue}, {cyBlue}, {angleBlue}")
                 else:
-                    # No line detected: stop lateral/yaw corrections
-                    dy = 0.0
-                    dyaw = 0.0
+                    self.node.get_logger().info("Blue line not detected, zeroing out PID inputs")
+                    vy = pid_cy.update(FRAME_WIDTH / 2)
+                    vyaw = pid_angle.update(0.0)
 
-                vy = pid_cy.update(-dy)
-                vyaw = pid_angle.update(-dyaw)
                 drone.move_velocity(vx=FOWARD_SPEED_BLUE_LINE, vy=vy, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
 
                 if abs(vy) < 0.01 and abs(vyaw) < 0.01:
@@ -177,4 +177,4 @@ class FollowBlueLine(State):
                     pass
             return ABORT
         finally:
-            camera.stop()
+            camera.close()

@@ -19,11 +19,12 @@ from yasmin_viewer import YasminViewerPub
 
 from hang_the_hook.core.states import Initialize, Takeoff, ReturnToLaunch, End
 from hang_the_hook.followlineSM.followlineSM import FollowLineSM
-from hang_the_hook.hookSM.hookSM import hookSM
+# TODO: uncomment when hookSM is ready
+# from hang_the_hook.hookSM.hookSM import hookSM
 
 class HangTheHookSM(StateMachine):
     def __init__(self):
-        super().__init__(outcomes=[SUCCEED, ABORT, "END"])
+        super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.add_state(
             "INITIALIZE",
@@ -47,19 +48,21 @@ class HangTheHookSM(StateMachine):
             "FOLLOW_LINE",
             FollowLineSM(),
             transitions={
-                SUCCEED: "HOOK",
+                # TODO: change back to "HOOK" when hookSM is ready
+                SUCCEED: "RETURN_TO_LAUNCH",
                 ABORT: ABORT,
             }
         )
-        
-        self.add_state(
-            "HOOK",
-            hookSM(),
-            transitions={
-                SUCCEED: "RETURN_TO_LAUNCH",
-                ABORT: ABORT
-            }
-        )
+
+        # TODO: uncomment when hookSM is ready
+        # self.add_state(
+        #     "HOOK",
+        #     hookSM(),
+        #     transitions={
+        #         SUCCEED: "RETURN_TO_LAUNCH",
+        #         ABORT: ABORT
+        #     }
+        # )
 
         self.add_state(
             'RETURN_TO_LAUNCH',
