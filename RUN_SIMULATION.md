@@ -18,6 +18,13 @@ Este terminal abre o mundo 3D customizado no Gazebo e cria a ponte MAVROS.
 > [!WARNING]
 > Devido a um bug no Gazebo Harmonic com o ROS 2, o argumento `resource_path:=` não funciona corretamente para resolver links `model://` em arquivos `.sdf`. É **obrigatório** exportar o `GZ_SIM_RESOURCE_PATH` globalmente no terminal antes de chamar a simulação.
 
+> [!TIP]
+> **Dica:** Para evitar ter que executar o `export` em todo novo terminal, você pode adicionar essa variável de ambiente diretamente ao seu `~/.bashrc`:
+> ```bash
+> echo 'export GZ_SIM_RESOURCE_PATH=/home/arthur-xavier/ros2_ws/src/black-bee-challenge-2026/simulation/model' >> ~/.bashrc
+> source ~/.bashrc
+> ```
+
 ```bash
 export GZ_SIM_RESOURCE_PATH=/home/arthur-xavier/ros2_ws/src/black-bee-challenge-2026/simulation/model
 cd ~/ros2_ws/src/nectar-sdk
