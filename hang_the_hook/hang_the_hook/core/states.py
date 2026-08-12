@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass, asdict
 from traceback import print_exc
+from typing import Any
 
 from yasmin import(
     State,
@@ -12,7 +13,7 @@ from yasmin import(
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
-from hang_the_hook.utils.check_blackboard import blackboard_check
+from hang_the_hook.utils.blackboard_utils import blackboard_check
 
 from hang_the_hook.core.constants import (
     RTL_ALTITUDE,
@@ -69,7 +70,19 @@ class Initialize(State):
                 else MavrosConfig(pose_source=PoseSource.GPS)
             )
             drone = DroneFactory.create("mavros", config, node._executor)
-            
+
+            # ---- Line Detector ----
+            linedetector = LineDetector(
+                color="blue",
+                estimation_method=RotatedRect(),
+                color_space=ColorSpace.HSV,
+            )
+
+            hosedetector = LineDetector(
+                color="red",
+                estimation_method=RotatedRect(),
+                color_space=ColorSpace.LAB
+            )
 
             # ---- Camera ----
             if SIM_MODE:
@@ -134,6 +147,7 @@ class Initialize(State):
             blackboard["pid_cx"]      = pid_cx
             blackboard["pid_cy"]      = pid_cy
             blackboard["pid_angle"]   = pid_angle
+            blackboard['findhose_state_counter'] = 0
 
             return SUCCEED
 

@@ -1,5 +1,3 @@
-from nectar.control import PIDController, PIDConfig
-
 SIM_MODE = True
 
 '''
@@ -21,9 +19,6 @@ SIM_IMAGE_COMPRESSED = False
 '''
 IMAGE_SOURCE = "/down_camera"
 
-'''
-Drone frame
-'''
 FRAME_WIDTH = 1280
 FRAME_HEIGHT = 980
 
