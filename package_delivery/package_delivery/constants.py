@@ -34,6 +34,13 @@ class Config:
     pkgs_bases: list[dict] = []
     delivery_boxes: list[dict] = []
     
+    # Gripper Controller
+    has_thePkg : bool = True   # flag to verify if the drone has the package (True)              
+    servo_channel : int = 0           # aux_out (0-7 maps to AUX physical outputs 1-8)
+    servo_open_pwm : int = 1800
+    servo_closed_pwm : int = 1200     
+    servo_action_delay = 1.0    # sleep time
+    
 
     ### PIDController ###
     # PID xy

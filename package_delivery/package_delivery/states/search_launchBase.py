@@ -4,7 +4,7 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from nectar.control import MavrosDrone, MavlinkDrone, MoveReference
 from package_delivery.constants import Config
 
-
+# Estado passivel de exclusao --> caso utilizarmos somente uma unica base de launch
 class SearchLaunchBase(State):
     def __init__(self, config: Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
