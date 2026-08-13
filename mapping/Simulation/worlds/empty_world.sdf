@@ -9,17 +9,208 @@
             <real_time_factor>1</real_time_factor>
         </physics>
 
-        <!-- Fundo -->
+        <!-- Plugins -->
+        <plugin filename="gz-sim-physics-system"
+          name="gz::sim::systems::Physics"/>
+        <plugin filename="gz-sim-sensors-system"
+          name="gz::sim::systems::Sensors">
+          <render_engine>ogre2</render_engine>
+        </plugin>
+        <plugin filename="gz-sim-user-commands-system"
+          name="gz::sim::systems::UserCommands"/>
+        <plugin filename="gz-sim-scene-broadcaster-system"
+          name="gz::sim::systems::SceneBroadcaster"/>
+        <plugin filename="gz-sim-imu-system"
+          name="gz::sim::systems::Imu"/>
+        <plugin filename="gz-sim-navsat-system"
+          name="gz::sim::systems::NavSat"/>
+
+
+
+        <!-- Fundo -->  
+
         <scene>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <background>0.75 0.85 0.95 1</background>
+          <ambient>1.0 1.0 1.0</ambient>
+          <background>0.8 0.8 0.8</background>
+            <sky></sky>
         </scene>
+         
+             <!-- <scene>
+                 <ambient>0.8 0.8 0.8 1</ambient>
+                 <background>0.75 0.85 0.95 1</background>
+             </scene> -->
+         
+        <!-- ── GUI — camera feeds + topic echo inside Gazebo window ──── -->
+         <gui fullscreen="0">
+           <plugin filename="MinimalScene" name="3D View">
+             <gz-gui>
+               <title>3D View</title>
+               <property type="bool" key="showTitleBar">false</property>
+               <property type="string" key="state">docked</property>
+             </gz-gui>
+             <engine>ogre2</engine>
+             <scene>scene</scene>
+             <ambient_light>0.4 0.4 0.4</ambient_light>
+             <background_color>0.8 0.8 0.8</background_color>
+             <camera_pose>-5 0 8 0 0.8 0</camera_pose>
+           </plugin>
+           <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+             <gz-gui>
+               <property key="state" type="string">floating</property>
+               <property key="width" type="double">5</property>
+               <property key="height" type="double">5</property>
+               <property key="showTitleBar" type="bool">false</property>
+             </gz-gui>
+           </plugin>
+           <plugin filename="GzSceneManager" name="Scene Manager">
+             <gz-gui>
+               <property key="resizable" type="bool">false</property>
+               <property key="width" type="double">5</property>
+               <property key="height" type="double">5</property>
+               <property key="state" type="string">floating</property>
+               <property key="showTitleBar" type="bool">false</property>
+             </gz-gui>
+           </plugin>
+           <plugin filename="InteractiveViewControl" name="Interactive view control">
+             <gz-gui>
+               <property key="resizable" type="bool">false</property>
+               <property key="width" type="double">5</property>
+               <property key="height" type="double">5</property>
+               <property key="state" type="string">floating</property>
+               <property key="showTitleBar" type="bool">false</property>
+             </gz-gui>
+           </plugin>
+           <plugin filename="CameraTracking" name="Camera Tracking">
+             <gz-gui>
+               <property key="resizable" type="bool">false</property>
+               <property key="width" type="double">5</property>
+               <property key="height" type="double">5</property>
+               <property key="state" type="string">floating</property>
+               <property key="showTitleBar" type="bool">false</property>
+             </gz-gui>
+           </plugin>
+           <plugin filename="WorldControl" name="World control">
+             <gz-gui>
+               <title>World control</title>
+               <property type="bool" key="showTitleBar">false</property>
+               <property type="bool" key="resizable">false</property>
+               <property type="double" key="height">72</property>
+               <property type="double" key="width">145</property>
+               <property type="double" key="z">1</property>
+               <property type="string" key="state">floating</property>
+               <anchors target="3D View">
+                 <line own="left" target="left"/>
+                 <line own="bottom" target="bottom"/>
+               </anchors>
+             </gz-gui>
+             <play_pause>true</play_pause>
+             <step>true</step>
+             <start_paused>false</start_paused>
+           </plugin>
+           <plugin filename="WorldStats" name="World stats">
+             <gz-gui>
+               <title>World stats</title>
+               <property type="bool" key="showTitleBar">false</property>
+               <property type="bool" key="resizable">false</property>
+               <property type="double" key="height">110</property>
+               <property type="double" key="width">290</property>
+               <property type="double" key="z">1</property>
+               <property type="string" key="state">floating</property>
+               <anchors target="3D View">
+                 <line own="right" target="right"/>
+                 <line own="bottom" target="bottom"/>
+               </anchors>
+             </gz-gui>
+             <sim_time>true</sim_time>
+             <real_time>true</real_time>
+             <real_time_factor>true</real_time_factor>
+             <iterations>false</iterations>
+           </plugin>
+           <!-- Camera feeds — start collapsed, expand to view -->
+           <plugin filename="ImageDisplay" name="Front Camera RGB">
+             <gz-gui>
+               <property type="string" key="state">docked_collapsed</property>
+             </gz-gui>
+             <topic>/front_camera/image</topic>
+           </plugin>
+           <plugin filename="ImageDisplay" name="Front Camera Depth">
+             <gz-gui>
+               <property type="string" key="state">docked_collapsed</property>
+             </gz-gui>
+             <topic>/front_camera/depth_image</topic>
+           </plugin>
+           <plugin filename="ImageDisplay" name="Down Camera">
+             <gz-gui>
+               <property type="string" key="state">docked_collapsed</property>
+             </gz-gui>
+             <topic>/down_camera</topic>
+           </plugin>
+           <!-- Topic echo — select any Gazebo topic to view live data -->
+           <plugin filename="TopicEcho" name="Topic Echo">
+             <gz-gui>
+               <property type="string" key="state">docked_collapsed</property>
+             </gz-gui>
+           </plugin>
+         </gui>
 
 
-        <!--ILUMINAÇÃO-->
+        <!-- GPS origin — matches ArduPilot SITL default (Canberra) -->
+        <spherical_coordinates>
+          <latitude_deg>-35.363262</latitude_deg>
+          <longitude_deg>149.165237</longitude_deg>
+          <elevation>584</elevation>
+          <heading_deg>0</heading_deg>
+          <surface_model>EARTH_WGS84</surface_model>
+        </spherical_coordinates>
 
-        <light name="sun"
-            type="directional">
+
+        <!-- Sunlight -->
+        <light type="directional" name="sun">
+          <cast_shadows>true</cast_shadows>
+          <pose>0 0 10 0 0 0</pose>
+          <diffuse>0.8 0.8 0.8 1</diffuse>
+          <specular>0.8 0.8 0.8 1</specular>
+          <attenuation>
+            <range>1000</range>
+            <constant>0.9</constant>
+            <linear>0.01</linear>
+            <quadratic>0.001</quadratic>
+          </attenuation>
+          <direction>-0.5 0.1 -0.9</direction>
+        </light>
+
+        <!-- Ground plane -->
+        <model name="ground_plane">
+          <static>true</static>
+          <link name="link">
+            <collision name="collision">
+              <geometry>
+                <plane>
+                  <normal>0 0 1</normal>
+                  <size>200 200</size>
+                </plane>
+              </geometry>
+            </collision>
+            <visual name="visual">
+              <geometry>
+                <plane>
+                  <normal>0 0 1</normal>
+                  <size>200 200</size>
+                </plane>
+              </geometry>
+              <material>
+                <ambient>0.3 0.5 0.3 1</ambient>
+                <diffuse>0.3 0.5 0.3 1</diffuse>
+              </material>
+            </visual>
+          </link>
+        </model>
+
+
+        <!-- ILUMINAÇÃO
+
+            <light name="sun"
+                type="directional">
 
             <cast_shadows>true</cast_shadows>
 
@@ -31,11 +222,10 @@
 
             <direction>-0.5 0.5 -1</direction>
 
-        </light>
+        </light> -->
 
-        <!--CHÃO-->
 
-        <model name="ground">
+        <!-- <model name="ground">
 
             <static>true</static>
 
@@ -63,14 +253,14 @@
                             <size>100 100</size>
                         </plane>
 
-                    </geometry>
+                    </geometry> -->
 
                     <!--TEXTURA-->
-                    <material>
+                    <!-- <material>
                         <ambient>0.2 0.8 0.2 1</ambient>
                         <diffuse>0.2 0.8 0.2 1</diffuse>
                         <specular>0.1 0.1 0.1 1</specular>
-                    </material>
+                    </material> -->
 
                     <!-- <material>
                         <pbr>
@@ -81,15 +271,28 @@
                         </pbr>
                     </material> -->
 
-                </visual>
+                <!-- </visual>
 
             </link>
 
-        </model>
+        </model> -->
 
-        <!-- RANDOM_BASES -->
-
+        <!-- ── Obstacle zone (centered around x=15, clear of takeoff) ── -->
+        <!-- Shared scenery (gate + obstacle field) — also used by the PX4 world -->
         <include>
+          <uri>model://outdoor_field_scenery</uri>
+        </include>
+
+        <!-- Iris quadcopter with gimbal (ardupilot_gazebo model) -->
+        <include>
+          <uri>model://iris_with_gimbal</uri>
+          <name>iris</name>
+          <pose degrees="true">0 0 0.195 0 0 0</pose>
+        </include>
+
+            <!-- RANDOM_BASES -->
+
+            <include>
 
             <name>base_azul</name>
 
