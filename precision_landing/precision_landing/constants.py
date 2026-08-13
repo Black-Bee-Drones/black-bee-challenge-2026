@@ -5,9 +5,9 @@ from ament_index_python.packages import get_package_share_directory
 
 SIM_MODE = True
 
-CAMERA_SOURCE = '/down_camera'
+CAMERA_SOURCE = '/down_camera' #We will use "webcam" for the drone
 FRAMES_FOLDER = ''
-#Folder to save the frames that we will process with Yolo
+
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector.pt")
 #TODO: update this later to get our best detector model
 DETECTOR_CONFIDENCE_THRESHOLD = 0.6
@@ -15,8 +15,8 @@ DETECTOR_CONFIDENCE_THRESHOLD = 0.6
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
 
-TAKEOFF_HEIGHT = 6 #Meters, can change this later
-MAX_ALTITUDE = 7 #meters
+TAKEOFF_HEIGHT = 5 #Meters
+MAX_ALTITUDE = 6 #meters
 
 SEARCH_TIME = 120 #seconds (2min)
 FIND_TIME = 120 #seconds (2min)
