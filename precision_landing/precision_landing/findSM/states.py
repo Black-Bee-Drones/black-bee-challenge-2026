@@ -81,7 +81,8 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
                         drone.move_to(yaw=yaw_angle)
-                        drone.move_to(x=1.5, MoveReference = MoveReference.BODY) # Moves the drone a little bit closer to the aruco
+                        drone.move_to(x=1.5, MoveReference = MoveReference.BODY)
+                        #Moves the drone a little bit closer to the aruco
                         blackboard["use_detector"] = True
                         frame = camera.take_photo()
                     
@@ -105,7 +106,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
             yasmin.YASMIN_LOG_ERROR(f"SEARCH SUB-STATE FAILED: {e}")
             return ABORT
 
-    def get_aruco_shape(self, frame, bbox):
+    def get_aruco_shape(self, frame, bbox): #Function that gets the shape around the ArUco
         #NOTE: Not sure this function works, if not we need to instantiate the detector object inside each class
         aruco_shapes = []
         for s in frame.filter_by_class(['Triangle', 'Hexagon', 'Star']): #NOTE: Possible error here
@@ -120,7 +121,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
             return str(aruco_shape)
         return None
 
-    def bbox_center(self, bbox):
+    def bbox_center(self, bbox): #Function to get the center of the ArUco by its bbox
         sup_left = bbox[0]
         inf_right = bbox[2]
 
