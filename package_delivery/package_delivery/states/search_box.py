@@ -6,7 +6,7 @@ from package_delivery.constants import Config
 
 
 class SearchBox(State):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
         self._i_box = 0

@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
 # Simulation
 SIM_MODE = 1
 SIM_IMAGE_SOURCE = "/down_camera"
@@ -30,9 +31,9 @@ class Config:
     land_altitude: float = 1.0  # meters
     
     # waypoints: launch and package bases; boxes
-    launch_bases: list[dict] = []
-    pkgs_bases: list[dict] = []
-    delivery_boxes: list[dict] = []
+    launch_bases: list = field(default_factory=list)
+    pkgs_bases: list = field(default_factory=list)
+    delivery_boxes: list = field(default_factory=list)
     
     # Gripper Controller
     has_thePkg : bool = True   # flag to verify if the drone has the package (True)              

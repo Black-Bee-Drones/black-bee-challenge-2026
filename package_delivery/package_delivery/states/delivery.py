@@ -5,7 +5,7 @@ from nectar.control import MavrosDrone, MavlinkDrone, MoveReference
 from package_delivery.constants import Config
 
 class Delivery(State):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
         self.has_thePkg = config.has_thePkg

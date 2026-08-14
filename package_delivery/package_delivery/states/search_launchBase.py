@@ -6,7 +6,7 @@ from package_delivery.constants import Config
 
 # Estado passivel de exclusao --> caso utilizarmos somente uma unica base de launch
 class SearchLaunchBase(State):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
         self._i_base = 0

@@ -7,15 +7,19 @@ from yasmin_ros import set_ros_loggers
 from yasmin_ros.yasmin_node import YasminNode
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from package_delivery.states import (
+from package_delivery.states.core import (
     Initialize,
     Takeoff,
+    Land,
+    Rtl,
+)
+
+from package_delivery.states import (
     SearchBox,
     Approach,
     Delivery,
-    SearchBase,
+    SearchLaunchBase,
     PrecisionLand,
-    Land,
     Wait,
 )
 
@@ -27,13 +31,13 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "INITIALIZE",
             Initialize(),
-            transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
+            transitions={SUCCEED: SUCCEED, ABORT: ABORT}
         )
 
         self.add_state(
             "TAKEOFF",
             Takeoff(),
-            transitions={SUCCEED: "SEARCH_BOX", ABORT: "LAND"}
+            transitions={SUCCEED: SUCCEED, ABORT: "LAND"}
 
         )
 
@@ -52,12 +56,12 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "DELIVERY",
             Delivery(),
-            transitions={SUCCEED: "SEARCH_BASE", ABORT: "LAND"}
+            transitions={SUCCEED: "SEARCH_LAUNCH_BASE", ABORT: "LAND"}
         )
 
         self.add_state(
-            "SEARCH_BASE",
-            SearchBase(),
+            "SEARCH_LAUNCH_BASE",
+            SearchLaunchBase(),
             transitions={SUCCEED: "PRECISION_LAND", ABORT: "LAND"}
         )
 
