@@ -1,7 +1,115 @@
+import math
 import yasmin
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
+from nectar.control import MavrosDrone, PIDController
+from precision_landing.constants import (
+    IMAGE_WITH,
+    IMAGE_HEIGHT,
+    PRECISION_LANDING_TIME,
+    CONTROLER_P_XY,
+    CONTROLER_I_XY,
+    CONTROLER_D_XY,
+    CONTROLER_OUTPUT_LIMITS_XY,
+    CONTROLER_INTEGRAL_LIMITS_XY,
+    CONTROLER_P_Z,
+    CONTROLER_I_Z,
+    CONTROLER_D_Z,
+    CONTROLER_OUTPUT_LIMITS_Z,
+    CONTROLER_INTEGRAL_LIMITS_Z,
+    PRECISE_DOWN_TOLERANCE_PX
+)
+
 class Precision_landing(State):
-    pass
+    def __init__(self):
+        super().__init__(outcomes=[SUCCEED, ABORT])
+        
+        self.pid_x = PIDController(
+            kp=CONTROLER_P_XY,
+            ki=CONTROLER_I_XY,
+            kd=CONTROLER_D_XY,
+            output_limits=CONTROLER_OUTPUT_LIMITS_XY,
+            integral_limits=CONTROLER_INTEGRAL_LIMITS_XY,
+        )
+
+        self.pid_y = PIDController(
+            kp=CONTROLER_P_XY,
+            ki=CONTROLER_I_XY,
+            kd=CONTROLER_D_XY,
+            output_limits=CONTROLER_OUTPUT_LIMITS_XY,
+            integral_limits=CONTROLER_INTEGRAL_LIMITS_XY,
+        )
+
+        self.pid_z = PIDController(
+            kp=CONTROLER_P_Z,
+            ki=CONTROLER_I_Z,
+            kd=CONTROLER_D_Z,
+            output_limits=CONTROLER_OUTPUT_LIMITS_Z,
+            integral_limits=CONTROLER_INTEGRAL_LIMITS_Z,
+        )
+
+    def PIXEL_POR_METRO (self, altitude_m: float, fov_deg: float, width: float):
+            half_fov_rad = math.radians(fov_deg/2.0)
+            return width / (2.0 * altitude_m * math.tan(half_fov_rad))
+
+
+    def execute(self, blackboard: Blackboard):
+        if "drone" not in blackboard:
+            yasmin.YASMIN_LOG_ERROR("Drone not available...")
+            return ABORT
+
+        drone: MavrosDrone  = blackboard["drone"]
+
+        if "camera" not in blackboard:
+            yasmin.YASMIN_LOG_ERROR("CAMERA NOT AVAILABLE... ABORTING")
+            return ABORT
+
+        camera: ImageHandler = blackboard["camera"]
+        frame = camera.take_photo()
+
+        start_time = self.node.get_clock().now() #gets the start time of the state
+        precision_landing_time = Duration(seconds=PRECISION_LANDING_TIME) #gets the max time in seconds before TIMEOUT
+
+        while (self.node.get_clock - start_time) < precision_landing_time:
+
+            for shape in frame.filter_by_class([blackboard["aruco_shape"]]):
+                for number in frame.filter_by_class([blackboard["aruco_id"]]):
+                    if abs(shape.center[0] - number.center[0]) <= shape.width/2:
+
+                        target_x = shape.center[0]
+                        target_y = shape.center[1]
+
+                        erro_x_pixel = [target_x - CAMERA_WIDTH/2]
+                        erro_y_pixel = [target_y - CAMERA_HEIGHT/2]
+
+                        erro_x = erro_x_pixel / self.ppm(drone.get_altitude(), 86, CAMERA_WIDTH/2)
+                        erro_y = erro_y_pixel / self.ppm(drone.get_altitude(), 47, CAMERA_HEIGHT/2)
+                        erro_z = drone.get_altitude() - 0.7                        
+
+                        output_x = self.pid_x.update(erro_x)
+                        output_y = self.pid_y.update(erro_y)
+                        output_z = self.pid_z.update(erro_z)
+                       
+                        drone.move_velocity(
+                            vx = output_x,
+                            vy = output_y,
+                            vz = output_z if (erro_x_pixel <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
+                            vyaw = 0.0,
+                        )
+
+
+
+        #fazer uma detecção para saber onde está o target (FEITO)
+
+        #após ter a posição do target, fazer um PID até ele (FEITO)
+        #descer usando tambem um PID('feito')
+        
+       
+        """try:
+            return  SUCCEED
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f"TAKEOFF Failed: {e}")
+            return ABORT"""
+
