@@ -4,9 +4,12 @@ from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
+from rclpy.duration import Duration
+
+from nectar.vision import ImageHandler
 from nectar.control import MavrosDrone, PIDController
 from precision_landing.constants import (
-    IMAGE_WITH,
+    IMAGE_WIDTH,
     IMAGE_HEIGHT,
     PRECISION_LANDING_TIME,
     CONTROLER_P_XY,
@@ -81,11 +84,11 @@ class Precision_landing(State):
                         target_x = shape.center[0]
                         target_y = shape.center[1]
 
-                        erro_x_pixel = [target_x - CAMERA_WIDTH/2]
-                        erro_y_pixel = [target_y - CAMERA_HEIGHT/2]
+                        erro_x_pixel = [target_x - IMAGE_WIDTH/2]
+                        erro_y_pixel = [target_y - IMAGE_HEIGHT/2]
 
-                        erro_x = erro_x_pixel / self.ppm(drone.get_altitude(), 86, CAMERA_WIDTH/2)
-                        erro_y = erro_y_pixel / self.ppm(drone.get_altitude(), 47, CAMERA_HEIGHT/2)
+                        erro_x = erro_x_pixel / self.ppm(drone.get_altitude(), 86, IMAGE_WIDTH/2)
+                        erro_y = erro_y_pixel / self.ppm(drone.get_altitude(), 47, IMAGE_HEIGHT/2)
                         erro_z = drone.get_altitude() - 0.7                        
 
                         output_x = self.pid_x.update(erro_x)
