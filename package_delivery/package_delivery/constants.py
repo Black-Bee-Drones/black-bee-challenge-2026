@@ -1,17 +1,18 @@
 from dataclasses import dataclass, field
 
-# Simulation
-SIM_MODE = 1
-SIM_IMAGE_SOURCE = "/down_camera"
-SIM_IMAGE_COMPRESSED = False
-
-# Camera
-IMAGE_WIDTH = 0     # Change later
-IMAGE_HEIGHT = 0    # Change later
-
 
 @dataclass
 class Config:
+
+    # Simulation
+    sim_mode = True
+    sim_image_source = "/down_camera"
+    sim_image_compressed = False
+
+    # Camera
+    image_width = 640
+    image_height = 480
+
     
     safe_altitude: float = 2.0 # meters
     max_altitude: float = 6.0  # meters

@@ -9,40 +9,37 @@ from nectar.control import (
     MavrosDrone,
     MavlinkDrone,
     MavrosConfig,
-    MavlinkConfig, 
+    MavlinkConfig,
     PoseSource,
     SITL_GAZEBO_CONFIG,
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
 
-from package_delivery.constants import (
-    SIM_MODE,
-    SIM_IMAGE_SOURCE,
-    SIM_IMAGE_COMPRESSED,
-    IMAGE_WIDTH,
-    IMAGE_HEIGHT,
-)
-
 from package_delivery.constants import Config
 
 
 class Initialize(State):
-    def __init__(self):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
+
+        self.config = config
 
     def execute(self, blackboard: Blackboard):
         try:
             yasmin.YASMIN_LOG_INFO("Setting up initializing options...")
-            if (SIM_MODE):
+            if (self.config.sim_mode):
                 drone_config = SITL_GAZEBO_CONFIG
                 cam_config = ROSConfig(
-                    topic=SIM_IMAGE_SOURCE, 
-                    compressed=SIM_IMAGE_COMPRESSED,
+                    topic=self.config.sim_image_source, 
+                    compressed=self.config.sim_image_compressed,
                     )
             else:
                 drone_config = MavrosConfig(pose_source=PoseSource.GPS)
-                cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
+                cam_config = OpenCVConfig(
+                    width=self.config.image_width, 
+                    height=self.config.image_height,
+                    )
 
             yasmin.YASMIN_LOG_INFO("Initializing drone...")
             drone = DroneFactory.create("mavros", drone_config)
@@ -50,7 +47,7 @@ class Initialize(State):
 
             yasmin.YASMIN_LOG_INFO("Initializing camera...")
             camera = ImageHandler(
-                image_source=SIM_IMAGE_SOURCE, 
+                image_source=self.config.sim_image_source, 
                 config=cam_config,
                 image_processing_callback=self.photo_callback,
             )
@@ -61,6 +58,8 @@ class Initialize(State):
             if frame is None:
                 yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera. Aborting...")
                 return ABORT
+
+            camera.cleanup()
 
             yasmin.YASMIN_LOG_INFO(
                 f"Camera ready. Frame shape: {frame.shape}"
@@ -115,7 +114,6 @@ class Takeoff(State):
 class Land(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
-
 
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':

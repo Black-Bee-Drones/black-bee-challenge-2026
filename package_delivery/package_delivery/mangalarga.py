@@ -31,13 +31,13 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "INITIALIZE",
             Initialize(),
-            transitions={SUCCEED: SUCCEED, ABORT: ABORT}
+            transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
         )
 
         self.add_state(
             "TAKEOFF",
             Takeoff(),
-            transitions={SUCCEED: SUCCEED, ABORT: "LAND"}
+            transitions={SUCCEED: "SEARCH_BOX", ABORT: "LAND"}
 
         )
 
