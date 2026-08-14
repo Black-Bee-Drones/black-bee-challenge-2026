@@ -28,6 +28,7 @@ from precision_landing.constants import (
 class Precision_landing(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
+        self.node = YasminNode.get_instance()
         
         self.pid_x = PIDController(
             kp=CONTROLER_P_XY,
