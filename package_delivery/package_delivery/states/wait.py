@@ -6,4 +6,8 @@ from yasmin_ros.yasmin_node import YasminNode
 
 
 class Wait(State):
-    pass
+    def __init__(self):
+        super().__init__(outcomes=[SUCCEED, ABORT])
+
+    def execute(self, blackboard: Blackboard):
+        pass
