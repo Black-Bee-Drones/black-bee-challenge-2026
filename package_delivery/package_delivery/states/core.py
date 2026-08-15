@@ -80,8 +80,16 @@ class Initialize(State):
                 output_limits=self.config.xy_output_lim,
                 integral_limits=self.config.xy_integral_lim,
             )
+            pid_cz = PIDController(
+                kp=self.config.z_kp,
+                ki=self.config.z_ki,
+                kd=self.config.z_kd,
+                output_limits=self.config.z_output_lim,
+                integral_limits=self.config.z_integral_lim,
+            )
             blackboard["pid_cx"] = pid_cx
             blackboard["pid_cy"] = pid_cy
+            blackboard["pid_cz"] = pid_cz
 
             return SUCCEED
 

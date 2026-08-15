@@ -14,8 +14,11 @@ class Config:
     image_width: int = 640      # pixels
     image_height: int = 480     # pixels
 
-    # Approach Box
-    approach_timeout: int = 60 # seconds
+    # Approach
+    approach_timeout: int = 60                  # seconds
+    approach_tolerance: float = 0.20            # meters
+    approach_dropoff_altitude: float = 0.80     # meters
+    approach_dropoff_tolerance: float = 0.10    # meters
 
     safe_altitude: float = 2.0 # meters
     max_altitude: float = 6.0  # meters
