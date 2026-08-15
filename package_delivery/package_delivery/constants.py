@@ -50,7 +50,7 @@ class Config:
     servo_action_delay = 1.0    # sleep time
     
 
-    ### PIDController ###
+    # PIDController ###
     # PID xy
     xy_output_lim: tuple = (-1.0, 1.0)
     xy_integral_lim: tuple = (-1.0, 1.0)
@@ -62,13 +62,11 @@ class Config:
     y_kd: float = 0.0
 
     # PID z
-    controller_z_kp: float = 1.0
-    controller_z_kd: float = 1.0
-    controller_z_ki: float = 1.0
-    controller_z_output_min: float = -1.0
-    controller_z_output_max: float = 1.0
-    controller_z_integral_min: float = -1.0
-    controller_z_integral_max: float = 1.0
+    z_kp: float = 1.0
+    z_kd: float = 1.0
+    z_ki: float = 1.0
+    z_output_lim: tuple = (-1.0, 1.0)
+    z_integral_lim: tuple = (-1.0, 1.0)
 
     # PID yaw
     controller_yaw_kp: float = 1.0

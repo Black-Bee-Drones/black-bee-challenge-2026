@@ -54,7 +54,6 @@ class Initialize(State):
 
             camera.open()
             frame = camera.take_photo()
-            camera.cleanup()
 
             if frame is None:
                 yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera. Aborting...")

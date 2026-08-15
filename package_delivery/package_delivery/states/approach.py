@@ -92,5 +92,5 @@ class Approach(State):
     def ppm(self, delta_pixel: int, altitude: float, fov_degrees: float, frame_px: int) -> float:
         angle_rad = math.radians(fov_degrees)/2
         ratio = (math.tan(angle_rad) * altitude) / (frame_px//2)
-        
+
         return delta_pixel*ratio
