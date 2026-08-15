@@ -11,7 +11,9 @@ from nectar.control import (
     MavrosConfig,
     MavlinkConfig,
     PoseSource,
+    RTLMethod,
     SITL_GAZEBO_CONFIG,
+    PIDController,
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
@@ -22,7 +24,6 @@ from package_delivery.constants import Config
 class Initialize(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
-
         self.config = config
 
     def execute(self, blackboard: Blackboard):
@@ -49,31 +50,44 @@ class Initialize(State):
             camera = ImageHandler(
                 image_source=self.config.sim_image_source, 
                 config=cam_config,
-                image_processing_callback=self.photo_callback,
             )
 
             camera.open()
             frame = camera.take_photo()
+            camera.cleanup()
 
             if frame is None:
                 yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera. Aborting...")
                 return ABORT
 
-            camera.cleanup()
-
             yasmin.YASMIN_LOG_INFO(
                 f"Camera ready. Frame shape: {frame.shape}"
             )
             blackboard["camera"] = camera
+
+            yasmin.YASMIN_LOG_INFO("Initializing PID Controller...")
+            pid_cx = PIDController(
+                kp=self.config.x_kp,
+                ki=self.config.x_ki,
+                kd=self.config.x_kd,
+                output_limits=self.config.xy_output_lim,
+                integral_limits=self.config.xy_integral_lim,
+            )
+            pid_cy = PIDController(
+                kp=self.config.y_kp,
+                ki=self.config.y_ki,
+                kd=self.config.y_kd,
+                output_limits=self.config.xy_output_lim,
+                integral_limits=self.config.xy_integral_lim,
+            )
+            blackboard["pid_cx"] = pid_cx
+            blackboard["pid_cy"] = pid_cy
+
             return SUCCEED
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Initialization failed: {e}")
             return ABORT
-
-    def photo_callback(self, image):
-        # Implement later
-        return image
 
 
 class Takeoff(State):

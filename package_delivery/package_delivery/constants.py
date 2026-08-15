@@ -5,15 +5,17 @@ from dataclasses import dataclass, field
 class Config:
 
     # Simulation
-    sim_mode = True
-    sim_image_source = "/down_camera"
-    sim_image_compressed = False
+    sim_mode: bool = True
+    sim_image_source: str = "/down_camera"
+    sim_image_compressed: bool = False
 
     # Camera
-    image_width = 640
-    image_height = 480
+    image_width: int = 640
+    image_height: int = 480
 
-    
+    # Approach Box
+    approach_timeout: int = 60 # seconds
+
     safe_altitude: float = 2.0 # meters
     max_altitude: float = 6.0  # meters
     
@@ -46,13 +48,14 @@ class Config:
 
     ### PIDController ###
     # PID xy
-    controller_xy_kp: float = 1.0
-    controller_xy_kd: float = 1.0
-    controller_xy_ki: float = 1.0
-    controller_xy_output_min: float = -1.0
-    controller_xy_output_max: float = 1.0
-    controller_xy_integral_min: float = -1.0
-    controller_xy_integral_max: float = 1.0
+    xy_output_lim: tuple = (-1.0, 1.0)
+    xy_integral_lim: tuple = (-1.0, 1.0)
+    x_kp: float = 0.5
+    x_kd: float = 0.05
+    x_ki: float = 0.01
+    y_kp: float = 0.5
+    y_kd: float = 0.05
+    y_ki: float = 0.01
 
     # PID z
     controller_z_kp: float = 1.0
