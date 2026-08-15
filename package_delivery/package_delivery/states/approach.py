@@ -22,8 +22,6 @@ class Approach(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
-        self.node = YasminNode.get_instance()
-
 
     def execute(self, blackboard: Blackboard):
         if "drone" not in blackboard: 
@@ -56,22 +54,19 @@ class Approach(State):
 
                 # TODO: implementar o detector
 
-
                 if (time.time() - start_time) > self.config.approach_timeout:
                     yasmin.YASMIN_LOG_ERROR("Approaching box timed out.")
                     return TIMEOUT
-
-
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Approaching box failed: {e}")
             return ABORT
 
 
-    def ppm(self, delta_pixel: int, altitude: float) -> float:
+    def ppm(self, delta_pixel: int, altitude: float, fov_degrees: float, frame_px: int) -> float:
 
-        angle_rad = math.radians(self.config.camera_fov)/2
+        angle_rad = math.radians(fov_degrees)/2
 
-        ratio = (math.tan(angle_rad) * altitude) / (self.config.image_width/2) 
+        ratio = (math.tan(angle_rad) * altitude) / (frame_px//2)
 
         return delta_pixel*ratio
