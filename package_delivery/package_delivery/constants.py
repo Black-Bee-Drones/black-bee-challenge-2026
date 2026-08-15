@@ -10,8 +10,9 @@ class Config:
     sim_image_compressed: bool = False
 
     # Camera
-    image_width: int = 640
-    image_height: int = 480
+    camera_fov: int = 78        # degrees
+    image_width: int = 640      # pixels
+    image_height: int = 480     # pixels
 
     # Approach Box
     approach_timeout: int = 60 # seconds
@@ -51,11 +52,11 @@ class Config:
     xy_output_lim: tuple = (-1.0, 1.0)
     xy_integral_lim: tuple = (-1.0, 1.0)
     x_kp: float = 0.5
-    x_kd: float = 0.05
-    x_ki: float = 0.01
+    x_ki: float = 0.1
+    x_kd: float = 0.0
     y_kp: float = 0.5
-    y_kd: float = 0.05
-    y_ki: float = 0.01
+    y_ki: float = 0.1
+    y_kd: float = 0.0
 
     # PID z
     controller_z_kp: float = 1.0
