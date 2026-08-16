@@ -72,7 +72,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     bbox, aruco_id = aruco.detect(frame, draw=True)
                     
                     if aruco_id is not None:
-                        blackboard["aruco_id"] = str(aruco_id - 3) #The index for the numbers are 0, 1 and 2
+                        blackboard["aruco_id"] = str(int(aruco_id) - 3) #The index for the numbers are 0, 1 and 2
                         drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
                         yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
