@@ -72,6 +72,7 @@ class Precision_landing(State):
                 return ABORT
              
             camera: ImageHandler = blackboard["camera"]
+            camera.open()
             frame = camera.take_photo()
              
             start_time = self.node.get_clock().now() #gets the start time of the state
