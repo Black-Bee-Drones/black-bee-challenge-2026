@@ -60,60 +60,50 @@ class Precision_landing(State):
 
 
     def execute(self, blackboard: Blackboard):
-        if "drone" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("Drone not available...")
-            return ABORT
-
-        drone: MavrosDrone  = blackboard["drone"]
-
-        if "camera" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("CAMERA NOT AVAILABLE... ABORTING")
-            return ABORT
-
-        camera: ImageHandler = blackboard["camera"]
-        frame = camera.take_photo()
-
-        start_time = self.node.get_clock().now() #gets the start time of the state
-        precision_landing_time = Duration(seconds=PRECISION_LANDING_TIME) #gets the max time in seconds before TIMEOUT
-
-        while (self.node.get_clock - start_time) < precision_landing_time:
-
-            for shape in frame.filter_by_class([blackboard["aruco_shape"]]):
-                for number in frame.filter_by_class([blackboard["aruco_id"]]):
-                    if abs(shape.center[0] - number.center[0]) <= shape.width/2:
-
-                        target_x = shape.center[0]
-                        target_y = shape.center[1]
-
-                        erro_x_pixel = [target_x - IMAGE_WIDTH/2]
-                        erro_y_pixel = [target_y - IMAGE_HEIGHT/2]
-
-                        erro_x = erro_x_pixel / self.ppm(drone.get_altitude(), 86, IMAGE_WIDTH/2)
-                        erro_y = erro_y_pixel / self.ppm(drone.get_altitude(), 47, IMAGE_HEIGHT/2)
-                        erro_z = drone.get_altitude() - 0.7                        
-
-                        output_x = self.pid_x.update(erro_x)
-                        output_y = self.pid_y.update(erro_y)
-                        output_z = self.pid_z.update(erro_z)
-                       
-                        drone.move_velocity(
-                            vx = output_x,
-                            vy = output_y,
-                            vz = output_z if (erro_x_pixel <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
-                            vyaw = 0.0,
-                        )
-
-
-
-        #fazer uma detecção para saber onde está o target (FEITO)
-
-        #após ter a posição do target, fazer um PID até ele (FEITO)
-        #descer usando tambem um PID('feito')
-        
-       
-        """try:
-            return  SUCCEED
+        try:
+            if "drone" not in blackboard:
+                yasmin.YASMIN_LOG_ERROR("Drone not available...")
+                return ABORT
+             
+            drone: MavrosDrone  = blackboard["drone"]
+             
+            if "camera" not in blackboard:
+                yasmin.YASMIN_LOG_ERROR("CAMERA NOT AVAILABLE... ABORTING")
+                return ABORT
+             
+            camera: ImageHandler = blackboard["camera"]
+            frame = camera.take_photo()
+             
+            start_time = self.node.get_clock().now() #gets the start time of the state
+            precision_landing_time = Duration(seconds=PRECISION_LANDING_TIME) #gets the max time in seconds before TIMEOUT
+             
+            while (self.node.get_clock - start_time) < precision_landing_time:
+             
+                for shape in frame.filter_by_class([blackboard["aruco_shape"]]):
+                    for number in frame.filter_by_class([blackboard["aruco_id"]]):
+                        if abs(shape.center[0] - number.center[0]) <= shape.width/2:
+             
+                            target_x = shape.center[0]
+                            target_y = shape.center[1]
+             
+                            erro_x_pixel = [target_x - IMAGE_WIDTH/2]
+                            erro_y_pixel = [target_y - IMAGE_HEIGHT/2]
+             
+                            erro_x = erro_x_pixel / self.ppm(drone.get_altitude(), 86, IMAGE_WIDTH/2)
+                            erro_y = erro_y_pixel / self.ppm(drone.get_altitude(), 47, IMAGE_HEIGHT/2)
+                            erro_z = drone.get_altitude() - 0.7                        
+             
+                            output_x = self.pid_x.update(erro_x)
+                            output_y = self.pid_y.update(erro_y)
+                            output_z = self.pid_z.update(erro_z)
+                                    
+                            drone.move_velocity(
+                                vx = output_x,
+                                vy = output_y,
+                                vz = output_z if (erro_x_pixel <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
+                                vyaw = 0.0,
+                            )
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"TAKEOFF Failed: {e}")
-            return ABORT"""
+            yasmin.YASMIN_LOG_ERROR(f"PRECISION_LANDING Failed: {e}")
+            return ABORT
 

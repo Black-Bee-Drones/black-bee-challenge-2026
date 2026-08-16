@@ -8,8 +8,8 @@ SIM_MODE = True
 CAMERA_SOURCE = '/down_camera' #We will use "webcam" for the drone
 FRAMES_FOLDER = ''
 
-DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector.pt")
-#TODO: update this later to get our best detector model
+DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
+
 DETECTOR_CONFIDENCE_THRESHOLD = 0.6
 
 IMAGE_WIDTH = 640
