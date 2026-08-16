@@ -10,9 +10,12 @@ class Config:
     sim_image_compressed: bool = False
 
     # Camera
+    image_source : str = 'webcam'   # 'ros' for Simulation Mode 
     camera_fov: int = 78        # degrees
     image_width: int = 640      # pixels
     image_height: int = 480     # pixels
+    
+    
 
     # Approach
     approach_timeout: int = 60                  # seconds

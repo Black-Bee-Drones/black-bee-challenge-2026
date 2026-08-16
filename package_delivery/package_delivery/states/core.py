@@ -1,4 +1,5 @@
 import yasmin
+import numpy as np
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
@@ -11,13 +12,12 @@ from nectar.control import (
     MavrosConfig,
     MavlinkConfig,
     PoseSource,
+    PIDController,
     RTLMethod,
     SITL_GAZEBO_CONFIG,
     PIDController,
 )
-from nectar.vision import ImageHandler, OpenCVConfig
-from nectar.vision.camera import ROSConfig
-
+from nectar.vision import ImageHandler, ROSConfig, OpenCVConfig
 from package_delivery.constants import Config
 
 
@@ -27,43 +27,80 @@ class Initialize(State):
         self.config = config
 
     def execute(self, blackboard: Blackboard):
+        # Drone
         try:
-            yasmin.YASMIN_LOG_INFO("Setting up initializing options...")
-            if (self.config.sim_mode):
-                drone_config = SITL_GAZEBO_CONFIG
+            yasmin.YASMIN_LOG_INFO('Initializing Drone...')
+            if self.config.drone_type == 'mavros':
+                drone_config = MavrosConfig(
+                    pose_source=PoseSource.VISION,
+                    connection_string=self.config.connection_string
+                )
+
+            elif self.config.drone_type == 'mavlink':
+                drone_config = MavlinkConfig(
+                    pose_source=PoseSource.VISION,
+                    connection_string=self.config.connection_string
+                )
+            else:
+                yasmin.YASMIN_LOG_ERROR('Invalid drone_type.')
+                return ABORT
+            if self.config.sim_mode:
+                drone = DroneFactory.create(self.config.drone_type, SITL_GAZEBO_CONFIG)
+            else:
+                drone = DroneFactory.create(self.config.drone_type, drone_config)
+            
+            blackboard['drone'] = drone
+            yasmin.YASMIN_LOG_INFO(f'Successful start Drone("{self.config.drone_type}")!')
+        
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f'DroneFactory failed: {e}')
+            return ABORT
+        
+        # Camera (Image Handler)
+        try:
+            yasmin.YASMIN_LOG_INFO('Initializing Camera...')
+            if self.config.image_source == 'webcam':
+                cam_config = OpenCVConfig(
+                    width=self.config.image_width, 
+                    height=self.config.image_width
+                )
+            elif self.config.image_source == 'ros':
                 cam_config = ROSConfig(
                     topic=self.config.sim_image_source, 
                     compressed=self.config.sim_image_compressed,
-                    )
-            else:
-                drone_config = MavrosConfig(pose_source=PoseSource.GPS)
-                cam_config = OpenCVConfig(
-                    width=self.config.image_width, 
-                    height=self.config.image_height,
-                    )
-
-            yasmin.YASMIN_LOG_INFO("Initializing drone...")
-            drone = DroneFactory.create("mavros", drone_config)
-            blackboard["drone"] = drone
-
-            yasmin.YASMIN_LOG_INFO("Initializing camera...")
+                )
+            
             camera = ImageHandler(
-                image_source=self.config.sim_image_source, 
+                image_source=self.config.image_source,
                 config=cam_config,
+                image_processing_callback=self.photo_callba
             )
-
+            
+            yasmin.YASMIN_LOG_INFO('Open camera...')
             camera.open()
-            frame = camera.take_photo()
 
-            if frame is None:
-                yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera. Aborting...")
+            yasmin.YASMIN_LOG_INFO('Take testing photo...')
+            frame_test = camera.take_photo()
+            if frame_test is None:
+                yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
 
-            yasmin.YASMIN_LOG_INFO(
-                f"Camera ready. Frame shape: {frame.shape}"
-            )
-            blackboard["camera"] = camera
-
+            blackboard['camera'] = camera
+            yasmin.YASMIN_LOG_INFO('Successful start camera!')
+        
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+        
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
+            return ABORT 
+        
+        try:
             yasmin.YASMIN_LOG_INFO("Initializing PID Controller...")
             pid_cx = PIDController(
                 kp=self.config.x_kp,
@@ -89,12 +126,20 @@ class Initialize(State):
             blackboard["pid_cx"] = pid_cx
             blackboard["pid_cy"] = pid_cy
             blackboard["pid_cz"] = pid_cz
-
-            return SUCCEED
+            yasmin.YASMIN_LOG_INFO(f'Successful start PID (x, y and z)!')
+        
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
 
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"Initialization failed: {e}")
+            yasmin.YASMIN_LOG_ERROR(f'PID failed: {e}')
             return ABORT
+
+    def photo_callback(self, image : np.ndarray):
+        pass
+        # Implement later
+        # return image
 
 
 class Takeoff(State):
