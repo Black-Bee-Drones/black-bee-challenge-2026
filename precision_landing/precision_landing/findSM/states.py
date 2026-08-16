@@ -35,7 +35,6 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
     def execute(self, blackboard: Blackboard):
         try:
-            blackboard["use_detector"] = False #To prevent we dont run the detector when we don't need
 
             if "drone" not in blackboard: #IFs que conferem se está tudo certo antes de iniciar o estado
                 yasmin.YASMIN_LOG_ERROR("Drone not Available... ")
@@ -82,7 +81,6 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         drone.move_to(yaw=yaw_angle)
                         drone.move_to(x=1.5, MoveReference = MoveReference.BODY)
                         #Moves the drone a little bit closer to the aruco
-                        blackboard["use_detector"] = True
                         frame = camera.take_photo()
                     
                         blackboard["aruco_shape"] = self.get_aruco_shape(frame, bbox)

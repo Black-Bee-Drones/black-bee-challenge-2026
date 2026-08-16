@@ -26,8 +26,8 @@ MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
 WAYPOINTS = [ (1, 1), (2, 2), (3, 3), (3, 2), (3, 1), (3, 0),
              (3, -1), (3, -2), (3, -3), (2, -3), (1, -3),
-             (0, -3), (-1, -3), (-2, -3) (-3, -3), 
-             (-3, -2), (-3, -1), (-3, 0), (-3, 1), (-3, 2) (-3, 3)] #Need to update these for the arena size of 14x14
+             (0, -3), (-1, -3), (-2, -3), (-3, -3), 
+             (-3, -2), (-3, -1), (-3, 0), (-3, 1), (-3, 2), (-3, 3)] #Need to update these for the arena size of 14x14
 
 CONTROLER_P_XY = 0.4
 CONTROLER_I_XY = 0.0
