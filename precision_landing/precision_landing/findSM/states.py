@@ -50,7 +50,6 @@ class Search(State): #Sub-state that will only move around the arena until it de
                 yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
                 return ABORT
             camera.open()
-            camera.run()
 
             aruco = Aruco(marker_dict=MARKER_DICT, tag_size=ARUCO_SIZE)
 
@@ -146,7 +145,6 @@ class FindTargetBase(State):
                 return ABORT
 
             camera.open()
-            camera.run()
 
             start_time = self.node.get_clock().now() #gets the start time of the state
             find_time = Duration(seconds=FIND_TIME) #gets the max time in seconds before TIMEOUT
