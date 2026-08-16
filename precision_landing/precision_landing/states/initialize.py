@@ -60,6 +60,23 @@ class Initialize(State):
                 #NOTE: There are other ways of doing the continuously image processing,
                 #this is one of them, but we can discuss this later
             )
+
+            try:
+                self.detector = Detector( #Creates the detector
+                    model_source= DETECTOR_MODEL_SOURCE,
+                    confidence_threshold= DETECTOR_CONFIDENCE_THRESHOLD,
+                )
+            
+                yasmin.YASMIN_LOG_INFO("Loading the Detector...")
+                self.detector.load()
+            
+                blackboard["detector"] = self.detector
+                yasmin.YASMIN_LOG_INFO("Detector succesfully loaded.")
+            
+            except Exception as e:
+                yasmin.YASMIN_LOG_ERROR(f"Detector failed: {e}")
+                return ABORT
+            
             camera.open()
             camera.run()
             frame = camera.take_photo()
@@ -67,33 +84,17 @@ class Initialize(State):
                 yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
             yasmin.YASMIN_LOG_INFO(
-                f"Camera ready. Frame Shape: {frame.shape}"
+                f"Camera ready!"
             )
             blackboard["camera"] = camera
-
-            try:
-                self.detector = Detector( #Creates the detector
-                    model_source= DETECTOR_MODEL_SOURCE,
-                    confidence_threshold= DETECTOR_CONFIDENCE_THRESHOLD,
-                )
-
-                yasmin.YASMIN_LOG_INFO("Loading the Detector...")
-                self.detector.load()
-
-                blackboard["detector"] = self.detector
-                yasmin.YASMIN_LOG_INFO("Detector succesfully loaded.")
-
-            except Exception as e:
-                yasmin.YASMIN_LOG_ERROR(f"Detector failed: {e}")
-                return ABORT
 
             return SUCCEED
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Initialization failed: {e}")
             return ABORT
 
-    def camera_callback(self, image, blackboard: Blackboard): #Runs everytime we call camera.take_photo()
-        if (blackboard["use_detector"]): #Prevents using the detector when we don't need
+    def camera_callback(self, image): #Runs everytime we call camera.take_photo()
+        try: #Prevents using the detector when we don't need
             #os.makedirs(self.photos_folder, exist_ok=True)
             
             timestamp = self.node.get_clock().now().nanoseconds
@@ -112,5 +113,6 @@ class Initialize(State):
             #NOTE: We will only use this folders for debugging purposes
 
             return result
-        else:
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f"Detector not working: {e}")
             return image

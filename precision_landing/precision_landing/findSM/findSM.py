@@ -3,8 +3,6 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT, FAIL, TIMEOUT
 
 from .states import Search, FindTargetBase
 
-#from states import
-
 class FindSM(StateMachine):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT, FAIL, TIMEOUT])
