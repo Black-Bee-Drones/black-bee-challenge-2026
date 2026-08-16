@@ -4,9 +4,7 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
 from nectar.control import MavrosDrone
 
-from config import Config
-
-from nectar.control import MavrosDrone, MavlinkDrone
+from mapping.config import Config, LandingMode
 
 
 class Land(State):
@@ -19,20 +17,16 @@ class Land(State):
 
     def execute(self, blackboard: Blackboard):
 
-        if self.config.drone_type == 'mavros':
-            drone : MavrosDrone = blackboard.get('drone')
-
-        elif self.config.drone_type == 'mavlink':
-            drone : MavlinkDrone = blackboard.get('drone')
-
-        else:
-            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (MavrosDrone / MavlinkDrone)!\033[0m')
+        if self.config.drone_type != 'mavros':
+            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')
             return ABORT
+
+        drone: MavrosDrone = blackboard.get('drone')
 
         yasmin.YASMIN_LOG_INFO('Landing...')
 
         try:
-            if self.config.landing_mode == 'RTL':
+            if self.config.landing_mode == LandingMode.RTL:
                 drone.rtl()
             else:
                 drone.land()

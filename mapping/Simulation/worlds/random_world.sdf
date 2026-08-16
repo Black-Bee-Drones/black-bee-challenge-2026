@@ -311,11 +311,11 @@
 
             <name>random_base_0</name>
 
-            <uri>model://base_estrela3</uri>
+            <uri>model://base_hexagono3</uri>
 
             <pose>
-                2.089631601435819 -2.1566447593306686 0.05
-                1.5708 0 0.5985156708798621
+                1.7288923008777584 -5.88986663523893 0.05
+                1.5708 0 3.5264067331829754
             </pose>
 
         </include>
@@ -325,11 +325,11 @@
 
             <name>random_base_1</name>
 
-            <uri>model://base_estrela4</uri>
+            <uri>model://base_triangulo5</uri>
 
             <pose>
-                -2.775160709207783 -3.4347427194194298 0.05
-                1.5708 0 5.75084224505255
+                -2.789636452222921 -3.432186846954598 0.05
+                1.5708 0 4.49888391156646
             </pose>
 
         </include>
@@ -339,11 +339,11 @@
 
             <name>random_base_2</name>
 
-            <uri>model://base_estrela5</uri>
+            <uri>model://base_hexagono4</uri>
 
             <pose>
-                -8.072331963147676 -3.9604663615024966 0.05
-                1.5708 0 5.163203420591557
+                2.932243055633754 2.1910736440441 0.05
+                1.5708 0 4.406554769620282
             </pose>
 
         </include>
@@ -353,11 +353,11 @@
 
             <name>random_base_3</name>
 
-            <uri>model://base_hexagono3</uri>
+            <uri>model://base_triangulo3</uri>
 
             <pose>
-                -0.16062547424414397 5.741109080376653 0.05
-                1.5708 0 0.7928989154251178
+                4.863026639540084 -5.12195847539524 0.05
+                1.5708 0 2.635920775136905
             </pose>
 
         </include>
@@ -367,67 +367,11 @@
 
             <name>random_base_4</name>
 
-            <uri>model://base_hexagono4</uri>
+            <uri>model://base_estrela3</uri>
 
             <pose>
-                -0.6510999778816942 -6.770525435549408 0.05
-                1.5708 0 5.570199197614598
-            </pose>
-
-        </include>
-
-
-        <include>
-
-            <name>random_base_5</name>
-
-            <uri>model://base_hexagono5</uri>
-
-            <pose>
-                -7.818978115366613 -5.116838249218102 0.05
-                1.5708 0 2.0655623646149235
-            </pose>
-
-        </include>
-
-
-        <include>
-
-            <name>random_base_6</name>
-
-            <uri>model://base_triangulo3</uri>
-
-            <pose>
-                0.3597914988108002 -7.965143618539489 0.05
-                1.5708 0 6.111630327570359
-            </pose>
-
-        </include>
-
-
-        <include>
-
-            <name>random_base_7</name>
-
-            <uri>model://base_triangulo4</uri>
-
-            <pose>
-                7.426752175353325 -6.517459961007748 0.05
-                1.5708 0 3.820504906841391
-            </pose>
-
-        </include>
-
-
-        <include>
-
-            <name>random_base_8</name>
-
-            <uri>model://base_triangulo5</uri>
-
-            <pose>
-                4.920180998951375 -3.853930301377459 0.05
-                1.5708 0 3.196321432484417
+                -0.9681694359026469 -5.8305144789679275 0.05
+                1.5708 0 2.8224636794628637
             </pose>
 
         </include>

@@ -8,11 +8,10 @@ from yasmin_ros.yasmin_node import YasminNode
 
 
 
-from nectar.control import DroneFactory, MavrosConfig, MavlinkConfig, PoseSource, PIDController
-from nectar.vision import ImageHandler, Aruco, ROSConfig, CameraFactory, OpenCVConfig
+from nectar.control import DroneFactory, MavrosConfig, PoseSource
+from nectar.vision import ImageHandler
 
-
-from mapping import Config
+from mapping.config import Config, PoseSourceOption
 
 class Inicialize(State):
 
@@ -49,23 +48,21 @@ class Inicialize(State):
 
         try:
             yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
-            if self.config.drone_type == 'mavros':
-                drone_config = MavrosConfig(
-                    pose_source=PoseSource.GPS,
-                    start_driver=False,
-                    connection_string=self.config.conection_string
-                )
-
-            elif self.config.drone_type == 'mavlink':
-                drone_config = MavlinkConfig(
-                    pose_source=PoseSource.GPS,
-                    connection_string=self.config.conection_string
-                )
-
-            else:
-                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type!\033[0m')
+            if self.config.drone_type != 'mavros':
+                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type (only "mavros" is supported)!\033[0m')
                 return ABORT
 
+            pose_source = (
+                PoseSource.GPS
+                if self.config.pose_source == PoseSourceOption.GPS
+                else PoseSource.VISION
+            )
+
+            drone_config = MavrosConfig(
+                pose_source=pose_source,
+                start_driver=self.config.start_driver,
+                connection_string=self.config.connection_string,
+            )
 
             drone = DroneFactory.create(self.config.drone_type, drone_config)
 
@@ -82,23 +79,15 @@ class Inicialize(State):
             return ABORT
         
         #Camera
-        
+
         try:
-            
+
             yasmin.YASMIN_LOG_INFO('Initializing Camera(down)...')
-            
-            if self.config.down_image_source == "ros":
-                cam_config = ROSConfig(topic=self.config.down_ros_topic)
-                
-            else:
-                cam_config = OpenCVConfig(width=self.config.image_width, height=self.config.image_height)
-                
-            
+
             camera_down = ImageHandler(
-                image_source=self.config.down_image_source,
-                config=cam_config
+                image_source=self.config.camera.source,
             )
-            
+
             yasmin.YASMIN_LOG_INFO('Opening camera (down)...')
             camera_down.open()
             camera_down.run()
@@ -119,17 +108,5 @@ class Inicialize(State):
             yasmin.YASMIN_LOG_ERROR(f'Camera(down) failed: {error}')
             return ABORT
 
-        
-        
-        
-        
-        
-        
-        
-        
         yasmin.YASMIN_LOG_INFO('\033[32mInicialize Successfully Completed!\033[0m')
         return SUCCEED
-
-    
-    
-            
