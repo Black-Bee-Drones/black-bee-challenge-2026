@@ -94,21 +94,22 @@ class Initialize(State):
 
     def camera_callback(self, image, blackboard: Blackboard): #Runs everytime we call camera.take_photo()
         if (blackboard["use_detector"]): #Prevents using the detector when we don't need
-            os.makedirs(self.photos_folder, exist_ok=True)
+            #os.makedirs(self.photos_folder, exist_ok=True)
             
             timestamp = self.node.get_clock().now().nanoseconds
             
-            os.makedirs(os.path.join(self.photos_folder, 'images'), exist_ok=True)
-            raw_path = os.path.join(self.photos_folder, 'images', f'{timestamp}.png') #Saves the frames in a folder
-            cv2.imwrite(raw_path, image)
+            #os.makedirs(os.path.join(self.photos_folder, 'images'), exist_ok=True)
+            #raw_path = os.path.join(self.photos_folder, 'images', f'{timestamp}.png') #Saves the frames in a folder
+            #cv2.imwrite(raw_path, image)
             
             result = self.detector.detect(image) #Runs the detector on the frame
             result.image = image
             
             annotated = self.detector.draw_detections(image, result) #Annotates the frames
-            os.makedirs(os.path.join(self.photos_folder, 'annotated'), exist_ok=True)
-            ann_path = os.path.join(self.photos_folder, 'annotated', f'{timestamp}-annotated.png') #Saves the annotaded frames
-            cv2.imwrite(ann_path, annotated)
+            #os.makedirs(os.path.join(self.photos_folder, 'annotated'), exist_ok=True)
+            #ann_path = os.path.join(self.photos_folder, 'annotated', f'{timestamp}-annotated.png') #Saves the annotaded frames
+            #cv2.imwrite(ann_path, annotated)
+            #NOTE: We will only use this folders for debugging purposes
 
             return result
         else:

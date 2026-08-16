@@ -1,4 +1,3 @@
-import math
 import cv2
 
 from nectar.vision import(
@@ -73,7 +72,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     bbox, aruco_id = aruco.detect(frame, draw=True)
                     
                     if aruco_id is not None:
-                        blackboard["aruco_id"] = str(aruco_id)
+                        blackboard["aruco_id"] = str(aruco_id - 3) #The index for the numbers are 0, 1 and 2
                         drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
                         yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
@@ -109,7 +108,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
     def get_aruco_shape(self, frame, bbox): #Function that gets the shape around the ArUco
         #NOTE: Not sure this function works, if not we need to instantiate the detector object inside each class
         aruco_shapes = []
-        for s in frame.filter_by_class(['Triangle', 'Hexagon', 'Star']): #NOTE: Possible error here
+        for s in frame.filter_by_class(['3', '4', '5']): #NOTE: Possible error here, those are the index for the shapes
             if(abs(self.bbox_center(bbox)[0]-s.center[0])<=s.width/2)and(abs(self.bbox_center(bbox)[1]-s.center[1])<=s.height/2):
                 aruco_shapes.append(s)
 
