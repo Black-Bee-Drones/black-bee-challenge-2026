@@ -43,20 +43,24 @@ def build_chessboard(cols: int, rows: int, page: str, dpi: int, square_mm: float
     page_w_mm, page_h_mm = PAGE_SIZES_MM[page]
     squares_x, squares_y = cols + 1, rows + 1
 
-    usable_w_mm = page_w_mm - 2 * MARGIN_MM
-    usable_h_mm = page_h_mm - 2 * MARGIN_MM
-    if square_mm is None:
-        square_mm = min(usable_w_mm / squares_x, usable_h_mm / squares_y)
-
     px_per_mm = dpi / 25.4
-    square_px = round(square_mm * px_per_mm)
     margin_px = round(MARGIN_MM * px_per_mm)
     page_w_px = round(page_w_mm * px_per_mm)
     page_h_px = round(page_h_mm * px_per_mm)
+    usable_w_px = page_w_px - 2 * margin_px
+    usable_h_px = page_h_px - 2 * margin_px
+
+    if square_mm is None:
+        # Floor-divide in pixel space (not mm) so rounding can't push the
+        # board past the margin after the mm->px conversion below.
+        square_px = min(usable_w_px // squares_x, usable_h_px // squares_y)
+        square_mm = square_px / px_per_mm
+    else:
+        square_px = round(square_mm * px_per_mm)
 
     board_w_px = squares_x * square_px
     board_h_px = squares_y * square_px
-    if board_w_px > page_w_px - 2 * margin_px or board_h_px > page_h_px - 2 * margin_px:
+    if board_w_px > usable_w_px or board_h_px > usable_h_px:
         raise ValueError(
             f'square_mm={square_mm:.1f} does not fit a {page} page with '
             f'{MARGIN_MM:.0f}mm margins -- lower --square-mm or drop --square-mm '
