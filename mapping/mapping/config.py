@@ -1,7 +1,7 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import yaml
 
@@ -54,6 +54,10 @@ class CameraConfig:
     hfov_deg: float  # derived from config.yml's dfov_deg, see Config.load()
     mount: CameraMountConfig
     detection_override: Optional[DetectionCameraOverride] = None
+    # Only consumed if source == "c920" (nectar's C920Cam driver), for the
+    # rare case its v4l2-ctl auto-detection can't find the device -- see
+    # capture_waypoint.py::_ensure_camera().
+    c920_fallback_device_index: int = 0
 
 
 @dataclass(frozen=True)
@@ -116,6 +120,19 @@ class DetectionConfig:
     dedup_radius_m: float
     templates_dir: Optional[str]
     max_bases: int
+    # Lê roll/pitch reais do MAVROS (/mavros/local_position/pose) e corrige
+    # pixel_to_local() por interseção raio-solo em vez de assumir câmera
+    # nadir -- default False porque o sinal de roll/pitch vindo do
+    # quaternion ENU do MAVROS ainda não foi validado empiricamente contra
+    # um ground truth (mesmo tipo de verificação já feita pro
+    # yaw_offset_deg -- ver docs/decisions/0001, adendo 2026-08-17).
+    tilt_compensation: bool
+    # Se achar menos que max_bases, tenta de novo nas MESMAS fotos já
+    # corrigidas (sem recapturar nem costurar um mosaico -- ver adendo
+    # 2026-08-17 sobre por que não usar o mosaico pra detecção) com
+    # limiares relaxados, só pra preencher a diferença. Ver
+    # states/mission/detect_bases.py.
+    retry_on_shortfall: bool
 
 
 @dataclass(frozen=True)
@@ -128,6 +145,39 @@ class OutputConfig:
 @dataclass(frozen=True)
 class MosaicConfig:
     enabled: bool
+
+
+def _apply_profile(data: dict) -> dict:
+    """Overlay config.yml's profiles[active_profile] on top of the shared
+    sections it targets (drone/simulation/camera/arena), so the rest of
+    Config.load() reads a fully-resolved dict regardless of which profile
+    is active -- see config.yml's `active_profile`/`profiles` for what
+    each profile overrides (sim vs. real-flight camera/connection/arena
+    values).
+
+    Args:
+        data: Raw dict parsed from config.yml (before dataclass
+            construction), containing the optional 'active_profile' key,
+            the 'profiles' mapping, and the shared config sections
+            ('drone', 'simulation', 'camera', 'arena', ...) to overlay.
+
+    Returns:
+        The same dict with the active profile's overrides merged into its
+        target sections (the dict is also mutated in place); returned
+        unchanged if 'active_profile' is falsy.
+    """
+    profile_name = data.get('active_profile')
+    if not profile_name:
+        return data
+    profiles = data.get('profiles', {})
+    if profile_name not in profiles:
+        raise KeyError(
+            f'active_profile {profile_name!r} not found under config.yml profiles '
+            f'(available: {sorted(profiles)})'
+        )
+    for section, overrides in profiles[profile_name].items():
+        data[section] = {**data.get(section, {}), **overrides}
+    return data
 
 
 @dataclass(frozen=True)
@@ -150,11 +200,23 @@ class Config:
 
     @classmethod
     def load(cls, filepath: Optional[str] = None) -> 'Config':
+        """Load, profile-resolve, and validate config.yml into a frozen Config.
+
+        Args:
+            filepath: Path to the config.yml file to load. Defaults to
+                `_default_config_path()` (installed share dir, falling back
+                to the source tree) when omitted.
+
+        Returns:
+            A fully populated, frozen Config instance built from the file's
+            contents, with the active profile's overrides already applied.
+        """
         if filepath is None:
             filepath = cls._default_config_path()
 
         with open(filepath, 'r') as f:
             data = yaml.safe_load(f)
+        data = _apply_profile(data)
 
         camera_data = data['camera']
         mount_data = camera_data.get('mount', {})
@@ -179,6 +241,7 @@ class Config:
                 yaw_offset_deg=mount_data.get('yaw_offset_deg', 0.0),
             ),
             detection_override=detection_override,
+            c920_fallback_device_index=camera_data.get('c920_fallback_device_index', 0),
         )
 
         calibration_data = data['calibration']
@@ -226,6 +289,8 @@ class Config:
             dedup_radius_m=detection_data['dedup_radius_m'],
             templates_dir=detection_data.get('templates_dir') or None,
             max_bases=detection_data['max_bases'],
+            tilt_compensation=detection_data.get('tilt_compensation', False),
+            retry_on_shortfall=detection_data.get('retry_on_shortfall', True),
         )
 
         output_data = data['output']
@@ -260,6 +325,10 @@ class Config:
 
         Falls back to the source tree path so `Config.load()` also works
         when running scripts directly out of the workspace (not installed).
+
+        Returns:
+            Absolute path to config.yml -- the installed share-dir copy if
+            found, otherwise the path inside the source tree.
         """
         if get_package_share_directory is not None:
             try:
@@ -274,7 +343,13 @@ class Config:
 
 
 def default_templates_dir() -> str:
-    """Locate Simulation/Base_Images, installed or in the source tree."""
+    """Locate Simulation/Base_Images, installed or in the source tree.
+
+    Returns:
+        Absolute path to the Base_Images directory (shape templates for
+        match_shape()) -- the installed share-dir copy if found, otherwise
+        the path inside the source tree.
+    """
     if get_package_share_directory is not None:
         try:
             share_dir = get_package_share_directory('mapping')
@@ -291,6 +366,11 @@ def default_model_path() -> str:
     """Locate the bundled YOLO weights (models/base_detector.pt), installed
     or in the source tree -- same install/source fallback pattern as
     default_templates_dir().
+
+    Returns:
+        Absolute path to base_detector.pt (the YOLO weights file) -- the
+        installed share-dir copy if found, otherwise the path inside the
+        source tree.
     """
     if get_package_share_directory is not None:
         try:
@@ -306,3 +386,34 @@ def default_model_path() -> str:
 
 # Para usar no código:
 # config = Config.load()
+
+
+def _demo():
+    # ponytail self-check: _apply_profile() overlay logic, no file I/O.
+    base = {
+        'active_profile': 'simulation',
+        'drone': {'connection_string': 'base-value', 'type': 'mavros'},
+        'profiles': {
+            'simulation': {'drone': {'connection_string': 'sim-value'}},
+            'real': {'drone': {'connection_string': 'real-value'}},
+        },
+    }
+
+    sim = _apply_profile({**base, 'active_profile': 'simulation'})
+    assert sim['drone']['connection_string'] == 'sim-value', sim
+    assert sim['drone']['type'] == 'mavros', sim  # untouched key preserved
+
+    real = _apply_profile({**base, 'active_profile': 'real'})
+    assert real['drone']['connection_string'] == 'real-value', real
+
+    try:
+        _apply_profile({**base, 'active_profile': 'nonexistent'})
+        assert False, 'expected KeyError for unknown active_profile'
+    except KeyError:
+        pass
+
+    print('config profile self-check OK')
+
+
+if __name__ == '__main__':
+    _demo()

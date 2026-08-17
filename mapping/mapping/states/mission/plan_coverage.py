@@ -12,10 +12,28 @@ class PlanCoverage(State):
     """
 
     def __init__(self, config: Config):
+        """Args:
+            config: Loaded mission configuration; used for arena size,
+                takeoff altitude, camera FOV/resolution/mount yaw offset,
+                and mission.overlap_margin_m.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
 
     def execute(self, blackboard: Blackboard):
+        """Compute the coverage-grid waypoints and initialize the capture
+        loop's bookkeeping on the blackboard.
+
+        Args:
+            blackboard: Shared mission state. Writes 'waypoints' (list of
+                grid Waypoints from compute_grid()), 'waypoint_idx' (reset
+                to 0), and 'captures' (reset to an empty list) on success.
+
+        Returns:
+            SUCCEED once the grid is computed and the blackboard is
+            initialized; ABORT if an exception/KeyboardInterrupt occurs
+            during compute_grid().
+        """
         yasmin.YASMIN_LOG_INFO('PLANNING COVERAGE GRID...')
 
         try:

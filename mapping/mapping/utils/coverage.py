@@ -36,6 +36,14 @@ def hfov_from_dfov(dfov_deg: float, resolution: Tuple[int, int]) -> float:
     half-angle tangent is the diagonal half-angle tangent scaled by
     width_px / diagonal_px (same relation `camera_footprint` uses to go
     from horizontal to vertical FOV).
+
+    Args:
+        dfov_deg: Diagonal field of view of the lens, in degrees, as quoted
+            by the camera datasheet.
+        resolution: (width_px, height_px) of the photos this camera produces.
+
+    Returns:
+        Horizontal field of view, in degrees.
     """
     width_px, height_px = resolution
     diagonal_px = math.hypot(width_px, height_px)
@@ -54,6 +62,15 @@ def camera_footprint(
     is derived from the sensor aspect ratio, since a rectilinear lens has
     a single focal length shared by both axes:
     tan(vfov/2) = tan(hfov/2) * (height_px / width_px).
+
+    Args:
+        altitude_m: Camera height above the ground plane, in meters.
+        hfov_deg: Horizontal field of view of the camera, in degrees.
+        resolution: (width_px, height_px) of the photo the footprint is for.
+
+    Returns:
+        (footprint_x_m, footprint_y_m): ground footprint size, in meters,
+        along the image-width and image-height axes respectively.
     """
     width_px, height_px = resolution
     half_hfov = math.radians(hfov_deg) / 2
@@ -71,6 +88,17 @@ def _axis_positions(span_m: float, footprint_m: float, margin_m: float) -> List[
     arena/takeoff center) along one axis that gives 100% coverage of
     `span_m`, reaching `margin_m` past each edge, with no gaps between
     adjacent photo footprints.
+
+    Args:
+        span_m: Length of the arena along this axis, in meters.
+        footprint_m: Length of a single photo's ground footprint along
+            this axis, in meters.
+        margin_m: Extra distance the coverage must reach past each edge
+            of `span_m`, in meters.
+
+    Returns:
+        Capture-center offsets along this axis, in meters, relative to 0
+        (the arena/takeoff center).
     """
     if footprint_m <= 0:
         raise ValueError('footprint_m must be positive')
@@ -119,6 +147,23 @@ def compute_grid(
     axis then actually sweeps the arena's Y span instead. Only quarter-turn
     offsets keep the footprint axis-aligned with the arena, which is what
     this rectangular grid requires.
+
+    Args:
+        arena_size_x_m: Arena extent along the local X axis, in meters.
+        arena_size_y_m: Arena extent along the local Y axis, in meters.
+        altitude_m: Flight altitude for the coverage pass, in meters.
+        hfov_deg: Horizontal field of view of the camera, in degrees.
+        resolution: (width_px, height_px) of the photos the camera produces.
+        overlap_margin_m: Extra distance coverage must reach past each
+            arena edge, in meters.
+        yaw_deg: Yaw, in degrees, assigned to every generated waypoint.
+        camera_yaw_offset_deg: Camera mount rotation relative to the drone
+            body, in degrees (`camera.mount.yaw_offset_deg` in config.yml);
+            only quarter-turn multiples (0/90/180/270) are supported.
+
+    Returns:
+        Waypoints covering the arena, ordered along a serpentine
+        (boustrophedon) path, with positions relative to the arena center.
     """
     footprint_x, footprint_y = camera_footprint(altitude_m, hfov_deg, resolution)
 

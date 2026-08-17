@@ -18,6 +18,15 @@ from mapping import Config
 
 class MappingSM(StateMachine):
     def __init__(self, config: Config):
+        """Wire up the mission's YASMIN state machine, in the fixed order
+        INICIALIZE -> TAKEOFF -> PLAN_COVERAGE -> CAPTURE_WAYPOINT (self-loop)
+        -> DETECT_BASES -> PUBLISH_RESULTS -> LAND, with ABORT reachable from
+        every state.
+
+        Args:
+            config: Loaded mission configuration, passed through unchanged
+                to every state's constructor.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT, CANCEL, TIMEOUT])
 
         self.add_state(

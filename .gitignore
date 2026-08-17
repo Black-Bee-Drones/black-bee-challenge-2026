@@ -210,3 +210,7 @@ sae_hook_arena_*.sdf
 
 # --- Documentation ---
 *.md
+# ...except the top-level README, which now lives at the repo root
+# (moved from mapping/) and should be tracked/committed like the rest of
+# the code.
+!/README.md

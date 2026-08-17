@@ -27,7 +27,14 @@ BoxDetection = Tuple[str, Tuple[float, float, float, float]]  # (class_name, (x0
 
 
 def load_model(model_path: str):
-    """Load the Ultralytics YOLO model from a .pt checkpoint path."""
+    """Load the Ultralytics YOLO model from a .pt checkpoint path.
+
+    Args:
+        model_path: Filesystem path to the trained YOLO `.pt` checkpoint.
+
+    Returns:
+        The loaded `ultralytics.YOLO` model, ready for `.predict()`.
+    """
     from ultralytics import YOLO
     return YOLO(model_path)
 
@@ -42,6 +49,14 @@ def _pair_shapes_and_numbers(boxes: Sequence[BoxDetection]) -> List[PairedDetect
     (shape_name, shape_box, matched_number_or_None) per shape detected --
     unmatched number boxes are dropped, since without a shape there's no
     base square to anchor the crop/pixel_center on.
+
+    Args:
+        boxes: Raw (class_name, (x0, y0, x1, y1)) detections from the YOLO
+            model, in pixel coordinates, mixing shape and digit classes.
+
+    Returns:
+        One (shape_name, shape_box, matched_number_or_None) tuple per shape
+        box detected.
     """
     shapes = [(name, box) for name, box in boxes if name in _SHAPE_NAMES]
     numbers = [(name, box) for name, box in boxes if name in _NUMBER_NAMES]
@@ -69,6 +84,16 @@ def find_base_squares_ai(
     """Detect candidate base squares with the YOLO model, returning
     Detection objects with shape_label already filled in (bypassing
     match_shape() -- see Detection.shape_label).
+
+    Args:
+        img: BGR image to run detection on.
+        model: Loaded `ultralytics.YOLO` model (see `load_model`).
+        confidence: Minimum detection confidence passed to the model.
+        pad_frac: Padding added around each detected box, as a fraction of
+            the box's longest side, when cropping the proof photo.
+
+    Returns:
+        One `Detection` per shape box found, with `shape_label` set.
     """
     h, w = img.shape[:2]
     result = model.predict(img, conf=confidence, verbose=False)[0]

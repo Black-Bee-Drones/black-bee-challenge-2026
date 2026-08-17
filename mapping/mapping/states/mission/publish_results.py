@@ -21,6 +21,11 @@ class PublishResults(State):
     """
 
     def __init__(self, config: Config):
+        """Args:
+            config: Loaded mission configuration; used for arena GPS
+                transform, output directory/topic/save_report, and
+                takeoff_altitude (reported as each base's altitude).
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
         self.node = YasminNode.get_instance()
@@ -29,6 +34,20 @@ class PublishResults(State):
         )
 
     def execute(self, blackboard: Blackboard):
+        """Convert each detected base's local coordinates to GPS, publish a
+        PhotoInfo message per base, and save proof photos plus a JSON
+        report to disk.
+
+        Args:
+            blackboard: Shared mission state. Reads 'base_results' (list of
+                BaseResult from DetectBases). Writes 'results_dir' (the
+                timestamped output directory used for this run) on success.
+
+        Returns:
+            SUCCEED once all results are published and saved; ABORT if an
+            exception/KeyboardInterrupt occurs during GPS conversion,
+            file I/O, or publishing.
+        """
         yasmin.YASMIN_LOG_INFO('PUBLISHING RESULTS...')
 
         try:
@@ -61,13 +80,8 @@ class PublishResults(State):
 
                 report.append(
                     {
-                        'photo_num': photo_num,
                         'lat': lat,
                         'lon': lon,
-                        'local_x': base.local_x,
-                        'local_y': base.local_y,
-                        'shape_label': base.shape_label,
-                        'confirming_photos': base.num_photos,
                         'photo_path': photo_path,
                     }
                 )

@@ -16,6 +16,12 @@
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
+  <!-- Both imported unconditionally at the top of capture_waypoint.py
+       for detection.tilt_compensation's MAVROS attitude subscription;
+       even with that feature left off in config.yml, the import itself
+       still has to succeed for `ros2 run mapping mangalarga` to start. -->
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

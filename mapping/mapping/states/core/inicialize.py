@@ -16,6 +16,11 @@ from mapping.config import Config, PoseSourceOption
 class Inicialize(State):
 
     def __init__(self, config: Config):
+        """Args:
+            config: Loaded mission configuration; used for drone_type,
+                pose_source, start_driver, connection_string, and
+                camera.source.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
@@ -25,6 +30,21 @@ class Inicialize(State):
         self.start_time = None
 
     def execute(self, blackboard: Blackboard):
+        """Record the mission start time, build the drone connection, and
+        initialize/open the down-facing camera.
+
+        Args:
+            blackboard: Shared mission state. Writes 'Start_time' (ROS
+                clock timestamp), 'drone' (the connected MavrosDrone
+                instance), and 'camera_down' (the opened ImageHandler)
+                on success.
+
+        Returns:
+            SUCCEED once start time, drone, and camera are all set up;
+            ABORT if drone_type isn't "mavros", or if an exception/
+            KeyboardInterrupt occurs while getting the clock, creating the
+            drone, or opening/testing the camera.
+        """
         yasmin.YASMIN_LOG_INFO('INICIALIZING...')
 
         #Start Time

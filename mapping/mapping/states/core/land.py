@@ -10,12 +10,28 @@ from mapping.config import Config, LandingMode
 class Land(State):
 
     def __init__(self, config : Config):
+        """Args:
+            config: Loaded mission configuration; used for drone_type and
+                landing_mode.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
 
 
     def execute(self, blackboard: Blackboard):
+        """Land the drone, via RTL or a direct LAND command depending on
+        config.landing_mode.
+
+        Args:
+            blackboard: Shared mission state. Reads 'drone' (the connected
+                MavrosDrone set by Inicialize).
+
+        Returns:
+            SUCCEED once the land/RTL command completes; ABORT if
+            drone_type isn't "mavros", or if an exception/
+            KeyboardInterrupt occurs while landing.
+        """
 
         if self.config.drone_type != 'mavros':
             yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')

@@ -14,11 +14,13 @@ import math
 import os
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
+
+from mapping.utils.geo_projection import CapturePose
 
 
 @dataclass
@@ -48,6 +50,17 @@ class BaseCandidate:
     detection: Detection
     sharpness: float
     shape_label: Optional[str] = None
+    weight: float = 1.0  # from centrality_weight(); used by deduplicate()'s weighted average
+    # Only set by detect_bases.py when detection.fully_in_frame is False --
+    # what merge_base_crop() (utils/mosaic.py) needs to reproject this
+    # photo later if the whole cluster turns out to have no fully-in-frame
+    # photo at all (base straddling two waypoints' footprints). None for
+    # the (usual) fully-in-frame case, so most photos don't pay the memory
+    # cost of holding onto their full corrected image.
+    pose: Optional[CapturePose] = None
+    gsd_m_per_px: Optional[float] = None
+    camera_altitude_m: Optional[float] = None
+    source_img: Optional[np.ndarray] = None
 
 
 @dataclass
@@ -57,6 +70,10 @@ class BaseResult:
     crop: np.ndarray
     shape_label: Optional[str]
     num_photos: int
+    # The winning cluster, so the caller can tell whether `crop` came from
+    # a single fully-in-frame photo or needs merge_base_crop() -- see
+    # states/mission/detect_bases.py.
+    cluster: List[BaseCandidate] = field(default_factory=list)
 
 
 def find_base_squares(
@@ -64,9 +81,38 @@ def find_base_squares(
     expected_side_px: float,
     area_tolerance: float = 0.35,
     white_threshold: int = 200,
+    accept_partial_at_edge: bool = False,
 ) -> List[Detection]:
     """Detect candidate base squares: bright quadrilaterals of the
     expected pixel size, with a dark shape/number drawn inside.
+
+    accept_partial_at_edge (default False, unchanged normal behavior):
+    a contour touching the image border could be a base cut off by the
+    frame edge rather than noise -- its visible area/aspect can't be
+    expected to match a whole square, so such contours skip the
+    area/aspect checks below (just a lenient noise floor instead) when
+    this is set. Used by DetectBases._recover_edge_cut_bases() to find
+    candidates for merge_base_crop() that the normal area/aspect window
+    would otherwise reject before they ever became a Detection -- the
+    merged result still has to pass the normal, strict check (this
+    function again, with accept_partial_at_edge=False) to become a real
+    base, so a stray reflection at a frame edge can't become a false
+    positive on its own.
+
+    Args:
+        img: BGR (or grayscale) photo to search for base squares.
+        expected_side_px: Expected side length of a base square in this
+            photo, in pixels, at the flight altitude/GSD.
+        area_tolerance: Allowed fractional deviation from the expected
+            square area (e.g. 0.35 accepts 65%-135% of expected_area).
+        white_threshold: Grayscale value (0-255) above which a pixel counts
+            as part of the white base square.
+        accept_partial_at_edge: Whether to accept contours touching the
+            image border under a lenient noise floor instead of the normal
+            area/aspect window (see docstring above).
+
+    Returns:
+        One `Detection` per candidate base square found in the photo.
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
     _, mask = cv2.threshold(gray, white_threshold, 255, cv2.THRESH_BINARY)
@@ -80,24 +126,29 @@ def find_base_squares(
     expected_area = expected_side_px**2
     min_area = expected_area * (1 - area_tolerance)
     max_area = expected_area * (1 + area_tolerance)
+    partial_min_area = expected_area * 0.05  # noise floor for edge-touching contours
 
     h, w = img.shape[:2]
     detections = []
 
     for contour in contours:
         area = cv2.contourArea(contour)
-        if not (min_area <= area <= max_area):
-            continue
-
-        (cx, cy), (rw, rh), _ = cv2.minAreaRect(contour)
-        if rw <= 0 or rh <= 0:
-            continue
-        aspect = rw / rh if rw > rh else rh / rw
-        if aspect > 1.3:  # not square-ish enough
-            continue
-
         x, y, bw, bh = cv2.boundingRect(contour)
         fully_in_frame = x > 0 and y > 0 and (x + bw) < w and (y + bh) < h
+
+        (cx, cy), (rw, rh), _ = cv2.minAreaRect(contour)
+
+        if accept_partial_at_edge and not fully_in_frame:
+            if area < partial_min_area:
+                continue
+        else:
+            if not (min_area <= area <= max_area):
+                continue
+            if rw <= 0 or rh <= 0:
+                continue
+            aspect = rw / rh if rw > rh else rh / rw
+            if aspect > 1.3:  # not square-ish enough
+                continue
 
         # Dark shape/number drawn inside the white square: inverted threshold
         # within just the square's own bounding box, so the drawing's own
@@ -138,6 +189,18 @@ def _split_outline_and_digit(
     drawn inside it is comfortably smaller -- so the largest contour whose
     bounding box is under `small_frac` of the region on both axes is taken
     as the digit, and the single largest overall as the outline.
+
+    Args:
+        contours: Candidate contours found inside a base square's bounding box.
+        region_w: Width of the region the contours were found in, in pixels.
+        region_h: Height of the region the contours were found in, in pixels.
+        small_frac: Fraction of `region_w`/`region_h` a contour's bounding
+            box must stay under, on both axes, to be considered the digit.
+
+    Returns:
+        (outline, digit): the largest contour (the shape outline) and the
+        largest contour small enough to be the digit, or None for either
+        if `contours` was empty / no contour qualified as the digit.
     """
     if not contours:
         return None, None
@@ -167,6 +230,14 @@ def load_shape_templates(templates_dir: str) -> Dict[str, Tuple[np.ndarray, Opti
     """Load (outline, digit) contour pairs from Simulation/Base_Images for
     shape+number classification (informational only -- the competition
     rules don't require it for scoring).
+
+    Args:
+        templates_dir: Directory containing the reference marker PNGs
+            (e.g. Simulation/Base_Images), named like "hexagono3.png".
+
+    Returns:
+        Mapping of canonical marker name (e.g. "hexagono3") to its
+        (outline, digit) contour pair, `digit` possibly None.
     """
     templates = {}
     for path in glob.glob(os.path.join(templates_dir, '*.png')):
@@ -193,6 +264,17 @@ def match_shape(
 ) -> Optional[str]:
     """Best-matching template name (e.g. "hexagono3"), combining the outer
     outline's match score with the digit's when both are available.
+
+    Args:
+        shape_contour: Detected outline contour (hexagon/triangle/star),
+            or None if none was found.
+        digit_contour: Detected digit contour, or None if none was found.
+        templates: Reference (outline, digit) contour pairs keyed by
+            canonical marker name, from `load_shape_templates`.
+
+    Returns:
+        The best-matching template name, or None if `templates` is empty
+        or `shape_contour` is None.
     """
     if not templates or shape_contour is None:
         return None
@@ -206,6 +288,38 @@ def match_shape(
     return min(scores, key=scores.get)
 
 
+def centrality_weight(
+    pixel_center: Tuple[float, float], resolution: Tuple[int, int], floor: float = 0.1
+) -> float:
+    """Weight in [floor, 1.0] for how close a detection is to the image's
+    optical center (1.0 = dead center, floor = a corner). pixel_to_local()
+    assumes a perfectly nadir camera; any small residual drone tilt makes
+    that assumption's error grow with distance from the principal point,
+    so weighting a detection's contribution to deduplicate()'s averaged
+    position by this pulls the estimate toward the least-distorted
+    readings instead of trusting every repeated observation equally.
+
+    # ponytail: this is a statistical proxy for tilt error, not a fix of
+    # the root cause -- CapturePose carries no roll/pitch, so
+    # pixel_to_local() can't do a real ray-ground intersection. Upgrade
+    # path: capture drone attitude per photo (MAVROS EKF) and project with
+    # the full rotation instead of the flat nadir assumption; only then
+    # would this weighting become unnecessary.
+
+    Args:
+        pixel_center: (col, row) pixel position of the detection's center.
+        resolution: (width_px, height_px) of the photo.
+        floor: Minimum weight returned, for a detection at a corner.
+
+    Returns:
+        Weight in [floor, 1.0]; 1.0 at the optical center, `floor` at a corner.
+    """
+    width_px, height_px = resolution
+    half_diag = math.hypot(width_px, height_px) / 2
+    dist = math.hypot(pixel_center[0] - width_px / 2, pixel_center[1] - height_px / 2)
+    return max(floor, 1.0 - dist / half_diag)
+
+
 def deduplicate(
     candidates: Sequence[BaseCandidate], radius_m: float, max_bases: int
 ) -> List[BaseResult]:
@@ -215,6 +329,17 @@ def deduplicate(
     Clusters are ranked by how many photos confirm them (more confirming
     photos = more likely a real base, not a false positive), and only the
     top `max_bases` clusters are kept.
+
+    Args:
+        candidates: Per-photo base detections with their projected local
+            arena position.
+        radius_m: Maximum distance, in meters, between two candidates for
+            them to be considered the same physical base.
+        max_bases: Maximum number of base clusters to return.
+
+    Returns:
+        Up to `max_bases` `BaseResult`s, one per detected base, ranked by
+        number of confirming photos (most confirmed first).
     """
     remaining = list(candidates)
     clusters: List[List[BaseCandidate]] = []
@@ -248,14 +373,53 @@ def deduplicate(
         labels = [c.shape_label for c in cluster if c.shape_label is not None]
         shape_label = Counter(labels).most_common(1)[0][0] if labels else None
 
+        # Weighted average: detections closer to the image's optical center
+        # (higher weight, see centrality_weight()) carry less nadir-assumption
+        # error, so they should pull the averaged position harder.
+        total_weight = sum(c.weight for c in cluster)
+
         results.append(
             BaseResult(
-                local_x=sum(c.local_x for c in cluster) / len(cluster),
-                local_y=sum(c.local_y for c in cluster) / len(cluster),
+                local_x=sum(c.local_x * c.weight for c in cluster) / total_weight,
+                local_y=sum(c.local_y * c.weight for c in cluster) / total_weight,
                 crop=best.detection.crop,
                 shape_label=shape_label,
                 num_photos=len(cluster),
+                cluster=list(cluster),
             )
         )
 
     return results
+
+
+def _demo() -> None:
+    # ponytail self-check: accept_partial_at_edge lets a heavily cut-off
+    # square through (skipping the area/aspect window a partial view
+    # can't be expected to satisfy), while leaving the normal in-frame
+    # case identical either way.
+    img = np.zeros((60, 60, 3), dtype=np.uint8)
+    # A 40x40 white square, only its left third (cols 0-14) inside this
+    # 60x60 frame -- like a base cut off by >60% at the image edge.
+    img[10:50, 0:15] = 255
+    expected_side_px = 40.0
+
+    assert find_base_squares(img, expected_side_px, area_tolerance=0.35) == []
+    partial = find_base_squares(
+        img, expected_side_px, area_tolerance=0.35, accept_partial_at_edge=True
+    )
+    assert len(partial) == 1 and partial[0].fully_in_frame is False
+
+    full = np.zeros((60, 60, 3), dtype=np.uint8)
+    full[10:50, 10:50] = 255
+    normal = find_base_squares(full, expected_side_px, area_tolerance=0.35)
+    with_flag = find_base_squares(
+        full, expected_side_px, area_tolerance=0.35, accept_partial_at_edge=True
+    )
+    assert len(normal) == 1 and normal[0].fully_in_frame is True
+    assert len(with_flag) == 1 and with_flag[0].fully_in_frame is True
+
+    print('base_detector self-check OK')
+
+
+if __name__ == '__main__':
+    _demo()

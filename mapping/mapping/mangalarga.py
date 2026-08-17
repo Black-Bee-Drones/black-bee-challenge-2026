@@ -13,6 +13,13 @@ from mapping import (
 
 
 def main(args=None):
+    """Entry point: bring up ROS2, run the mapping mission state machine to
+    completion, and tear ROS2 down again.
+
+    Args:
+        args: Command-line arguments forwarded to `rclpy.init()` (standard
+            ROS2 node args); None uses the process's own sys.argv.
+    """
 
     rclpy.init(args=args)
     set_ros_loggers()

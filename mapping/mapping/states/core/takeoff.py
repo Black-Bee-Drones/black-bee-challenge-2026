@@ -9,12 +9,27 @@ from mapping.config import Config
 class Takeoff(State):
 
     def __init__(self, config : Config):
+        """Args:
+            config: Loaded mission configuration; used for drone_type and
+                takeoff_altitude.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
 
 
     def execute(self, blackboard: Blackboard):
+        """Set home, arm, and take off to config.takeoff_altitude.
+
+        Args:
+            blackboard: Shared mission state. Reads 'drone' (the connected
+                MavrosDrone set by Inicialize).
+
+        Returns:
+            SUCCEED once set_home/arm/takeoff complete and the post-takeoff
+            settle delay elapses; ABORT if drone_type isn't "mavros", or if
+            an exception/KeyboardInterrupt occurs during arming/takeoff.
+        """
 
         if self.config.drone_type != 'mavros':
             yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')
