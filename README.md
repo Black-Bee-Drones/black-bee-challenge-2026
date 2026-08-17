@@ -2,8 +2,7 @@
 
 Este documento explica **o que cada parte do pacote faz, por que foi feita
 assim, e a lógica por trás das contas**. Serve como referência técnica
-completa — para o histórico resumido das decisões, ver
-[`docs/decisions/0001-missao-1-mapeamento.md`](docs/decisions/0001-missao-1-mapeamento.md).
+completa, incluindo o histórico das decisões arquiteturais relevantes.
 
 ## Índice
 
@@ -265,8 +264,6 @@ uma missão de verdade:
    `math.degrees(-pitch_flu)`, e/ou negar `roll_flu` também, conforme o
    que a comparação mostrar) e reconfirmar.
 
-Ver `docs/decisions/0001-missao-1-mapeamento.md`, adendo 2026-08-17.
-
 ### 3.6 Sobre alinhar o drone ao Norte antes de decolar
 
 Não é necessário, e o projeto já foi desenhado para isso: o referencial
@@ -453,8 +450,8 @@ Requer `pip install -r requirements.txt` (`mapping/requirements.txt` —
 só `ultralytics`, a única dependência do pacote não resolvível via
 `rosdep`/`package.xml`; import feito só dentro de `load_model()`, então o
 caminho OpenCV continua funcionando sem essa dependência instalada). Ver
-`detection.method`/`detection.model_path`/
-`detection.ai_confidence` em [`CONFIG.md`](mapping/CONFIG.md).
+os campos `detection.method`/`detection.model_path`/`detection.ai_confidence`
+na seção 7.
 
 ### `mosaic.py`
 
@@ -546,8 +543,8 @@ câmera, não silenciosamente. O driver já desliga o autofoco sozinho
 nenhuma configuração adicional necessária pra isso.
 
 Ver `nectar/nectar/vision/camera/README.md` e
-`nectar/nectar/vision/camera/drivers/c920_cam.py` no `nectar-sdk`, e o
-adendo de 2026-08-17 em `docs/decisions/0001-missao-1-mapeamento.md`.
+`nectar/nectar/vision/camera/drivers/c920_cam.py` no `nectar-sdk` para o
+driver em si.
 
 ### Por que o heading é lido com try/except (`_safe_heading`)
 
@@ -584,9 +581,6 @@ fonte correta para o cálculo de ground-sample-distance de cada foto (ver
 seção 3.3).
 
 ## 7. `config.yml` — schema completo
-
-> Explicação campo a campo (para que serve cada um, que código o consome, e
-> como ajustar) em [`CONFIG.md`](mapping/CONFIG.md).
 
 ```yaml
 active_profile: "simulation"    # "simulation" | "real" — ver profiles: no fim do arquivo
@@ -649,8 +643,165 @@ campos que realmente mudam entre simular e voar de verdade:
 `drone.connection_string`, `simulation.mode`,
 `camera.source`/`camera.detection_override` e `arena.vertices_gps`. Todo o
 resto do arquivo (incluindo `camera.resolution`/`dfov_deg`, que são sempre
-da câmera real) vale para os dois perfis. Ver `CONFIG.md` para o mecanismo
-completo (`Config._apply_profile()`).
+da câmera real) vale para os dois perfis.
+
+O carregamento é feito por `Config.load()` em `mapping/mapping/config.py`,
+que lê o YAML e valida a estrutura em dataclasses (`frozen=True` — a config
+não muda depois de carregada). Se um campo obrigatório faltar, o load falha
+na hora (`KeyError`), então preencher tudo marcado com `<PREENCHER>` é
+obrigatório antes de rodar.
+
+### 7.1 `active_profile` / `profiles` — o mecanismo completo
+
+```yaml
+active_profile: "simulation"   # "simulation" | "real"
+# ... resto do arquivo ...
+profiles:
+  simulation:
+    drone: {connection_string: "..."}
+    simulation: {mode: true}
+    camera: {source: "...", detection_override: {...}}
+    arena: {vertices_gps: {...}}
+  real:
+    drone: {connection_string: "<PREENCHER>"}
+    simulation: {mode: false}
+    camera: {source: "..."}       # sem detection_override
+    arena: {vertices_gps: {...}}  # <PREENCHER>
+```
+
+Antes de existirem perfis, alternar entre simular e voar de verdade exigia
+editar manualmente ~4-5 campos espalhados pelo arquivo
+(`drone.connection_string`, `simulation.mode`, `camera.source`,
+`camera.detection_override`, `arena.vertices_gps`) — fácil de esquecer um e
+descobrir só em pleno voo. Agora `active_profile` escolhe um bloco dentro de
+`profiles:` (no fim do arquivo) que resolve tudo isso de uma vez.
+
+O merge é feito por `_apply_profile()` (topo de `config.py`), chamada logo
+depois de `yaml.safe_load()` dentro de `Config.load()`, **antes** de
+qualquer outra leitura do dict — o resto do `Config.load()` nem sabe que
+perfis existem, só vê o dict já resolvido. O mecanismo é um **overlay raso
+por seção**: para cada seção (`drone`, `simulation`, `camera`, `arena`)
+listada no perfil ativo, as chaves do perfil sobrescrevem as chaves da
+seção correspondente no topo do arquivo; chaves da seção **não**
+mencionadas no perfil (ex. `drone.type`, `camera.resolution`) continuam
+valendo do topo do arquivo, para os dois perfis. Perfil ativo desconhecido
+(erro de digitação) levanta `KeyError` na hora do load, com a lista de
+perfis disponíveis.
+
+### 7.2 `drone`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `type` | Tipo de driver do drone. **Único valor suportado hoje é `"mavros"`** — o nectar-sdk instalado não tem `"mavlink"` (código antigo que tentava isso foi removido). `Inicialize` aborta a missão se vier qualquer outro valor. | `states/core/inicialize.py` |
+| `connection_string` | *(agora vem de `profiles.<active_profile>.drone.connection_string`, não é mais editado direto aqui — ver 7.1)* String de conexão MAVROS/MAVLink com o piloto automático (SITL, companion computer, etc.), ex. `tcp:127.0.0.1:5760` para SITL local. Passada direto pro `MavrosConfig` do SDK. | `states/core/inicialize.py` → `nectar.control.MavrosConfig` |
+| `pose_source` | `"gps"` ou `"vision"`. Define se o SDK usa `PoseSource.GPS` (posição do GPS/EKF do piloto automático) ou `PoseSource.VISION` (sistema de posicionamento visual local, ex. motion capture/VIO). O regulamento fornece coordenadas GPS dos vértices da arena, então o padrão é `"gps"`. Também afeta `drone.heading`: no modo `vision` essa propriedade lança `SensorNotAvailableError`, por isso `CaptureWaypoint` lê o heading com try/except (`_safe_heading`). | `states/core/inicialize.py`, `states/mission/capture_waypoint.py` |
+| `start_driver` | Se `true`, o próprio SDK sobe o processo do driver MAVROS. Se `false`, assume que o MAVROS já está rodando externamente (ex. já iniciado por um launch file separado ou pela simulação). | `states/core/inicialize.py` |
+
+### 7.3 `simulation`
+
+*(o campo `mode` agora vem de `profiles.<active_profile>.simulation.mode` —
+o bloco `simulation:` fixo no topo do arquivo não existe mais, só o
+resultado já resolvido depois do merge de perfil.)*
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `mode` | Carregado em `Config.sim_mode`, mas **atualmente não é consumido por nenhum código do pacote** — nenhum estado ou utilitário lê esse campo hoje. Existe como metadado informativo (ex. pra futura lógica de "se `sim_mode`, pular alguma checagem de hardware"), mas não muda o comportamento da missão no estado atual do código. Não gaste tempo tentando descobrir o efeito dele — não tem, ainda. | Só `config.py` (carrega e guarda o valor) |
+
+### 7.4 `takeoff`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `altitude` | Altitude de decolagem **e também** a altitude de varredura durante toda a missão (a câmera aponta pra baixo o tempo todo, então não há uma altitude "de cruzeiro" separada). É o `h` da conta de `footprint_x`/`footprint_y` (ver seção 3) — mudar esse valor recalcula a grade de cobertura inteira sozinho. Também usado literalmente na chamada `drone.takeoff(altitude)` e na projeção pixel→GPS (assume que o drone está sempre a essa altura ao fotografar). | `states/core/takeoff.py`, `states/mission/plan_coverage.py`, `states/mission/capture_waypoint.py`, `states/mission/detect_bases.py`, `states/mission/publish_results.py` |
+
+### 7.5 `land`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `mode` | `"LAND"` pousa no lugar onde está; `"RTL"` (Return To Launch) volta pro ponto de decolagem antes de pousar. Só esses dois valores são aceitos (`LandingMode` enum) — qualquer outro valor quebra o `Config.load()`. | `states/core/land.py` |
+
+### 7.6 `camera`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `source` | *(agora vem de `profiles.<active_profile>.camera.source`, não é mais editado direto aqui — ver 7.1)* De onde o `ImageHandler` do nectar-sdk lê os frames: nome de driver conhecido (`"c920"`, `"webcam"`), tópico ROS de imagem, ou path de arquivo de vídeo. Passado direto como `image_source` na construção da câmera dentro de `CaptureWaypoint`. Se for `"c920"`, `CaptureWaypoint` também monta um `C920Config` (ver `c920_fallback_device_index` abaixo) — sem isso o driver usaria o profile padrão do SDK (1280×720), não `resolution` abaixo. | `states/mission/capture_waypoint.py` |
+| `resolution` | `[largura, altura]` em pixels da imagem capturada. Entra em **toda** conta de FOV vertical, footprint (pegada no chão), GSD (resolução espacial) e área esperada da base em pixels — é um dos parâmetros centrais de `camera_footprint()`. Se a câmera real capturar em resolução diferente da configurada, a grade de cobertura e a detecção ficam erradas (GSD errado). Com `source: "c920"`, precisa ser exatamente `[640,480]`, `[1280,720]` ou `[1920,1080]` — os 3 profiles fixos que o driver `C920Cam` do nectar-sdk suporta (`_c920_profile_for()` levanta `ValueError` em `CaptureWaypoint` se não bater com nenhum). | `utils/coverage.py`, `utils/geo_projection.py`, `states/mission/plan_coverage.py`, `states/mission/detect_bases.py`, `states/mission/capture_waypoint.py::_c920_profile_for` |
+| `c920_fallback_device_index` | Só lido se `source: "c920"`. `C920Cam` detecta o dispositivo `/dev/videoN` da C920 sozinho via `v4l2-ctl` (procura pelo nome do modelo); esse índice só é usado como último recurso se essa auto-detecção falhar. `0` cobre a maioria dos casos com uma única câmera USB conectada — só mexer se o log indicar que a auto-detecção falhou e a câmera errada (ou nenhuma) foi aberta. | `states/mission/capture_waypoint.py`, `nectar.vision.camera.drivers.c920_cam.C920Cam` |
+| `dfov_deg` | FOV **diagonal** da câmera, em graus, tirado do datasheet do fabricante — para a C920s, o datasheet oficial da Logitech diz explicitamente "campo de visão diagonal fixo de 78°" (não horizontal, apesar de ser fácil de ler errado assim). `Config.load()` deriva `CameraConfig.hfov_deg` automaticamente a partir deste valor + `resolution`, via `hfov_from_dfov()` (mesma lógica de tangente proporcional usada entre HFOV e VFOV). O `hfov_deg` derivado é o parâmetro central de `camera_footprint()` — usado pra achar o FOV vertical e a pegada em metros. Errar esse valor (ou colocar o número do datasheet direto como se fosse horizontal, como aconteceu antes dessa correção) desalinha toda a grade de voo (waypoints cobrindo a área errada) e o GSD usado na detecção. Se trocar de câmera, usar o valor de FOV diagonal do datasheet dela aqui — nunca um FOV horizontal já calculado por terceiros sem confirmar que é mesmo horizontal. | `config.py::Config.load`, `utils/coverage.py::hfov_from_dfov`, `utils/coverage.py`, `utils/geo_projection.py` |
+| `detection_override` | *(agora vem de `profiles.<active_profile>.camera.detection_override` — presente só no perfil `simulation`, omitido inteiramente no perfil `real`)* Resolução/FOV diagonal da câmera que está **de fato** produzindo as fotos analisadas por `DetectBases`, quando difere da câmera real descrita por `resolution`/`dfov_deg` acima — ex. o sensor bem mais largo do `gimbal_small_3d` simulado no Gazebo. Usado só pro cálculo de GSD/área esperada na detecção; `plan_coverage.py`/`compute_grid()` nunca leem isto, só os valores reais de `camera.resolution`/`dfov_deg`. | `config.py::Config.load`, `states/mission/detect_bases.py` |
+| `mount.forward_m` / `right_m` / `up_m` | Offset físico de montagem da câmera em relação ao centro do drone, em metros (frente/direita/cima). **Agora aplicados de fato** (antes eram só carregados na config e nunca consumidos — bug de config morto, corrigido): `forward_m`/`right_m` deslocam a origem da projeção em `pixel_to_local()` (rotacionados só pelo heading do drone, não pelo `yaw_offset_deg` do sensor); `up_m` soma à altitude usada em `compute_gsd()` dentro de `detect_bases.py` (câmera montada acima do ponto de referência de altitude do drone). Deixar em `0.0` continua seguro/neutro se a câmera estiver no centro do drone. | `utils/geo_projection.py::pixel_to_local`, `states/mission/detect_bases.py` |
+| `mount.yaw_offset_deg` | **Esse sim é usado — e por dois lugares diferentes, não só pela detecção.** Corrige desalinhamento de rotação entre a câmera e a frente do drone. A convenção padrão é "eixo largo da imagem (1920px) = eixo X/frente do drone" quando `yaw_offset_deg=0`. **Neste projeto o valor é `-90.0`**, porque a C920 vai montada na frente do drone olhando reto pro chão sem giro no eixo da lente (mesma orientação de quando fica em cima de um monitor de PC, só inclinada 90° pra baixo) — isso gira o eixo largo do sensor pra alinhar com a direita/esquerda do drone em vez da frente/trás, e o sinal `-90` (não `+90`) foi confirmado testando que o topo da imagem corresponde à frente do drone (ver seção 3.5 para a dedução completa). Esse campo entra tanto em `pixel_to_local()` (projeta onde uma base detectada está, depois do voo) quanto em `compute_grid()` (decide quantas posições de voo cabem em cada eixo da arena, antes do voo) — os dois precisam do mesmo valor pra a missão fazer sentido fisicamente; só múltiplos de 90° (0/90/180/270) são suportados por `compute_grid()`, porque a pegada retangular só fica alinhada aos eixos da arena nesses ângulos. | `utils/geo_projection.py::pixel_to_local`, `utils/coverage.py::compute_grid`, `states/mission/detect_bases.py`, `states/mission/plan_coverage.py` |
+
+### 7.7 `calibration`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `camera_matrix_path` / `distortion_path` | Paths para arquivos `.txt` (mesmo formato salvo por `Calibration.save_matrices()` do nectar-sdk: linhas separadas por vírgula) com a matriz intrínseca 3×3 e os coeficientes de distorção. **Se deixados em branco** (`""`), `undistort()` cai automaticamente para `nectar.vision.camera.calibration.Calibration.load_calibration()` — a calibração já salva do SDK em `nectar-sdk/.../calibration/camera_matrix.txt`. Só preencher se quiser usar uma calibração alternativa àquela do SDK. Ver seção 12 para como gerar essa calibração. | `utils/image_pipeline.py::undistort` |
+| `color_correction.enabled` | Liga/desliga a correção de cor (`correct_color()`) inteira no pipeline de `DetectBases`. Se `false`, as fotos vão direto do `undistort()` pro detector, sem white balance nem gamma. | `states/mission/detect_bases.py` |
+| `color_correction.gray_world_white_balance` | Se `true`, aplica a técnica "gray world" (assume que a cor média da cena deveria ser cinza neutro, e escala cada canal BGR pra corrigir tons de iluminação — ex. luz amarelada de LED). Ajuda o threshold de branco (`detection.white_threshold`) a ser mais consistente entre condições de luz diferentes. | `utils/image_pipeline.py::correct_color` |
+| `color_correction.gamma` | Fator de correção de gama aplicado depois do white balance. `1.0` = sem alteração. Só mexer se as fotos ficarem sistematicamente muito escuras ou estouradas mesmo depois do white balance — não é o primeiro parâmetro a ajustar. | `utils/image_pipeline.py::correct_gamma` |
+
+### 7.8 `arena`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `size_x_m` / `size_y_m` | Tamanho da arena em metros nos eixos X (frente, largura da câmera) e Y (direita, altura da câmera). Alimenta diretamente `compute_grid()` — é o `D` da busca iterativa de posições (`_axis_positions()`) que decide quantas linhas/colunas de waypoints são necessárias. Mudar o tamanho da arena recalcula a grade inteira sozinho. Também usado por `LocalToGpsTransform` (os 4 cantos locais são `±size_x/2, ±size_y/2`) e pelo mosaico opcional. | `utils/coverage.py`, `utils/geo_projection.py`, `utils/mosaic.py` |
+| `vertices_gps` | *(agora vem de `profiles.<active_profile>.arena.vertices_gps`, não é mais editado direto aqui — ver 7.1)* As 4 coordenadas GPS (lat/lon) dos cantos da arena, **nomeadas A/B/C/D exatamente como os organizadores vão informar no dia da prova** — relativas à frente/direita do drone no momento da decolagem (não é ordem de bússola N/S/L/O, porque o código não assume pra onde o drone aponta ao decolar): `A`=frente-esquerda, `B`=frente-direita, `C`=trás-esquerda, `D`=trás-direita. Basta preencher cada letra com o que for informado, sem precisar descobrir a ordem sozinho. Usado só na etapa final do pipeline (`LocalToGpsTransform`), ajustando por mínimos quadrados uma transformação afim (rotação+escala+translação) entre esses 4 pontos GPS e os 4 cantos locais correspondentes — é o que converte a posição local (metros) de cada base detectada pra latitude/longitude publicada. **Preencher a letra errada faz todas as coordenadas de saída ficarem erradas**, mesmo que a detecção em si esteja correta — conferir com cuidado antes da missão é crítico. | `states/mission/publish_results.py`, `utils/geo_projection.py::LocalToGpsTransform` |
+
+### 7.9 `mission`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `overlap_margin_m` | Folga extra de sobreposição além do mínimo geométrico necessário para cobrir a arena — o único "ajuste fino" de cobertura que sobra pro usuário. Mais margem = mais waypoints (mais tempo de voo), mas mais robustez contra erro de GPS/posicionamento (o drone raramente para exatamente no ponto pedido). Entra em `_axis_positions()` como a distância extra que cada waypoint de borda precisa alcançar além de `D/2`. | `utils/coverage.py::compute_grid` |
+| `photos_per_waypoint` | Quantas fotos são tiradas em cada waypoint antes de seguir pro próximo. `CaptureWaypoint` tira todas e guarda só a mais nítida (`sharpness_score()` mais alto, via variância do Laplaciano) — compensa o drone estar levemente instável no momento da captura. Mais fotos = mais chance de pegar uma nítida, mas mais tempo parado por waypoint. | `states/mission/capture_waypoint.py` |
+| `stabilize_seconds` | Tempo de espera parado em cada waypoint antes de começar a tirar fotos, dando tempo do drone amortecer oscilação residual do movimento. Curto demais gera fotos borradas (drone ainda balançando); longo demais aumenta o tempo total de missão. | `states/mission/capture_waypoint.py` |
+| `move_precision_m` | Precisão de chegada exigida em `drone.move_to()` — o quão perto do waypoint alvo o drone precisa estar para considerar o movimento concluído. Passado direto pro SDK. | `states/mission/capture_waypoint.py` |
+| `move_timeout_s` | Timeout máximo, em segundos, esperando o drone chegar em cada waypoint antes de desistir do movimento. Passado direto pro SDK. | `states/mission/capture_waypoint.py` |
+
+### 7.10 `detection`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `method` | `"opencv"` (padrão) usa threshold+contorno (`find_base_squares()`, sem dependências extras); `"ia"` usa o modelo YOLO treinado (`find_base_squares_ai()`), que classifica forma (hexágono/estrela/triângulo) e número (3/4/5) diretamente pelas classes do modelo em vez de casar contornos contra templates. Requer `pip install -r requirements.txt` (`mapping/requirements.txt`, só `ultralytics` — a única dependência do pacote não resolvível via `rosdep`/`package.xml`; só é importado se `method: "ia"` for escolhido, o caminho OpenCV nunca precisa dessa dependência). | `states/mission/detect_bases.py` |
+| `model_path` | Path pro arquivo `.pt` do modelo YOLO. Deixar em branco (`""`) usa `mapping/models/base_detector.pt` do próprio pacote (`default_model_path()`). Só é lido se `method: "ia"`. | `states/mission/detect_bases.py`, `utils/ai_detector.py::load_model` |
+| `ai_confidence` | Confiança mínima (0–1) que o YOLO precisa ter numa detecção pra ela ser considerada. Só é lido se `method: "ia"`. Baixo demais aceita falsos positivos; alto demais perde bases sob ângulo/iluminação ruim. | `utils/ai_detector.py::find_base_squares_ai` |
+| `base_size_m` | Tamanho físico do lado do quadrado da base, em metros (80×80 cm conforme regulamento). Combinado com o GSD (resolução espacial, calculada a partir de `camera`/`takeoff.altitude`), dá a área esperada em pixels de uma base na foto (`expected_side_px = base_size_m / gsd`) — é o alvo que `find_base_squares()` procura entre os contornos candidatos. Só usado se `method: "opencv"` (o YOLO não precisa de área esperada). | `states/mission/detect_bases.py`, `utils/base_detector.py` |
+| `area_tolerance` | Tolerância relativa (fração, ex. `0.35` = ±35%) em torno da área esperada da base em pixels. Contornos com área fora de `[esperada×(1-tol), esperada×(1+tol)]` são descartados como candidatos. Se a altitude real de voo variar bastante do configurado (drone não mantém altitude exata), aumentar essa tolerância evita perder detecções válidas por causa de área ligeiramente diferente do esperado. Só usado se `method: "opencv"`. | `utils/base_detector.py::find_base_squares` |
+| `white_threshold` | Limiar de brilho (0–255) em `cv2.threshold` que separa "branco da base" do resto da cena, antes de procurar contornos. **É o parâmetro mais provável de precisar de ajuste em campo** — depende do brilho real do piso e da base sob a iluminação do local (ver seção 12: tirar foto de teste e ajustar visualmente antes da missão oficial). Threshold baixo demais pega ruído/reflexos como "branco"; alto demais perde a base sob luz fraca. Só usado se `method: "opencv"`. | `utils/base_detector.py::find_base_squares` |
+| `dedup_radius_m` | Raio, em metros (no referencial local da arena), usado para agrupar detecções da mesma base física vistas em fotos de waypoints diferentes (a grade tem sobreposição de propósito). Detecções mais próximas que esse raio são tratadas como a mesma base. Raio pequeno demais pode duplicar a mesma base em dois "clusters"; grande demais pode fundir duas bases reais próximas numa só. Usado por ambos os métodos. Dentro de cada cluster, a posição final não é mais uma média simples: `deduplicate()` pondera cada detecção por `centrality_weight()` (1.0 no centro da imagem, caindo até um piso de 0.1 nos cantos), porque `pixel_to_local()` assume câmera perfeitamente nadir e o erro dessa suposição cresce com a distância ao centro óptico. | `utils/base_detector.py::deduplicate`, `utils/base_detector.py::centrality_weight` |
+| `templates_dir` | Path pra pasta com as imagens de referência das formas das bases (hexágono/triângulo/estrela etc.), usadas só por `match_shape()` como rótulo informativo opcional no relatório final (não bloqueia nem influencia a detecção/pontuação). Deixar em branco (`""`) usa `Simulation/Base_Images/` do próprio pacote (`default_templates_dir()`). Só usado se `method: "opencv"` — no `"ia"`, o rótulo já sai direto das classes do modelo. | `states/mission/detect_bases.py`, `utils/base_detector.py::load_shape_templates` |
+| `max_bases` | Número máximo de bases a manter depois da deduplicação (o regulamento define até 5 bases na arena). Os clusters de detecção são ranqueados por quantidade de fotos que confirmaram cada um (mais fotos = mais confiança) e só os `max_bases` primeiros são mantidos — funciona como um corte de "top-N mais confiáveis", descartando ruído/falsos positivos com pouca confirmação. | `utils/base_detector.py::deduplicate` |
+| `tilt_compensation` | Se `true`, lê roll/pitch reais do MAVROS por foto (`/mavros/local_position/pose`) e `pixel_to_local()` faz interseção raio-solo de verdade em vez de assumir câmera nadir. **Desligado por padrão** — o sinal de roll/pitch não foi validado empiricamente ainda (ver seção 3.5-bis antes de ligar pra uma missão de verdade). | `states/mission/capture_waypoint.py`, `utils/geo_projection.py::pixel_to_local` |
+| `retry_on_shortfall` | Se `true` (padrão) e a primeira passada encontrar menos que `max_bases`, `DetectBases` tenta duas coisas a mais nas MESMAS fotos já capturadas/corrigidas (sem recapturar, sem costurar mosaico — a detecção nunca roda no mosaico, ver seção 5): (1) `_retry_shortfall()` — detecta de novo com `area_tolerance`/`white_threshold`/`ai_confidence` relaxados por deltas fixos no código; (2) `_recover_edge_cut_bases()` — pra bases cortadas demais em toda foto pra virar candidata em (1), agrupa contornos que tocam a borda entre fotos, mescla com `merge_base_crop()` e só aceita se a composição passar na validação normal e rígida (evita falso-positivo de reflexo/brilho na borda). Bases já encontradas na primeira passada nunca são reconsideradas ou sobrescritas — candidatos das retentativas perto de uma base já achada (dentro de `dedup_radius_m`) são descartados. Seguro deixar ligado (`true`); só desligar se quiser reprodutibilidade estrita entre execuções. | `states/mission/detect_bases.py::_retry_shortfall`, `states/mission/detect_bases.py::_recover_edge_cut_bases` |
+
+### 7.11 `output`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `directory` | Pasta onde as fotos de comprovação e o relatório JSON são salvos. Deixar em branco (`""`) usa `~/.ros/mapping_results`. | `states/mission/publish_results.py` |
+| `publish_topic` | Tópico ROS onde cada base encontrada é publicada como mensagem `PhotoInfo` (`nectar_interfaces`) — reaproveitada em vez de criar uma mensagem nova. | `states/mission/publish_results.py` |
+| `save_report` | Se `true`, além de publicar no tópico ROS, salva um relatório em JSON em disco (dentro de `output.directory`) com o resumo de todas as bases encontradas — útil pra conferência pós-missão sem precisar re-escutar o tópico. | `states/mission/publish_results.py` |
+
+### 7.12 `mosaic`
+
+| Campo | Para que serve | Onde é usado |
+|---|---|---|
+| `enabled` | Liga/desliga a construção do ortomosaico da arena (`utils/mosaic.py`) — projeta cada foto no plano do chão usando a pose de captura já conhecida (não é stitching por casamento de features, a geometria já é conhecida de antemão). É **opcional e não bloqueia o pipeline principal** — serve só pra debug/relatório visual; a detecção de bases roda nas fotos individuais, nunca no mosaico. Deixar `false` não afeta a pontuação da missão de forma alguma. | (consumido pelo estado/script que decide chamar `build_mosaic()` — não faz parte do fluxo obrigatório de `DetectBases`) |
+
+### 7.13 Resumo rápido: "o que eu realmente preciso preencher antes de voar"
+
+Da lista inteira acima, os campos que **exigem preenchimento manual** antes de
+rodar em campo/simulação real (todo o resto tem default seguro ou é
+recalculado automaticamente):
+
+0. `active_profile: "real"` no topo do arquivo antes de qualquer voo em campo
+   (fica `"simulation"` para SITL/Gazebo) — troca `drone.connection_string`,
+   `simulation.mode`, `camera.source`/`detection_override` e
+   `arena.vertices_gps` de uma vez só, ver 7.1 acima.
+1. `profiles.real.drone.connection_string` — string de conexão real do MAVROS (o perfil `simulation` já vem preenchido para SITL local).
+2. `profiles.real.arena.vertices_gps` — os 4 cantos A/B/C/D, com o que os organizadores informarem no dia (o perfil `simulation` já vem preenchido para o smoke test em SITL).
+3. `detection.white_threshold` (e possivelmente `area_tolerance`) — calibrado visualmente sob a iluminação real do local.
+4. `camera.mount.yaw_offset_deg` — já preenchido como `-90.0` pra montagem física atual (câmera na frente do drone, olhando reto pro chão, sem giro no eixo da lente). **Se a montagem física mudar** (câmera trocada de lugar, girada, etc.), esse valor precisa ser reconfirmado — ver seção 3.5 para o procedimento de verificação (checar no vídeo ao vivo se o topo da imagem corresponde à frente ou à traseira do drone).
+5. Opcional: `calibration.camera_matrix_path`/`distortion_path`, só se não quiser usar a calibração já salva no nectar-sdk.
 
 ## 8. Convenção de eixos e sistemas de coordenadas
 
