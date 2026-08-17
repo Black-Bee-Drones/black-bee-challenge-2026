@@ -22,7 +22,8 @@ from precision_landing.constants import (
     CONTROLER_D_Z,
     CONTROLER_OUTPUT_LIMITS_Z,
     CONTROLER_INTEGRAL_LIMITS_Z,
-    PRECISE_DOWN_TOLERANCE_PX
+    PRECISE_DOWN_TOLERANCE_PX,
+    MAX_ALTITUDE
 )
 
 class Precision_landing(State):
@@ -81,6 +82,7 @@ class Precision_landing(State):
             while (self.node.get_clock.now() - start_time) < precision_landing_time:
 
                 frame = camera.take_photo()
+                TARGET_FOUND = False
              
                 for shape in frame.filter_by_class([blackboard["aruco_shape"]]):
                     for number in frame.filter_by_class([blackboard["aruco_id"]]):
@@ -89,7 +91,9 @@ class Precision_landing(State):
                         abs(shape.center[0] - number.center[0]) <= shape.width/2 
                         and 
                         abs(shape.center[1] - number.center[1]) <= shape.heigth/2):
-             
+
+                            TARGET_FOUND = True
+                            yasmin.YASMIN_LOG_INFO("GOING TO TARGET...")
                             target_x = shape.center[0]
                             target_y = shape.center[1]
              
@@ -110,12 +114,25 @@ class Precision_landing(State):
                                 vz = output_z if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
                                 vyaw = 0.0,
                             )
-                            """
-                            if(shape.width >= TAMANHO_DE_LOSE):
-                                drone.land()
-                                return SUCEED
-                            
-                            """
+
+                if not TARGET_FOUND:
+
+                    ROGUE_HEIGHT = drone.get_altitude()
+
+                    if ROGUE_HEIGHT <= 0.7:
+                        #TAKES THE LAND WHEN DETECTION IS LOST
+                        yasmin.YASMIN_LOG_INFO("TAKING LAST LAND")
+                        drone.land()
+                        return SUCCEED
+
+                    elif ROGUE_HEIGHT < MAX_ALTITUDE -0.7:
+                        #TRY TO GO UP AFTER DONT FINDING THE TARGET
+                        yasmin.YASMIN_LOG_INFO("TARGET LOST :( GOING UP")
+                        drone.setmove_velocity(vz = 0.3)
+                    else:
+                        #NÃO SEI OQUE FAZER AQUI
+                        drone.move_velocity(vx=0,vy=0,vz=0)
+
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"PRECISION_LANDING Failed: {e}")
             return ABORT
