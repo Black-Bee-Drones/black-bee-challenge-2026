@@ -967,36 +967,69 @@ atualizar o agregado.
 ## 12. Como calibrar a câmera
 
 A calibração intrínseca (matriz da câmera + coeficientes de distorção) **não
-é feita por este pacote** — ele reusa
-`nectar.vision.camera.calibration.Calibration`, já pronta no `nectar-sdk`
-(`nectar/nectar/vision/camera/calibration/calibration.py`), que implementa o
-método padrão de tabuleiro de xadrez (chessboard) do OpenCV:
+é feita por este pacote** — ele reusa o node `CameraCalibration`, já pronto
+no `nectar-sdk`
+(`nectar/nectar/vision/camera/calibration/calibration.py`), que é um node
+ROS2 executável de verdade, não uma classe Python pra importar/instanciar
+manualmente. É só rodar, apontar a câmera pro tabuleiro e mexer o tabuleiro
+na frente dela — o node captura e calcula sozinho.
 
-1. Imprimir/exibir um tabuleiro de xadrez com **9×7 cantos internos**
-   (padrão default da classe; dá pra mudar via
-   `Calibration(chessboard_size=(w, h))`).
-2. Rodar o node de calibração do SDK, que abre a câmera (`webcam` por
-   padrão) e captura fotos do tabuleiro a cada 30 frames:
-   ```python
-   from nectar.vision.camera.calibration.calibration import Calibration
-   import rclpy
-   rclpy.init()
-   node = Calibration(chessboard_size=(9, 7))
-   node.run_photos(num_photos=50)   # move o tabuleiro em ângulos/distâncias variadas durante a captura
-   rclpy.spin(node)
+1. **Ter um alvo de calibração impresso ou numa tela.** Por padrão o node
+   espera um tabuleiro **ChArUco** (`pattern` default `"charuco"`, 5×7
+   quadrados). Se não tiver um ChArUco gerado, é mais simples trocar pro
+   modo **chessboard** — um tabuleiro de xadrez comum, com **9×7 cantos
+   internos** (10×8 quadrados). Gerar o PNG pronto pra imprimir com o script
+   `generate_chessboard.py` na raiz do repo:
+   ```bash
+   python3 generate_chessboard.py   # gera chessboard_a4.png, já dimensionado pra A4 a 300 DPI
    ```
-   Mover o tabuleiro (ângulo, distância, posição no quadro) entre as fotos é
-   importante — `cv2.calibrateCamera` precisa de variedade de poses pra
-   estimar a distorção corretamente.
-3. Ao capturar as `num_photos` fotos, a calibração roda automaticamente
-   (`calibrate()` → `cv2.calibrateCamera`) e salva os resultados em
-   `nectar-sdk/nectar/nectar/vision/camera/calibration/camera_matrix.txt` e
-   `camera_distortion.txt`.
+   Imprimir em **100% de escala** (nunca "ajustar à página"), medir um
+   quadrado com régua depois de impresso (o tamanho calculado aparece
+   escrito no rodapé da própria imagem — a impressora pode arredondar um
+   pouco diferente) e usar esse valor real em metros no comando de
+   calibração via `-p square_length:=<metros>` (ex. `0.019` pra 19mm).
+   `--help` lista outras opções (`--page letter`, `--cols`/`--rows`,
+   `--square-mm` fixo, `--dpi`, `--output`). Depois de imprimir, colar numa
+   superfície rígida e plana (papelão, prancheta) — se o tabuleiro dobrar
+   durante a captura, a calibração sai errada.
+2. **Rodar o node**, com o workspace já buildado e "sourced"
+   (`source install/setup.bash`), com a câmera conectada:
+   ```bash
+   ros2 run nectar calibration.py --ros-args \
+     -p pattern:=chessboard \
+     -p image_source:=c920 \
+     -p mode:=auto \
+     -p target_views:=20
+   ```
+   - `pattern:=chessboard` usa o tabuleiro de xadrez comum do passo 1 (omitir
+     esse parâmetro usa ChArUco).
+   - `image_source:=c920` abre a Logitech C920 pelo driver do SDK (trocar
+     por `webcam` se for usar uma webcam genérica pelo índice
+     `device_index`, default `0`).
+   - `mode:=auto` (default) captura sozinho sempre que o tabuleiro aparece
+     bem enquadrado, sem precisar apertar tecla nenhuma — só mover o
+     tabuleiro devagar na frente da câmera (ângulos e distâncias variadas)
+     até bater `target_views` capturas (default 20). Se preferir controlar
+     manualmente quando cada foto é aceita, usar `mode:=manual`: abre uma
+     janela de preview onde `c` captura, `u` desfaz a última, `r` reinicia,
+     Enter finaliza e calibra, `q` aborta.
+   Uma janela de preview mostra o tabuleiro detectado (verde = bom pra
+   capturar) e o contador de views — se não houver GUI disponível (ex. SSH
+   sem X forwarding), o node cai sozinho pro modo automático sem preview.
+3. Ao atingir `target_views` capturas (ou apertar Enter em modo manual), a
+   calibração roda sozinha (`cv2.calibrateCamera`) e o node imprime o erro
+   de reprojeção no log — **abaixo de 1.0 px é bom**; acima disso, vale
+   repetir a captura cobrindo mais os cantos/bordas da imagem e ângulos mais
+   inclinados. Os resultados são salvos automaticamente em
+   `camera_matrix.txt` e `camera_distortion.txt`, na pasta de instalação do
+   próprio módulo de calibração do `nectar-sdk` (mesma pasta que
+   `load_calibration()` lê por padrão — não precisa mover nada).
 4. No `mapping/config.yml`, deixar `calibration.camera_matrix_path` e
    `distortion_path` em branco — `load_calibration()` (usado por
    `undistort()` em `utils/image_pipeline.py`) cai automaticamente para essa
    calibração salva do SDK. Só preencher esses paths se quiser apontar para
-   uma calibração alternativa (ex.: arquivo gerado manualmente).
+   uma calibração alternativa (ex.: arquivo gerado manualmente, ou salvo com
+   `-p output_dir:=/algum/path`).
 
 ### O que mais precisa de ajuste visual antes da missão oficial
 
