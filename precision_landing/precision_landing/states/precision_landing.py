@@ -55,6 +55,7 @@ class Precision_landing(State):
         )
 
     def PIXEL_POR_METRO (self, altitude_m: float, fov_deg: float, width: float):
+            #calcular FOV, muito importante para detecção correta
             half_fov_rad = math.radians(fov_deg/2.0)
             return width / (2.0 * altitude_m * math.tan(half_fov_rad))
 
@@ -73,25 +74,30 @@ class Precision_landing(State):
              
             camera: ImageHandler = blackboard["camera"]
             camera.open()
-            frame = camera.take_photo()
              
             start_time = self.node.get_clock().now() #gets the start time of the state
             precision_landing_time = Duration(seconds=PRECISION_LANDING_TIME) #gets the max time in seconds before TIMEOUT
              
-            while (self.node.get_clock - start_time) < precision_landing_time:
+            while (self.node.get_clock.now() - start_time) < precision_landing_time:
+
+                frame = camera.take_photo()
              
                 for shape in frame.filter_by_class([blackboard["aruco_shape"]]):
                     for number in frame.filter_by_class([blackboard["aruco_id"]]):
-                        if abs(shape.center[0] - number.center[0]) <= shape.width/2:
+
+                        if(
+                        abs(shape.center[0] - number.center[0]) <= shape.width/2 
+                        and 
+                        abs(shape.center[1] - number.center[1]) <= shape.heigth/2):
              
                             target_x = shape.center[0]
                             target_y = shape.center[1]
              
-                            erro_x_pixel = [target_x - IMAGE_WIDTH/2]
-                            erro_y_pixel = [target_y - IMAGE_HEIGHT/2]
+                            erro_x_pixel = target_x - IMAGE_WIDTH/2
+                            erro_y_pixel = target_y - IMAGE_HEIGHT/2
              
-                            erro_x = erro_x_pixel / self.ppm(drone.get_altitude(), 86, IMAGE_WIDTH/2)
-                            erro_y = erro_y_pixel / self.ppm(drone.get_altitude(), 47, IMAGE_HEIGHT/2)
+                            erro_x = erro_x_pixel / self.PIXEL_POR_METRO(drone.get_altitude(), 86, IMAGE_WIDTH/2)
+                            erro_y = erro_y_pixel / self.PIXEL_POR_METRO(drone.get_altitude(), 47, IMAGE_HEIGHT/2)
                             erro_z = drone.get_altitude() - 0.7                        
              
                             output_x = self.pid_x.update(erro_x)
@@ -101,9 +107,15 @@ class Precision_landing(State):
                             drone.move_velocity(
                                 vx = output_x,
                                 vy = output_y,
-                                vz = output_z if (erro_x_pixel <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
+                                vz = output_z if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
                                 vyaw = 0.0,
                             )
+                            """
+                            if(shape.width >= TAMANHO_DE_LOSE):
+                                drone.land()
+                                return SUCEED
+                            
+                            """
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"PRECISION_LANDING Failed: {e}")
             return ABORT
