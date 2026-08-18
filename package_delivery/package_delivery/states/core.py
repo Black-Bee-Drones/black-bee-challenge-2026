@@ -129,8 +129,6 @@ class Initialize(State):
             blackboard["pid_cy"] = pid_cy
             blackboard["pid_cz"] = pid_cz
             yasmin.YASMIN_LOG_INFO(f'Successful start PID (x, y and z)!')
-
-            return SUCCEED
         
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
@@ -140,10 +138,11 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'PID failed: {e}')
             return ABORT
 
+        return SUCCEED
+
 
     def photo_callback(self, image : np.ndarray):
         return image
-        # Implement later
 
 
 class Takeoff(State):
