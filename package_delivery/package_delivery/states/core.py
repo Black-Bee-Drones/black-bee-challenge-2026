@@ -45,7 +45,7 @@ class Initialize(State):
                 yasmin.YASMIN_LOG_ERROR('Invalid drone_type.')
                 return ABORT
             if self.config.sim_mode:
-                drone = DroneFactory.create(self.config.drone_type, SITL_GAZEBO_CONFIG)
+                drone = DroneFactory.create("mavros", SITL_GAZEBO_CONFIG)
             else:
                 drone = DroneFactory.create(self.config.drone_type, drone_config)
             
@@ -63,23 +63,25 @@ class Initialize(State):
         # Camera (Image Handler)
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Camera...')
-            if self.config.image_source == 'webcam':
-                cam_config = OpenCVConfig(
-                    width=self.config.image_width, 
-                    height=self.config.image_width
-                )
-            elif self.config.image_source == 'ros':
+            if self.config.sim_mode:
+                image_source = self.config.sim_image_source
                 cam_config = ROSConfig(
                     topic=self.config.sim_image_source, 
                     compressed=self.config.sim_image_compressed,
                 )
+            else:
+                image_source = self.config.image_source
+                cam_config = OpenCVConfig(
+                    width=self.config.image_width, 
+                    height=self.config.image_width
+                )
             
             camera = ImageHandler(
-                image_source=self.config.image_source,
+                image_source=image_source,
                 config=cam_config,
-                image_processing_callback=self.photo_callba
+                image_processing_callback=self.photo_callback
             )
-            
+
             yasmin.YASMIN_LOG_INFO('Open camera...')
             camera.open()
 
@@ -127,6 +129,8 @@ class Initialize(State):
             blackboard["pid_cy"] = pid_cy
             blackboard["pid_cz"] = pid_cz
             yasmin.YASMIN_LOG_INFO(f'Successful start PID (x, y and z)!')
+
+            return SUCCEED
         
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
@@ -136,10 +140,10 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'PID failed: {e}')
             return ABORT
 
+
     def photo_callback(self, image : np.ndarray):
-        pass
+        return image
         # Implement later
-        # return image
 
 
 class Takeoff(State):

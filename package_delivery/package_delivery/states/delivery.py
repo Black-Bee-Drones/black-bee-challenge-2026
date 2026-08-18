@@ -20,7 +20,7 @@ class Delivery(State):
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT 
-        
+
         
         pwm = (self.config.servo_closed_pwm if self.has_thePkg else self.config.servo_open_pwm)
 

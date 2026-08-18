@@ -14,8 +14,6 @@ class Config:
     camera_fov: int = 78        # degrees
     image_width: int = 640      # pixels
     image_height: int = 480     # pixels
-    
-    
 
     # Approach
     approach_timeout: int = 60                  # seconds
@@ -40,9 +38,7 @@ class Config:
     lost_tolerance: int = 5
     land_altitude: float = 1.0  # meters
     
-    # waypoints: launch and package bases; boxes
-    launch_bases: list = field(default_factory=list)
-    pkgs_bases: list = field(default_factory=list)
+    # waypoints: boxes
     delivery_boxes: list = field(default_factory=list)
     
     # Gripper Controller
