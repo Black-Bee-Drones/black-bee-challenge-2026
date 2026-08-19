@@ -80,7 +80,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
                         drone.move_to(yaw=-yaw_angle)
-                        drone.move_to(x=1.0, reference= MoveReference.BODY)
+                        drone.move_to(x=0.7, reference= MoveReference.BODY)
                         #Moves the drone a little bit closer to the aruco
                         frame = camera.take_photo()
                         bbox2, id = aruco.detect(frame.image, draw=True)
