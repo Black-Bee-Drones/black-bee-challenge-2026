@@ -1,8 +1,14 @@
 import yasmin
 import numpy as np
+import cv2
+import os
+import pathlib
+
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
+
+from datetime import datetime
 
 import nectar
 from nectar.control import (
@@ -18,6 +24,7 @@ from nectar.control import (
     PIDController,
 )
 from nectar.vision import ImageHandler, ROSConfig, OpenCVConfig
+from nectar.ai import Detector, DetectionResult
 from package_delivery.constants import Config
 
 
@@ -60,46 +67,7 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'DroneFactory failed: {e}')
             return ABORT
         
-        # Camera (Image Handler)
-        try:
-            yasmin.YASMIN_LOG_INFO('Initializing Camera...')
-            if self.config.image_source == 'webcam':
-                cam_config = OpenCVConfig(
-                    width=self.config.image_width, 
-                    height=self.config.image_width
-                )
-            elif self.config.image_source == 'ros':
-                cam_config = ROSConfig(
-                    topic=self.config.sim_image_source, 
-                    compressed=self.config.sim_image_compressed,
-                )
-            
-            camera = ImageHandler(
-                image_source=self.config.image_source,
-                config=cam_config,
-                image_processing_callback=self.photo_callba
-            )
-            
-            yasmin.YASMIN_LOG_INFO('Open camera...')
-            camera.open()
-
-            yasmin.YASMIN_LOG_INFO('Take testing photo...')
-            frame_test = camera.take_photo()
-            if frame_test is None:
-                yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
-                return ABORT
-
-            blackboard['camera'] = camera
-            yasmin.YASMIN_LOG_INFO('Successful start camera!')
-        
-        except KeyboardInterrupt:
-            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
-            return ABORT
-        
-        except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
-            return ABORT 
-        
+        # PID controller
         try:
             yasmin.YASMIN_LOG_INFO("Initializing PID Controller...")
             pid_cx = PIDController(
@@ -136,10 +104,95 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'PID failed: {e}')
             return ABORT
 
-    def photo_callback(self, image : np.ndarray):
-        pass
-        # Implement later
-        # return image
+        
+        # Camera (Image Handler)
+        try:
+            yasmin.YASMIN_LOG_INFO('Initializing Camera...')
+            if self.config.image_source == 'webcam':
+                cam_config = OpenCVConfig(
+                    width=self.config.image_width, 
+                    height=self.config.image_width
+                )
+            elif self.config.image_source == 'ros':
+                cam_config = ROSConfig(
+                    topic=self.config.sim_image_source, 
+                    compressed=self.config.sim_image_compressed,
+                )
+            
+            camera = ImageHandler(
+                image_source=self.config.image_source,
+                config=cam_config,
+                image_processing_callback=self.detector_box_callback
+            )
+            
+            yasmin.YASMIN_LOG_INFO('Open camera...')
+            camera.open()
+
+            yasmin.YASMIN_LOG_INFO('Take testing photo...')
+            frame_test = camera.take_photo()
+            if frame_test is None:
+                yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
+                return ABORT
+
+            blackboard['camera'] = camera
+            yasmin.YASMIN_LOG_INFO('Successful start camera!')
+        
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+        
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
+            return ABORT 
+                
+        # Detector - box
+        try:
+            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
+            self.detector_box = Detector(
+                model_source=self.config.box_model_source,
+                confidence_threshold=self.config.box_conf,
+            )
+
+            yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
+            self.detector_box.load()
+
+            blackboard['detector_box'] = self.detector_box
+            blackboard.set('detector_box_callback', self.detector_box_callback)
+            yasmin.YASMIN_LOG_INFO('successful start Detector(box)!')
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
+            return ABORT
+
+    def detector_box_callback(self, image : np.ndarray) -> DetectionResult:
+        start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
+        now = datetime.fromtimestamp(
+        self.node.get_clock().now().nanoseconds / 1e9)
+
+        pkg_path = pathlib.Path.home() / 'ros2_ws' / \
+            start.strftime('pkgdelivery-%Y-%m-%d_%H-%M-%S')
+        raw_path = pkg_path / 'box'
+        annotated_path = pkg_path / 'box_annotated'
+
+        raw_file = raw_path / now.strftime('raw-%Y-%m-%d_%H-%M-%S-%f.png')
+        annotated_file = annotated_path / \
+            now.strftime('annotated-%Y-%m-%d_%H-%M-%S-%f.png')
+
+        os.makedirs(pkg_path, exist_ok=True)
+        os.makedirs(raw_path, exist_ok=True)
+        os.makedirs(annotated_path, exist_ok=True)
+
+        result = self.detector_gate.detect(image)
+        result.image = image
+        result.annotated_image = self.detector_gate.draw_detections(
+            image, result)
+
+        cv2.imwrite(raw_file, result.image)
+        cv2.imwrite(annotated_file, result.annotated_image)
 
 
 class Takeoff(State):
