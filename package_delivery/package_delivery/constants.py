@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Config:
+    target_box: tuple = (2, 2)
 
     # Simulation
     sim_mode: bool = True

@@ -143,6 +143,7 @@ class Initialize(State):
 
     def photo_callback(self, image : np.ndarray):
         return image
+        # Implement later
 
 
 class Takeoff(State):
