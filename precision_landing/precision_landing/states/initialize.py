@@ -11,8 +11,10 @@ import nectar
 from nectar.control import (
     DroneFactory,
     MavrosConfig,
+    MavlinkConfig,
     PoseSource,
     SITL_GAZEBO_CONFIG,
+    MAVLINK_SITL_GAZEBO_CONFIG,
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
@@ -35,7 +37,7 @@ class Initialize(State):
 
         timestamp = self.node.get_clock().now().nanoseconds / 1e9
         now = datetime.datetime.fromtimestamp(timestamp)
-        self.photos_folder = now.strftime('bouncing-%Y-%m-%d-%H-%M')
+        self.photos_folder = now.strftime('precision_landing-%Y-%m-%d-%H-%M')
 
     def execute(self, blackboard: Blackboard):
         try:
@@ -94,22 +96,22 @@ class Initialize(State):
             return ABORT
 
     def camera_callback(self, image): #Runs everytime we call camera.take_photo()
-        try: #Prevents using the detector when we don't need
-            #os.makedirs(self.photos_folder, exist_ok=True)
+        try:
+            os.makedirs(self.photos_folder, exist_ok=True)
             
             timestamp = self.node.get_clock().now().nanoseconds
             
-            #os.makedirs(os.path.join(self.photos_folder, 'images'), exist_ok=True)
-            #raw_path = os.path.join(self.photos_folder, 'images', f'{timestamp}.png') #Saves the frames in a folder
-            #cv2.imwrite(raw_path, image)
+            os.makedirs(os.path.join(self.photos_folder, 'images'), exist_ok=True)
+            raw_path = os.path.join(self.photos_folder, 'images', f'{timestamp}.png') #Saves the frames in a folder
+            cv2.imwrite(raw_path, image)
             
             result = self.detector.detect(image) #Runs the detector on the frame
             result.image = image
             
             annotated = self.detector.draw_detections(image, result) #Annotates the frames
-            #os.makedirs(os.path.join(self.photos_folder, 'annotated'), exist_ok=True)
-            #ann_path = os.path.join(self.photos_folder, 'annotated', f'{timestamp}-annotated.png') #Saves the annotaded frames
-            #cv2.imwrite(ann_path, annotated)
+            os.makedirs(os.path.join(self.photos_folder, 'annotated'), exist_ok=True)
+            ann_path = os.path.join(self.photos_folder, 'annotated', f'{timestamp}-annotated.png') #Saves the annotaded frames
+            cv2.imwrite(ann_path, annotated)
             #NOTE: We will only use this folders for debugging purposes
 
             return result
