@@ -61,6 +61,9 @@ class Precision_landing(State):
             half_fov_rad = math.radians(fov_deg/2.0)
             return width / (2.0 * altitude_m * math.tan(half_fov_rad))
 
+    def REGAIN_TARGET(self):
+        print("ola")
+
 
     def execute(self, blackboard: Blackboard):
         try:
