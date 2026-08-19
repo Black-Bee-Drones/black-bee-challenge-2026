@@ -1,13 +1,15 @@
-import time
-import yasmin
-from yasmin import State, StateMachine, Blackboard
-from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin import StateMachine
+from yasmin_ros.basic_outcomes import ABORT, SUCCEED
 
 from hang_the_hook.hookSM.states import(
+    FindHose,
     Align,
     Descend,
-    Hook,
-    EndHook,
+)
+from hang_the_hook.hookSM.constants import(
+    FIND_HOSE,
+    ALIGN,
+    DESCEND,
 )
 
 class hookSM(StateMachine):
@@ -15,10 +17,20 @@ class hookSM(StateMachine):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.add_state(
+            "FIND_HOSE",
+            FindHose(),
+            transitions={
+                FIND_HOSE: 'FIND_HOSE',
+                ALIGN: 'ALIGN',
+                ABORT: ABORT
+            }
+        )
+
+        self.add_state(
             "ALIGN",
             Align(),
             transitions={
-                SUCCEED: "DESCEND",
+                DESCEND: 'DESCEND',
                 ABORT: ABORT
             }
         )
@@ -26,25 +38,11 @@ class hookSM(StateMachine):
             "DESCEND",
             Descend(),
             transitions={
-                SUCCEED: "DROP_HOOK",
-                ABORT: "ALIGN"
-            }
-        )
-        self.add_state(
-            "DROP_HOOK",
-            Hook(),
-            transitions={
-                SUCCEED: "END_HOOK",
-                ABORT: "ALIGN"
-            }
-        )
-        self.add_state(
-            "END_HOOK",
-            EndHook(),
-            transitions={
-                SUCCEED: SUCCEED,
-                ABORT: ABORT
+                FIND_HOSE: 'FIND_HOSE',
+                ALIGN: 'ALIGN',
+                ABORT: ABORT,
+                SUCCEED: SUCCEED
             }
         )
 
-        self.set_start_state("ALIGN")
+        self.set_start_state('FIND_HOSE')

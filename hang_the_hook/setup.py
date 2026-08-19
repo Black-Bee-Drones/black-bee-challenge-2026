@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'mangalarga = hang_the_hook.mangalarga:mangalarga',
             'hook_test = hang_the_hook.hook_test:hook_test',
+            'plot_errors = hang_the_hook.utils.plot_errors:main',
         ],
     },
 )

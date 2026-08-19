@@ -1,26 +1,18 @@
-from rclpy import(
-    init as rclpy_init,
-    ok as rclpy_ok,
-    shutdown as rclpy_shutdown,
-)
+import rclpy
 
-from nectar import(
-    init as nectar_init,
-    is_initialized as nectar_ok,
-    shutdown as nectar_shutdown,
-)
+import nectar
 
 from traceback import print_exc
 
 from yasmin import StateMachine, Blackboard
 from yasmin_ros import set_ros_loggers as yasmin_set_ros_loggers
+from yasmin_ros.yasmin_node import YasminNode
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_viewer import YasminViewerPub
 
 from hang_the_hook.core.states import Initialize, Takeoff, ReturnToLaunch, End
 from hang_the_hook.followlineSM.followlineSM import FollowLineSM
-# TODO: uncomment when hookSM is ready
-# from hang_the_hook.hookSM.hookSM import hookSM
+from hang_the_hook.hookSM.hookSM import hookSM
 
 class HangTheHookSM(StateMachine):
     def __init__(self):
@@ -40,7 +32,7 @@ class HangTheHookSM(StateMachine):
             Takeoff(),
             transitions={
                 SUCCEED: "FOLLOW_LINE",
-                ABORT: ABORT
+                ABORT: "END"
             }
         )
 
@@ -48,21 +40,19 @@ class HangTheHookSM(StateMachine):
             "FOLLOW_LINE",
             FollowLineSM(),
             transitions={
-                # TODO: change back to "HOOK" when hookSM is ready
-                SUCCEED: "RETURN_TO_LAUNCH",
-                ABORT: ABORT,
+                SUCCEED: "HOOK",
+                ABORT: "RETURN_TO_LAUNCH",
             }
         )
 
-        # TODO: uncomment when hookSM is ready
-        # self.add_state(
-        #     "HOOK",
-        #     hookSM(),
-        #     transitions={
-        #         SUCCEED: "RETURN_TO_LAUNCH",
-        #         ABORT: ABORT
-        #     }
-        # )
+        self.add_state(
+             "HOOK",
+             hookSM(),
+             transitions={
+                 SUCCEED: "RETURN_TO_LAUNCH",
+                 ABORT: "RETURN_TO_LAUNCH"
+             }
+         )
 
         self.add_state(
             'RETURN_TO_LAUNCH',
@@ -102,10 +92,10 @@ ros2 run yasmin_viewer yasmin_viewer_node --ros-args -p host:=127.0.0.1 -p port:
 def mangalarga():
 
     try:
-        rclpy_init()
-        nectar_init()
-
+        rclpy.init()
         yasmin_set_ros_loggers()
+
+        nectar.use_executor(YasminNode.get_instance()._executor)
 
         mangalarga_sm = HangTheHookSM()
 
@@ -127,11 +117,11 @@ def mangalarga():
         print_exc()
 
     finally:
-        if nectar_ok():
-            nectar_shutdown()
+        if nectar.ok():
+            nectar.shutdown()
 
-        if rclpy_ok():
-            rclpy_shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     mangalarga()

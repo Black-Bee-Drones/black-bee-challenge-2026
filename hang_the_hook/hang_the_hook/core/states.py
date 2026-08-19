@@ -1,7 +1,5 @@
 import os
-from dataclasses import dataclass, asdict
 from traceback import print_exc
-from typing import Any
 
 from yasmin import(
     State,
@@ -34,24 +32,20 @@ from nectar.control import(
     MavlinkConfig,
     MavrosDrone,
     MavlinkDrone,
-    PoseSource,
     MoveReference,
     RTLMethod,
     PIDController,
-    PIDConfig,
     SITL_GAZEBO_CONFIG,
 )
 
 from nectar.vision import(
     ImageHandler,
-    CameraFactory,
     OpenCVConfig,
     LineDetector,
     RotatedRect,
     ColorSpace,
 )
 from nectar.vision.camera import ROSConfig
-from nectar.vision.algorithms.color import ColorDetector
 
 class Initialize(State):
 
@@ -67,21 +61,21 @@ class Initialize(State):
             # ---- Nectar ----
             config = (
                 SITL_GAZEBO_CONFIG if SIM_MODE
-                else MavrosConfig(pose_source=PoseSource.GPS)
+                else MavrosConfig()
             )
-            drone = DroneFactory.create("mavros", config, node._executor)
+            drone = DroneFactory.create("mavros", config)
 
             # ---- Line Detector ----
             linedetector = LineDetector(
-                color="blue",
+                color="blue_line",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV,
             )
 
             hosedetector = LineDetector(
-                color="red",
+                color="red_hose",
                 estimation_method=RotatedRect(),
-                color_space=ColorSpace.LAB
+                color_space=ColorSpace.HSV
             )
 
             # ---- Camera ----
@@ -105,21 +99,7 @@ class Initialize(State):
                 return ABORT
 
             YASMIN_LOG_INFO(
-                f"Camera {type(camera)} ready. Frame shape: {frame.shape}."
-            )
-
-            # ---- Line Detector (linha azul — preset HSV do Nectar) ----
-            linedetector = LineDetector(
-                color="blue",
-                estimation_method=RotatedRect(),
-                color_space=ColorSpace.LAB,
-            )
-
-            # ---- Hose Detector (mangueira vermelha — preset LAB do Nectar) ----
-            hosedetector = LineDetector(
-                color="red",
-                estimation_method=RotatedRect(),
-                color_space=ColorSpace.LAB,
+                f"Camera {type(camera.camera)} ready. Frame shape: {frame.shape}."
             )
 
             # ---- PID ----
@@ -139,6 +119,12 @@ class Initialize(State):
                 integral_limits=PID_YAW_INTEGRAL_LIMITS,
             )
 
+            log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors"))
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, "error_log.csv")
+            with open(log_file, "w") as f:
+                f.write("cx_error,angle_error,time\n")
+
             # ---- Blackboard ----
             blackboard["drone"]       = drone
             blackboard["camera"]      = camera
@@ -147,7 +133,6 @@ class Initialize(State):
             blackboard["pid_cx"]      = pid_cx
             blackboard["pid_cy"]      = pid_cy
             blackboard["pid_angle"]   = pid_angle
-            blackboard['findhose_state_counter'] = 0
 
             return SUCCEED
 
@@ -164,42 +149,20 @@ class Takeoff(State):
 
     def execute(self, blackboard: Blackboard):
         if not blackboard_check(
-                    blackboard=blackboard,
-                    args=(
-                        'drone',
-                        )
-                    ):
-                    return ABORT
+            blackboard=blackboard,
+            args=(
+                'drone',
+                )
+            ): return ABORT
 
         self.drone = blackboard["drone"]
 
         try:
             YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
-            self.drone.set_home()
-            self.drone.arm()
-            self.drone.takeoff(TAKEOFF_HEIGHT)
-            self.drone.delay(3)
+            ok = self.drone.takeoff(TAKEOFF_HEIGHT)
 
-            reached = self.drone.move_to(
-                z=TAKEOFF_HEIGHT,
-                reference=MoveReference.TAKEOFF,
-                timeout=30.0,
-                precision=0.3,
-            )
-
-            reached = self.drone.move_to(
-                x=0.3,
-                reference=MoveReference.BODY,
-                timeout=10.0,
-                precision=0.3,
-            )
-
-            if not reached:
-                YASMIN_LOG_WARN("Takeoff move_to timed out, continuing.")
-
-            self.drone.delay(1)
             YASMIN_LOG_INFO("Takeoff complete.")
-            return SUCCEED
+            return SUCCEED if ok else ABORT
 
         except Exception as e:
             YASMIN_LOG_ERROR(f"Takeoff failed: {e}")
@@ -214,12 +177,11 @@ class ReturnToLaunch(State):
 
     def execute(self, blackboard: Blackboard):
         if not blackboard_check(
-                    blackboard=blackboard,
-                    args=(
-                        'drone',
-                        )
-                    ):
-                    return ABORT
+            blackboard=blackboard,
+            args=(
+                'drone',
+                )
+            ): return ABORT
 
         self.drone = blackboard["drone"]
 
@@ -249,8 +211,7 @@ class End(State):
                     args=(
                         'drone',
                         )
-                    ):
-                    return ABORT
+                    ): return ABORT
 
         self.drone = blackboard["drone"]
 
@@ -267,4 +228,5 @@ class End(State):
 
         except Exception as e:
             YASMIN_LOG_ERROR(f"Landing failed: {e}")
+            print_exc()
             return ABORT

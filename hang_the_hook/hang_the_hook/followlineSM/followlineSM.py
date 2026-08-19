@@ -1,4 +1,4 @@
-from hang_the_hook.followlineSM.constants import FOUND_RED, FOUND_BLUE
+from hang_the_hook.followlineSM.constants import FOUND_RED, FOUND_BLUE, SEARCH
 from yasmin import StateMachine
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
@@ -22,7 +22,7 @@ class FollowLineSM(StateMachine):
             "FOLLOW_BLUE_LINE",
             FollowBlueLine(),
             transitions={
-                SUCCEED: "SEARCH_BLUE_LINE", 
+                SEARCH: "SEARCH_BLUE_LINE", 
                 ABORT: ABORT,
             }
         )

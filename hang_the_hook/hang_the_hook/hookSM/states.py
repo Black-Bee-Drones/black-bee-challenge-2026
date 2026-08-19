@@ -13,30 +13,19 @@ from hang_the_hook.core.constants import(
     FRAME_WIDTH,
 )
 
-from hang_the_hook.hookSM.constants import(
-    KP_X, KI_X, KD_X,
-    KP_Y, KI_Y, KD_Y,
-    KP_YAW, KI_YAW, KD_YAW,
-    TIMEOUT_ALIGN,
-    CENTER_TOLERANCE,
-    ANGULAR_TOLERANCE,
-    DROP_DIST,
-    FIND_HOSE,
-    DESCEND,
-    ALIGN,
-)
+from hang_the_hook.hookSM.constants import *
 from hang_the_hook.utils.blackboard_utils import blackboard_check
 
 class FindHose(State):
 
     '''
-    Every call of Aling must be preceded by FindHose to update hose position.\n
-    FindHose pushes the values cx, cy and angle to blackboard to be retrieved by Align.\n
-    If state doesn't find a hose, ascends the drone a bit for greater fov.
+    Each call to `Align` must be preceded by FindHose to update the hose's position.\n
+    FindHose ensures the hose is within the camera's field of view.\n
+    If the state fails to find a hose, the drone ascends slightly to obtain a wider field of view.
     '''
 
     def __init__(self) -> None:
-        super().__init__(outcomes=[ALIGN,ABORT])
+        super().__init__(outcomes=[FIND_HOSE, ALIGN, ABORT])
 
         self.drone: MavrosDrone | MavlinkDrone
         self.camera: ImageHandler
@@ -45,42 +34,47 @@ class FindHose(State):
         self.hosedetector: LineDetector
 
     def execute(self, blackboard: Blackboard) -> str:
-        if not blackboard_check(blackboard=blackboard, args=("drone", "camera")):
-            return ABORT
+        if not blackboard_check(
+            blackboard=blackboard,
+            args=(
+                "drone",
+                "camera",
+                'hose_detect',
+                )
+            ): return ABORT
 
         self.drone        = blackboard['drone']
         self.camera       = blackboard['camera']
         self.hosedetector = blackboard['hose_detect']
-        self.counter      = blackboard['findhose_state_counter']
 
         frame = self.camera.take_photo()
 
-        line = self.hosedetector.detect_line(frame)[2:5]
+        # --- Runs detect line and update is_valid flag
+        detected_line = self.hosedetector.detect_line(frame)[2:5]
+        line = detected_line[2:5] if detected_line and len(detected_line) >= 5 else []
+        is_valid_line = len(line) == 3 and not any(math.isnan(val) for val in line)
 
-        for i in line:
-            if math.isnan(i) or not line:
-                # --- Line not found
-                altitude = self.drone.get_altitude()
-                if altitude is not None and (altitude + 0.5 < 5.5) and self.counter <= 10:
-                    self.drone.move_to(z=(altitude + 0.5))
-                    self.counter += 1
-                    blackboard['findhose_state_counter'] = self.counter
-                    return FIND_HOSE
-                break
-            else:
-                return ALIGN
+        if is_valid_line:
+            return ALIGN
+
+        # --- If line is not valid, increase altitude for greater fov
+        altitude = self.drone.get_altitude()
+        if altitude is not None and (altitude + ALT_INCR < MAX_ALT):
+            self.drone.move_to(z=(altitude + ALT_INCR))
+            blackboard['findhose_state_counter'] = self.counter + 1
+            return FIND_HOSE
+
         return ABORT
 
 class Align(State):
 
     '''
-    With hose pos values from FindHose, Align centers drone's camera with found line's center.\n
-    Shifts center the same amount of hook-camera offset.\n
-    TODO: Drone's shift by hook-camera offset
+    Align centers drone's camera with found line's center.\n
+    Shifts center by the same amount of hook-camera offset.\n
     '''
 
     def __init__(self) -> None:
-        super().__init__(outcomes=[FIND_HOSE, DESCEND, ABORT])
+        super().__init__(outcomes=[DESCEND, ABORT])
 
         self.drone: MavlinkDrone | MavrosDrone
         self.camera: ImageHandler
@@ -99,8 +93,7 @@ class Align(State):
                 'drone', 'camera', 'hose',
                 'pid_cx', 'pid_cy', 'pid_angle',
                 )
-            ):
-            return ABORT
+            ): return ABORT
 
         self.drone        = blackboard["drone"]
         self.camera       = blackboard["camera"]
@@ -122,32 +115,43 @@ class Align(State):
 
         # --- The desired alignment is between hose's and camera's center, plus shift.
         # --- And also 0 degrees of yaw between camera-hose
-        self.pid_cx.set_setpoint(FRAME_WIDTH // 2)
-        self.pid_cy.set_setpoint(FRAME_HEIGHT // 2)
+        target_x = (FRAME_WIDTH // 2) + SHIFT
+        target_y = (FRAME_HEIGHT // 2) + SHIFT
+        self.pid_cx.set_setpoint(target_x)
+        self.pid_cy.set_setpoint(target_y)
         self.pid_angle.set_setpoint(0.0)
 
         # --- Starting time to apply timeout to state
         timer: float = time()
 
         while True:
-            self.drone.delay(0.05)
 
+            # --- Delay isn't necessery due to take_photo
             frame = self.camera.take_photo(wait_for_new=True)
-            _, _, hose_x, hose_y, hose_yaw, _, _ = self.hosedetector.detect_line(frame)
-            error_x = abs(hose_x - FRAME_WIDTH//2)
-            error_y = abs(hose_y - FRAME_HEIGHT//2)
+            detection = self.hosedetector.detect_line(frame, draw=False)
+            if detection is None or None in detection:
+                self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
+                return FIND_HOSE
+            else:
+                _, _, hose_x, hose_y, hose_yaw, _, _ = detection
 
-            if max(error_x, error_y) <= CENTER_TOLERANCE:
-                return DESCEND
+                error_x = abs(hose_x - target_x)
+                error_y = abs(hose_y - target_y)
 
-            # --- Calculating velocity based on hose's pos
-            vy = self.pid_cx.update(hose_x)
-            vx = self.pid_cy.update(hose_y)
-            vyaw = self.pid_angle.update(hose_yaw)
+                if max(error_x, error_y) <= CENTER_TOLERANCE and abs(hose_yaw) < ANGULAR_TOLERANCE:
+                    self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
+                    return DESCEND
 
-            self.drone.move_velocity(vx=vx, vy=vy, vz=0, vyaw=vyaw)
+                # --- Calculating velocity based on hose's pos
+                # --- Assumes camera X drives Drone Y (roll)
+                # --- And camera Y drives Drone X (pitch)
+                vy = self.pid_cx.update(hose_x)
+                vx = self.pid_cy.update(hose_y)
+                vyaw = self.pid_angle.update(hose_yaw)
 
-            if timer - time() >= TIMEOUT_ALIGN:
+                self.drone.move_velocity(vx=vx, vy=vy, vz=0, vyaw=vyaw)
+
+            if time() - timer >= TIMEOUT_ALIGN:
                 return DESCEND
 
 class Descend(State):
@@ -165,38 +169,45 @@ class Descend(State):
         self.hosedetector: LineDetector
 
     def execute(self, blackboard: Blackboard) -> str:
-        if not blackboard_check(blackboard, ('drone', 'camera', 'hose_detect')):
-            return ABORT
+        if not blackboard_check(
+            blackboard=blackboard,
+            args=(
+                'drone',
+                'camera',
+                'hose_detect',
+                )
+            ): return ABORT
 
         self.drone        = blackboard['drone']
         self.camera       = blackboard['camera']
         self.hosedetector = blackboard['hose_detect']
 
+        target_x = (FRAME_WIDTH // 2) + SHIFT
+        target_y = (FRAME_HEIGHT // 2) + SHIFT
+
         while True:
-            # --- First, checks for hose in camera view, just for watchdog
+
             frame = self.camera.take_photo(wait_for_new=True)
-            line = self.hosedetector.detect_line(frame)[2:5]
+            detection = self.hosedetector.detect_line(frame, draw=False)
+            if detection is None or None in detection:
+                self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
+                return FIND_HOSE
+            else:
+                _, _, hose_x, hose_y, hose_yaw, _, _ = detection
 
-            for i in line:
-                if math.isnan(i) or not line:
-                    return FIND_HOSE
+                error_x = abs(hose_x - target_x)
+                error_y = abs(hose_y - target_y)
 
-            # --- Then, checks center tolerance, if out of returns to align
-            hose_x, hose_y, hose_angle = line[0], line[1], line[2]
-            error_x = abs(hose_x - FRAME_WIDTH//2)
-            error_y = abs(hose_y - FRAME_HEIGHT//2)
-            error_angle = hose_angle
-            if max(error_x, error_y) > CENTER_TOLERANCE:
-                return ALIGN
-            if error_angle > ANGULAR_TOLERANCE:
-                return ALIGN
+                if max(error_x, error_y) > CENTER_TOLERANCE or abs(hose_yaw) > ANGULAR_TOLERANCE:
+                    self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
+                    return ALIGN
 
             # --- If already near the hose, drop the hook
             altitude = self.drone.get_altitude()
             if altitude is not None and altitude <= DROP_DIST:
                 self.drone.do_servo(
-                    aux_out= 0,
-                    pwm_value= 0,
+                    aux_out= AUX_OUT,
+                    pwm_value= PWM_VALUE,
                 )
                 return SUCCEED
 
