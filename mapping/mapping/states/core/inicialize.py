@@ -14,6 +14,8 @@ from nectar.vision import ImageHandler, Aruco, ROSConfig, CameraFactory, OpenCVC
 
 from mapping import Config
 
+import time
+
 class Inicialize(State):
 
     def __init__(self, config: Config):
@@ -50,6 +52,7 @@ class Inicialize(State):
         try:
             yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
             if self.config.drone_type == 'mavros':
+                
                 drone_config = MavrosConfig(
                     pose_source=PoseSource.GPS,
                     start_driver=False,
@@ -59,6 +62,7 @@ class Inicialize(State):
             elif self.config.drone_type == 'mavlink':
                 drone_config = MavlinkConfig(
                     pose_source=PoseSource.GPS,
+                    start_driver=False,
                     connection_string=self.config.conection_string
                 )
 
@@ -102,6 +106,9 @@ class Inicialize(State):
             yasmin.YASMIN_LOG_INFO('Opening camera (down)...')
             camera_down.open()
             camera_down.run()
+            time.sleep(2)
+
+            
             
             yasmin.YASMIN_LOG_INFO('Take testing photo (down)...')
             camera_down.take_photo()

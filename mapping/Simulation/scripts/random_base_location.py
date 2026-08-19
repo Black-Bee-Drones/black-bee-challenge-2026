@@ -1,19 +1,24 @@
 import random
 import math
 from pathlib import Path
+# from mapping.config import SITLConfig
+
+# sim_config = SITLConfig()
+
+
 
 NUMBER_OF_BASES = 9
 
 #Perimeter Limit
-X_MAX = 10 
-X_MIN = -10 
+X_MAX =  7
+X_MIN = - 7
 
-Y_MAX = 10
-Y_MIN = -10 
+Y_MAX =  7
+Y_MIN = - 7
 
-BASE_RADIOUS = 0.8 #meters
+BASE_RADIOUS = 0.8 # meters
 
-MIN_DISTANCE = 1 #meters
+MIN_DISTANCE = 1 # meters
 
 Z = 0.05 
 

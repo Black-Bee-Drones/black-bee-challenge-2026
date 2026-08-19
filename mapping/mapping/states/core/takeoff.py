@@ -32,8 +32,8 @@ class Takeoff(State):
         yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m ... ')
 
         try:
-            drone.set_home()
-            drone.arm()
+            #drone.set_home()
+            #drone.arm()
             drone.takeoff(self.config.takeoff_altitude)
             drone.delay(3)
 

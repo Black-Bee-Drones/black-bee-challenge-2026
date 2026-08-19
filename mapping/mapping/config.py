@@ -9,13 +9,14 @@ class LandingMode(str, Enum):
 @dataclass(frozen=True)
 class Config:
     
-    drone_type : str = "mavlink"
+    drone_type : str = "mavros"
     
     conection_string : str = 'tcp:127.0.0.1:5760'
     
     sim_mode: bool = True
     
-    takeoff_altitude: float = 1.6 #meters
+    takeoff_altitude: float = 5.6 #meters
+    max_altitude: float = 6.0 #meters
     
     landing_mode: LandingMode = LandingMode.LAND
 
@@ -25,6 +26,12 @@ class Config:
     
     image_width : int = 640
     image_height : int = 640
+    
+    
+    #ARENA
+    size_x : int = 14.0 # meters
+    size_y : int = 14.0 # meters
+    
 
     # @classmethod
     # def load(cls, filepath="config.yml"):
@@ -54,3 +61,7 @@ class SITLConfig(Config):
     front_ros_topic: str = '/front_camera/image'
     down_image_source: str = 'ros'
     down_ros_topic: str = '/down_camera'
+    
+    #ARENA
+    size_x : int = 14.0 # meters
+    size_y : int = 14.0 # meters
