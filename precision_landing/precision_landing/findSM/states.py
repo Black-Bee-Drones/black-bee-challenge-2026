@@ -6,6 +6,7 @@ from nectar.vision import(
 )
 from nectar.control import(
     MavrosDrone,
+    MavlinkDrone,
     MoveReference,
 )
 from nectar.ai import Detector
@@ -50,6 +51,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                 yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
                 return ABORT
             camera.open()
+            drone.delay(0.5)
 
             aruco = Aruco(marker_dict=MARKER_DICT, tag_size=ARUCO_SIZE)
 
@@ -67,23 +69,25 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
                 for _ in range(2): #Repeats the detection 2 times for security
                     frame = camera.take_photo()
-                    bbox, aruco_id = aruco.detect(frame, draw=True)
+                    bbox, aruco_id = aruco.detect(frame.image, draw=True)
                     
                     if aruco_id is not None:
-                        blackboard["aruco_id"] = str(int(aruco_id) - 3) #The index for the numbers are 0, 1 and 2
+                        blackboard["aruco_id"] = str(aruco_id) #The index for the numbers are 0, 1 and 2
                         drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
                         yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
                         yasmin.YASMIN_LOG_INFO(f"Bbox of ARUCO: {bbox}")
                     
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
-                        drone.move_to(yaw=yaw_angle)
-                        drone.move_to(x=1.5, MoveReference = MoveReference.BODY)
+                        drone.move_to(yaw=-yaw_angle)
+                        drone.move_to(x=0.7, reference= MoveReference.BODY)
                         #Moves the drone a little bit closer to the aruco
                         frame = camera.take_photo()
+                        bbox2, id = aruco.detect(frame.image, draw=True)
                     
-                        blackboard["aruco_shape"] = self.get_aruco_shape(frame, bbox)
-                        yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {blackboard["aruco_shape"]}")
+                        aruco_shape = self.get_aruco_shape(frame, bbox2)
+                        blackboard["aruco_shape"] = aruco_shape
+                        yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
                     
                         return SUCCEED
 
@@ -103,27 +107,26 @@ class Search(State): #Sub-state that will only move around the arena until it de
             return ABORT
 
     def get_aruco_shape(self, frame, bbox): #Function that gets the shape around the ArUco
-        #NOTE: Not sure this function works, if not we need to instantiate the detector object inside each class
-        aruco_shapes = []
-        for s in frame.filter_by_class(['3', '4', '5']): #NOTE: Possible error here, those are the index for the shapes
-            if(abs(self.bbox_center(bbox)[0]-s.center[0])<=s.width/2)and(abs(self.bbox_center(bbox)[1]-s.center[1])<=s.height/2):
-                aruco_shapes.append(s)
+        aruco_shape = None
+        for s in frame.filter_by_class(['Triangle', 'Hexagon', 'Star']):
+            if(abs(self.bbox_center(bbox)[0]-s.center[0])<=s.width/2):
+                aruco_shape = s.class_name
 
-        if aruco_shapes:
-            aruco_shape = max(
-                aruco_shapes,
-                key=lambda shape: (shape.center[0]-self.bbox_center(bbox)[0])**2 + (shape.center[1]-self.bbox_center(bbox)[1])**2
-            )
+        if aruco_shape is not None:
             return str(aruco_shape)
-        return None
+        else:
+            return None
 
     def bbox_center(self, bbox): #Function to get the center of the ArUco by its bbox
-        sup_left = bbox[0]
-        inf_right = bbox[2]
+        corners = bbox[0][0]  # unwrap: tupla -> array (1,4,2) -> array (4,2)
+    
+        sup_left = corners[0]
+        inf_right = corners[2]
 
         cx = (sup_left[0] + inf_right[0]) / 2
         cy = (sup_left[1] + inf_right[1]) / 2
-        return(cx, cy)
+        center = (cx, cy)
+        return center
 
 
 
@@ -134,8 +137,6 @@ class FindTargetBase(State):
     
     def execute(self, blackboard: Blackboard):
         try:
-            blackboard["use_detector"] = True
-
             drone: MavrosDrone = blackboard["drone"]
                     
             camera: ImageHandler = blackboard["camera"]
@@ -150,6 +151,8 @@ class FindTargetBase(State):
             find_time = Duration(seconds=FIND_TIME) #gets the max time in seconds before TIMEOUT
 
             idx = 0
+
+            drone.move_to(x=0.0, y=0.0, reference=MoveReference.TAKEOFF)
             
             while (self.node.get_clock().now() - start_time) < find_time:
                     

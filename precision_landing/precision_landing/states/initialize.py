@@ -11,8 +11,10 @@ import nectar
 from nectar.control import (
     DroneFactory,
     MavrosConfig,
+    MavlinkConfig,
     PoseSource,
     SITL_GAZEBO_CONFIG,
+    MAVLINK_SITL_GAZEBO_CONFIG,
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
@@ -35,7 +37,7 @@ class Initialize(State):
 
         timestamp = self.node.get_clock().now().nanoseconds / 1e9
         now = datetime.datetime.fromtimestamp(timestamp)
-        self.photos_folder = now.strftime('bouncing-%Y-%m-%d-%H-%M')
+        self.photos_folder = now.strftime('precision_landing-%Y-%m-%d-%H-%M')
 
     def execute(self, blackboard: Blackboard):
         try:
@@ -47,6 +49,32 @@ class Initialize(State):
             )
             drone = DroneFactory.create("mavros", config, self.node._executor)
             blackboard["drone"] = drone
+            yasmin.YASMIN_LOG_INFO("Drone succesfully loaded.")
+
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f"Drone failed: {e}")
+            return ABORT
+
+        try:
+            yasmin.YASMIN_LOG_INFO("Initializing Detector...")
+
+            self.detector = Detector( #Creates the detector
+                model_source= DETECTOR_MODEL_SOURCE,
+                confidence_threshold= DETECTOR_CONFIDENCE_THRESHOLD,
+            )
+        
+            yasmin.YASMIN_LOG_INFO("Loading the Detector...")
+            self.detector.load()
+        
+            blackboard["detector"] = self.detector
+            yasmin.YASMIN_LOG_INFO("Detector succesfully loaded.")
+        
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f"Detector failed: {e}")
+            return ABORT
+
+        try:
+            yasmin.YASMIN_LOG_INFO("Initializing Camera...")
 
             if SIM_MODE:
                 cam_config = ROSConfig(topic=CAMERA_SOURCE, compressed=False)
@@ -60,42 +88,26 @@ class Initialize(State):
                 #NOTE: There are other ways of doing the continuously image processing,
                 #this is one of them, but we can discuss this later
             )
-
-            try:
-                self.detector = Detector( #Creates the detector
-                    model_source= DETECTOR_MODEL_SOURCE,
-                    confidence_threshold= DETECTOR_CONFIDENCE_THRESHOLD,
-                )
-            
-                yasmin.YASMIN_LOG_INFO("Loading the Detector...")
-                self.detector.load()
-            
-                blackboard["detector"] = self.detector
-                yasmin.YASMIN_LOG_INFO("Detector succesfully loaded.")
-            
-            except Exception as e:
-                yasmin.YASMIN_LOG_ERROR(f"Detector failed: {e}")
-                return ABORT
             
             camera.open()
-
             frame = camera.take_photo()
+
             if frame is None:
                 yasmin.YASMIN_LOG_ERROR("Failed to get frame from camera.")
                 return ABORT
-            yasmin.YASMIN_LOG_INFO(
-                f"Camera ready!"
-            )
-            blackboard["camera"] = camera
 
-            return SUCCEED
+            blackboard["camera"] = camera
+            yasmin.YASMIN_LOG_INFO(f"Camera ready!")
+
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"Initialization failed: {e}")
+            yasmin.YASMIN_LOG_ERROR(f"Camera failed: {e}")
             return ABORT
 
+        return SUCCEED
+
     def camera_callback(self, image): #Runs everytime we call camera.take_photo()
-        try: #Prevents using the detector when we don't need
-            #os.makedirs(self.photos_folder, exist_ok=True)
+        try:
+            os.makedirs(self.photos_folder, exist_ok=True)
             
             timestamp = self.node.get_clock().now().nanoseconds
             

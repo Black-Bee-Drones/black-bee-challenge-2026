@@ -7,7 +7,7 @@ from yasmin_ros.yasmin_node import YasminNode
 from rclpy.duration import Duration
 
 from nectar.vision import ImageHandler
-from nectar.control import MavrosDrone, PIDController
+from nectar.control import MavrosDrone, MavlinkDrone, PIDController
 from precision_landing.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
@@ -118,6 +118,7 @@ class Precision_landing(State):
                                 vz = output_z if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
                                 vyaw = 0.0,
                             )
+                            drone.delay(0.5)
                             #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
                             break
 
