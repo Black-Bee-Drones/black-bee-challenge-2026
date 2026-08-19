@@ -2,7 +2,7 @@ import yasmin
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from nectar.control import MavrosDrone
+from nectar.control import MavrosDrone, MavlinkDrone
 
 from precision_landing.constants import (
     TAKEOFF_HEIGHT,
