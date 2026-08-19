@@ -9,14 +9,6 @@ from pathlib import Path
 
 import yaml
 
-<<<<<<< HEAD
-#Perimeter Limit
-X_MAX =  7
-X_MIN = - 7
-
-Y_MAX =  7
-Y_MIN = - 7
-=======
 SEED = 42  # fixed seed: same 5 bases, same positions, every run
 random.seed(SEED)
 
@@ -38,7 +30,6 @@ X_MIN = -X_MAX
 
 Y_MAX = _arena["size_y_m"] / 2
 Y_MIN = -Y_MAX
->>>>>>> origin/mapping
 
 BASE_RADIOUS = 0.8 # meters
 
