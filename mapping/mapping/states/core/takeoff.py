@@ -4,29 +4,38 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
 from nectar.control import MavrosDrone
 
-from config import Config
-
-from nectar.control import MavrosDrone, MavlinkDrone, MoveReference
+from mapping.config import Config
 
 class Takeoff(State):
 
     def __init__(self, config : Config):
+        """Args:
+            config: Loaded mission configuration; used for drone_type and
+                takeoff_altitude.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
 
 
     def execute(self, blackboard: Blackboard):
+        """Set home, arm, and take off to config.takeoff_altitude.
 
-        if self.config.drone_type == 'mavros':
-            drone : MavrosDrone = blackboard.get('drone')
+        Args:
+            blackboard: Shared mission state. Reads 'drone' (the connected
+                MavrosDrone set by Inicialize).
 
-        elif self.config.drone_type == 'mavlink':
-            drone : MavlinkDrone = blackboard.get('drone')
+        Returns:
+            SUCCEED once set_home/arm/takeoff complete and the post-takeoff
+            settle delay elapses; ABORT if drone_type isn't "mavros", or if
+            an exception/KeyboardInterrupt occurs during arming/takeoff.
+        """
 
-        else:
-            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (MavrosDrone / MavlinkDrone)!\033[0m')
+        if self.config.drone_type != 'mavros':
+            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')
             return ABORT
+
+        drone: MavrosDrone = blackboard.get('drone')
 
 
         yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m ... ')
@@ -36,7 +45,6 @@ class Takeoff(State):
             #drone.arm()
             drone.takeoff(self.config.takeoff_altitude)
             drone.delay(3)
-
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_INFO('    \033[31mExecution interrupted by user!\033[0m')

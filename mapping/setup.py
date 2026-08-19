@@ -1,3 +1,5 @@
+import glob
+
 from setuptools import find_packages, setup
 
 package_name = 'mapping'
@@ -9,7 +11,11 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name, ['package.xml', 'mapping/config.yml']),
+        ('share/' + package_name + '/Simulation/Base_Images',
+            glob.glob('Simulation/Base_Images/*.png')),
+        ('share/' + package_name + '/models',
+            glob.glob('mapping/models/*.pt')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,6 +30,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'mangalarga = mapping.mangalarga:main',
         ],
     },
 )

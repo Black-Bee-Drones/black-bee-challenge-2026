@@ -8,17 +8,21 @@ from yasmin_ros.yasmin_node import YasminNode
 
 
 
-from nectar.control import DroneFactory, MavrosConfig, MavlinkConfig, PoseSource, PIDController
-from nectar.vision import ImageHandler, Aruco, ROSConfig, CameraFactory, OpenCVConfig
+from nectar.control import DroneFactory, MavrosConfig, PoseSource
+from nectar.vision import ImageHandler
 
-
-from mapping import Config
+from mapping.config import Config, PoseSourceOption
 
 import time
 
 class Inicialize(State):
 
     def __init__(self, config: Config):
+        """Args:
+            config: Loaded mission configuration; used for drone_type,
+                pose_source, start_driver, connection_string, and
+                camera.source.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
@@ -28,6 +32,21 @@ class Inicialize(State):
         self.start_time = None
 
     def execute(self, blackboard: Blackboard):
+        """Record the mission start time, build the drone connection, and
+        initialize/open the down-facing camera.
+
+        Args:
+            blackboard: Shared mission state. Writes 'Start_time' (ROS
+                clock timestamp), 'drone' (the connected MavrosDrone
+                instance), and 'camera_down' (the opened ImageHandler)
+                on success.
+
+        Returns:
+            SUCCEED once start time, drone, and camera are all set up;
+            ABORT if drone_type isn't "mavros", or if an exception/
+            KeyboardInterrupt occurs while getting the clock, creating the
+            drone, or opening/testing the camera.
+        """
         yasmin.YASMIN_LOG_INFO('INICIALIZING...')
 
         #Start Time
@@ -51,6 +70,7 @@ class Inicialize(State):
 
         try:
             yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
+<<<<<<< HEAD
             if self.config.drone_type == 'mavros':
                 
                 drone_config = MavrosConfig(
@@ -68,8 +88,23 @@ class Inicialize(State):
 
             else:
                 yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type!\033[0m')
+=======
+            if self.config.drone_type != 'mavros':
+                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type (only "mavros" is supported)!\033[0m')
+>>>>>>> origin/mapping
                 return ABORT
 
+            pose_source = (
+                PoseSource.GPS
+                if self.config.pose_source == PoseSourceOption.GPS
+                else PoseSource.VISION
+            )
+
+            drone_config = MavrosConfig(
+                pose_source=pose_source,
+                start_driver=self.config.start_driver,
+                connection_string=self.config.connection_string,
+            )
 
             drone = DroneFactory.create(self.config.drone_type, drone_config)
 
@@ -86,23 +121,15 @@ class Inicialize(State):
             return ABORT
         
         #Camera
-        
+
         try:
-            
+
             yasmin.YASMIN_LOG_INFO('Initializing Camera(down)...')
-            
-            if self.config.down_image_source == "ros":
-                cam_config = ROSConfig(topic=self.config.down_ros_topic)
-                
-            else:
-                cam_config = OpenCVConfig(width=self.config.image_width, height=self.config.image_height)
-                
-            
+
             camera_down = ImageHandler(
-                image_source=self.config.down_image_source,
-                config=cam_config
+                image_source=self.config.camera.source,
             )
-            
+
             yasmin.YASMIN_LOG_INFO('Opening camera (down)...')
             camera_down.open()
             camera_down.run()
@@ -126,17 +153,5 @@ class Inicialize(State):
             yasmin.YASMIN_LOG_ERROR(f'Camera(down) failed: {error}')
             return ABORT
 
-        
-        
-        
-        
-        
-        
-        
-        
         yasmin.YASMIN_LOG_INFO('\033[32mInicialize Successfully Completed!\033[0m')
         return SUCCEED
-
-    
-    
-            

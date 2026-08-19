@@ -3,3 +3,11 @@ from .core import(
     Takeoff,
     Land
 )
+
+from .mission import(
+    PlanCoverage,
+    CaptureWaypoint,
+    CAPTURE_NEXT,
+    DetectBases,
+    PublishResults,
+)

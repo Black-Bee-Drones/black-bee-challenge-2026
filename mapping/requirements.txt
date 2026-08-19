@@ -1,0 +1,11 @@
+# Optional pip dependencies -- NOT resolvable via rosdep/package.xml, so
+# they live here instead. Everything else this package needs (rclpy,
+# yasmin, nectar, opencv, numpy, pyyaml, geometry_msgs,
+# tf_transformations, ...) is declared in package.xml and installed via
+# `rosdep install` / colcon's normal build, not this file.
+#
+# ultralytics: only needed if config.yml's detection.method is set to
+# "ia" (utils/ai_detector.py's YOLO path). Imported lazily, so the
+# default detection.method: "opencv" never needs it -- install with:
+#   pip install -r requirements.txt
+ultralytics

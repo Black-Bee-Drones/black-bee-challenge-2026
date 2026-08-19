@@ -1,22 +1,168 @@
-drone:
-  type: "mavlink"
-  connection_string: "tcp:127.0.0.1:5760"
+# Configuração da Missão 1 (Mapeamento) — Black Bee Challenge 2026
+#
+# Preencha os valores marcados com <PREENCHER> antes de rodar em campo/simulação.
+# Nada de geometria de voo é fixo no código: tudo é recalculado a partir destes parâmetros.
 
-simulation:
-  mode: true
+# Escolhe qual bloco de profiles: (no final do arquivo) sobrescreve os campos
+# que mudam entre simulação e campo (drone.connection_string, simulation.mode,
+# camera.source/detection_override, arena.vertices_gps). Ver profiles: abaixo.
+active_profile: "simulation"           # "simulation" | "real"
+
+drone:
+  type: "mavros"                       # único tipo suportado pelo nectar-sdk (ArduPilot/PX4)
+  pose_source: "gps"                   # "gps" (regulamento exige coordenadas geográficas) | "vision"
+  start_driver: false                  # true se o mavros ainda não estiver rodando e o SDK deve subi-lo
 
 takeoff:
-  altitude: 1.6
+  # 3.0m em vez do original 5.6m: mais baixo = footprint menor = base ocupa
+  # mais pixels na câmera simulada (melhora a classificação de forma/número
+  # em SIM). Custo: 28 waypoints em vez de 8 (voo mais longo). Ver mensagem
+  # da sessão de 2026-08-13 pra outras opções de altitude/waypoints.
+  altitude: 3.0                        # também é a altitude de varredura (câmera apontada para baixo)
 
 land:
-  mode: "LAND"
+  mode: "LAND"                         # "LAND" | "RTL"
 
 camera:
-  down_source: "ros"
-  #front_source : "c920"
-  down_ros_topic: "/down_camera"
-  #id : 6
+  # Especificações da câmera REAL (C920), usadas pelo planejamento de voo
+  # (compute_grid()) — NÃO mudar pra bater com a câmera simulada aqui; é
+  # pra isso que existe o `detection_override` do perfil simulation abaixo.
+  # Se o plano de voo usasse o FOV bem mais largo do sensor simulado,
+  # compute_grid() acharia que 1-2 waypoints já "cobrem" a arena, e o drone
+  # quase não se moveria.
+  resolution: [1920, 1080]             # [largura, altura] em pixels
+  # ATENÇÃO: o datasheet oficial da Logitech C920/C920s especifica 78° como
+  # o FOV DIAGONAL fixo ("campo de visão diagonal fixo de 78°"), não o
+  # horizontal. O FOV horizontal é derivado automaticamente por
+  # `hfov_from_dfov()` a partir deste valor + resolução — não trocar por um
+  # valor de hfov_deg direto sem atualizar config.py.
+  dfov_deg: 78.0                       # FOV diagonal do datasheet da câmera real
+  # Só lido se profiles.<perfil>.camera.source == "c920" (driver C920Cam do
+  # nectar-sdk p/ Logitech C920/C920e real) e a auto-detecção via v4l2-ctl
+  # não achar o dispositivo — índice /dev/videoN a testar como último
+  # recurso. 0 cobre a maioria dos casos com só uma câmera USB conectada.
+  c920_fallback_device_index: 0
+  mount:
+    forward_m: 0.0                     # offset da câmera em relação ao centro do drone
+    right_m: 0.0
+    up_m: 0.0
+    # Câmera montada na frente do drone, olhando reto pro chão, SEM giro no
+    # próprio eixo da lente (mesma orientação de quando fica em cima de um
+    # monitor, só "deitada"/inclinada 90° pra baixo) — confirmado que o topo
+    # da imagem (linha 0) corresponde à frente/nariz do drone. Isso gira o
+    # eixo largo do sensor (1920px) 90° em relação à frente do drone (ele
+    # fica alinhado à direita/esquerda, não à frente) — daí -90.0 aqui, não
+    # 0.0. Ver seção 3.2/8 do README para o porquê da conta e o sinal.
+    yaw_offset_deg: -90.0
 
-image: 
-  width: 640
-  height: 640
+calibration:
+  # Deixe em branco para usar a calibração já salva em
+  # nectar-sdk/nectar/nectar/vision/camera/calibration/{camera_matrix,camera_distortion}.txt
+  camera_matrix_path: ""
+  distortion_path: ""
+  color_correction:
+    enabled: true
+    gray_world_white_balance: true
+    gamma: 1.0
+
+arena:
+  size_x_m: 14.0
+  size_y_m: 14.0
+  # 4 vértices da arena, nomeados EXATAMENTE como os organizadores vão falar
+  # no dia da prova (A/B/C/D) — não é ordem de bússola/N-S-L-O, pois isso
+  # depende de para onde o drone aponta ao decolar (só se sabe na hora):
+  #   A = frente-esquerda do drone (nariz) na decolagem
+  #   B = frente-direita
+  #   C = trás-esquerda
+  #   D = trás-direita
+  # Preencher com o que os organizadores informarem para cada letra (perfil
+  # real, abaixo), sem precisar descobrir a ordem/orientação sozinho.
+
+mission:
+  overlap_margin_m: 0.3                # folga extra de sobreposição além do mínimo geométrico
+  photos_per_waypoint: 5                # fotos tiradas em cada posição (a mais nítida é escolhida)
+  stabilize_seconds: 2.0                # tempo parado antes de fotografar em cada waypoint
+  move_precision_m: 0.3
+  move_timeout_s: 30.0
+
+detection:
+  # "opencv" = threshold+contorno (utils/base_detector.py, sem dependências
+  # extras) | "ia" = modelo YOLO treinado (utils/ai_detector.py, detecta a
+  # forma/hexágono/estrela/triângulo e o número diretamente por classe;
+  # requer `pip install ultralytics` — ver CONFIG.md).
+  method: "opencv"
+  model_path: ""                        # vazio = usa mapping/models/base_detector.pt do próprio pacote
+  ai_confidence: 0.5                    # confiança mínima (0-1) do YOLO para aceitar uma detecção
+  base_size_m: 0.80                     # 80x80 cm, conforme regulamento
+  area_tolerance: 0.35                  # tolerância relativa na área esperada (em pixels)
+  white_threshold: 200                  # limiar de brilho para achar o quadrado branco da base
+  dedup_radius_m: 0.5                   # raio para agrupar detecções da mesma base em fotos sobrepostas
+  templates_dir: ""                     # vazio = usa Simulation/Base_Images do próprio pacote
+  max_bases: 5
+  # Lê roll/pitch reais do MAVROS (/mavros/local_position/pose) em cada foto
+  # e corrige pixel_to_local() por interseção raio-solo, em vez de assumir
+  # câmera sempre nadir (a câmera é fixa, sem gimbal, então inclina junto
+  # com o drone). DESLIGADO por padrão: o sinal de roll/pitch do quaternion
+  # ENU do MAVROS ainda não foi validado contra um ground truth (mesmo tipo
+  # de teste que já foi feito pro camera.mount.yaw_offset_deg) — ver seção
+  # 3.5-bis do README antes de ligar isso pra uma missão de verdade.
+  tilt_compensation: false
+  # Se achar menos que max_bases, tenta de novo nas MESMAS fotos já
+  # capturadas/corrigidas (não recaptura, não costura mosaico -- ver
+  # adendo 2026-08-17 sobre por que detecção não roda no mosaico) com
+  # area_tolerance/white_threshold/ai_confidence relaxados, só pra
+  # preencher a diferença. Bases já encontradas na primeira passada nunca
+  # são reconsideradas/sobrescritas. true é seguro deixar ligado.
+  retry_on_shortfall: true
+
+output:
+  directory: ""                         # vazio = usa ~/.ros/mapping_results
+  publish_topic: "/mapping/base_found"
+  save_report: true
+
+mosaic:
+  enabled: false                        # extra/opcional, não bloqueia a detecção
+
+# Perfis pré-configurados selecionados por active_profile (topo do arquivo).
+# Cada perfil sobrescreve SÓ as chaves listadas abaixo, seção por seção
+# (overlay raso: drone/simulation/camera/arena) -- o resto de cada seção
+# acima continua valendo para os dois perfis.
+profiles:
+  simulation:
+    drone:
+      connection_string: "tcp:127.0.0.1:5760"
+    simulation:
+      mode: true
+    camera:
+      source: "/down_camera"           # tópico ROS publicado pelo iris_with_gimbal no Gazebo
+      # Câmera que está DE FATO alimentando a detecção em simulação.
+      # detect_bases.py usa isto pro cálculo de GSD/área esperada;
+      # plan_coverage.py nunca lê isto, só os valores reais em camera: acima.
+      detection_override:
+        resolution: [640, 480]         # sensor do gimbal_small_3d no Gazebo
+        dfov_deg: 125.62                # equivalente ao horizontal_fov=2.0rad do sensor simulado
+    arena:
+      # Preenchido para o smoke test em SITL: quadrado 14x14m centrado no home
+      # do mundo ardupilot_gazebo/worlds/iris_runway.sdf (spherical_coordinates
+      # lat -35.363262 / lon 149.165237), já que a origem local == posição de
+      # decolagem.
+      vertices_gps:
+        A: {lat: -35.36319912, lon: 149.16515989}
+        B: {lat: -35.36319912, lon: 149.16531411}
+        C: {lat: -35.36332488, lon: 149.16515989}
+        D: {lat: -35.36332488, lon: 149.16531411}
+  real:
+    drone:
+      connection_string: "<PREENCHER>"
+    simulation:
+      mode: false
+    camera:
+      source: "c920"                   # dispositivo de vídeo real em campo (sem detection_override: câmera real já bate com camera: acima)
+    arena:
+      vertices_gps:
+        # <PREENCHER> com as coordenadas reais da arena informadas pelos
+        # organizadores antes de qualquer voo em campo/competição.
+        A: {lat: 0.0, lon: 0.0}
+        B: {lat: 0.0, lon: 0.0}
+        C: {lat: 0.0, lon: 0.0}
+        D: {lat: 0.0, lon: 0.0}

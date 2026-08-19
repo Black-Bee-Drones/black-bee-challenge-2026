@@ -7,22 +7,44 @@ from pathlib import Path
 
 
 
-NUMBER_OF_BASES = 9
+import yaml
 
+<<<<<<< HEAD
 #Perimeter Limit
 X_MAX =  7
 X_MIN = - 7
 
 Y_MAX =  7
 Y_MIN = - 7
+=======
+SEED = 42  # fixed seed: same 5 bases, same positions, every run
+random.seed(SEED)
+
+NUMBER_OF_BASES = 5
+
+HOME = Path.home()
+
+MAPPING_CONFIG = Path(
+    HOME / "ros2_ws/src/black-bee-challenge-2026/mapping/mapping/config.yml"
+)
+
+# Perimeter limit: bases must land inside the arena the drone actually
+# covers (mapping/config.yml's arena.size_x_m/size_y_m), centered on the
+# takeoff point like mapping/utils/coverage.py::compute_grid() assumes.
+# A hardcoded +-10m here would scatter bases outside the 14x14m arena.
+_arena = yaml.safe_load(MAPPING_CONFIG.read_text())["arena"]
+X_MAX = _arena["size_x_m"] / 2
+X_MIN = -X_MAX
+
+Y_MAX = _arena["size_y_m"] / 2
+Y_MIN = -Y_MAX
+>>>>>>> origin/mapping
 
 BASE_RADIOUS = 0.8 # meters
 
 MIN_DISTANCE = 1 # meters
 
-Z = 0.05 
-
-HOME = Path.home()
+Z = 0.05
 
 TEMPLATE_WORLD = Path(
     HOME / "ros2_ws/src/black-bee-challenge-2026/mapping/Simulation/worlds/empty_world.sdf"
@@ -57,46 +79,46 @@ BASE_MODELS = [
 
 
 def valid_position (x, y, positions):
-    
+
     for px, py in positions:
         distance = math.sqrt((x - px) ** 2 + (y - py) ** 2)
-        
-        
+
+
         if distance < MIN_DISTANCE:
             return False
-    
+
     return True
 
 
 def generate_positions(number):
     positions = []
-    
+
     while len(positions) < number:
-        
+
         x = random.uniform(
             X_MIN + BASE_RADIOUS,
             X_MAX - BASE_RADIOUS
         )
-        
+
         y = random.uniform(
             Y_MIN + BASE_RADIOUS,
             Y_MAX - BASE_RADIOUS
         )
-        
+
         if valid_position(x, y, positions):
-            
+
             positions.append((x, y))
-            
+
     return positions
 
 
 
-def create_base_includes(positions):
+def create_base_includes(models, positions):
 
     includes = []
 
     for i, (model_name, (x, y)) in enumerate(
-        zip(BASE_MODELS, positions)
+        zip(models, positions)
     ):
 
         yaw = random.uniform(
@@ -131,10 +153,13 @@ def generate_world():
         NUMBER_OF_BASES
     )
 
-    for i, (x, y) in enumerate(positions):
+    chosen_models = random.sample(BASE_MODELS, NUMBER_OF_BASES)
+
+    for i, (model_name, (x, y)) in enumerate(zip(chosen_models, positions)):
 
         print(
             f"Base {i + 1}: "
+            f"{model_name} "
             f"x={x:.2f}, "
             f"y={y:.2f}"
         )
@@ -144,7 +169,7 @@ def generate_world():
 
     # Gera os includes
     includes = create_base_includes(
-        positions
+        chosen_models, positions
     )
 
     # Procura o marcador
@@ -162,7 +187,7 @@ def generate_world():
     #     marker,
     #     includes
     # )
-    
+
     world_end = "</world>"
 
     if world_end not in world:
@@ -177,7 +202,7 @@ def generate_world():
     )
 
     OUTPUT_WORLD.write_text(world)
-    
+
     NECTAR_WORLD.parent.mkdir(
         parents=True,
         exist_ok=True
@@ -194,8 +219,8 @@ def generate_world():
     print()
     print(f"Nectar-SDK:")
     print(NECTAR_WORLD)
-    
-    
+
+
 if __name__ == "__main__":
 
     generate_world()

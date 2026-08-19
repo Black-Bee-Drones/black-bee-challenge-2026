@@ -4,35 +4,45 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
 from nectar.control import MavrosDrone
 
-from config import Config
-
-from nectar.control import MavrosDrone, MavlinkDrone
+from mapping.config import Config, LandingMode
 
 
 class Land(State):
 
     def __init__(self, config : Config):
+        """Args:
+            config: Loaded mission configuration; used for drone_type and
+                landing_mode.
+        """
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.config = config
 
 
     def execute(self, blackboard: Blackboard):
+        """Land the drone, via RTL or a direct LAND command depending on
+        config.landing_mode.
 
-        if self.config.drone_type == 'mavros':
-            drone : MavrosDrone = blackboard.get('drone')
+        Args:
+            blackboard: Shared mission state. Reads 'drone' (the connected
+                MavrosDrone set by Inicialize).
 
-        elif self.config.drone_type == 'mavlink':
-            drone : MavlinkDrone = blackboard.get('drone')
+        Returns:
+            SUCCEED once the land/RTL command completes; ABORT if
+            drone_type isn't "mavros", or if an exception/
+            KeyboardInterrupt occurs while landing.
+        """
 
-        else:
-            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (MavrosDrone / MavlinkDrone)!\033[0m')
+        if self.config.drone_type != 'mavros':
+            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')
             return ABORT
+
+        drone: MavrosDrone = blackboard.get('drone')
 
         yasmin.YASMIN_LOG_INFO('Landing...')
 
         try:
-            if self.config.landing_mode == 'RTL':
+            if self.config.landing_mode == LandingMode.RTL:
                 drone.rtl()
             else:
                 drone.land()

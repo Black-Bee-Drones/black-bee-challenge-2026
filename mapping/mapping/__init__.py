@@ -1,7 +1,3 @@
-from .config import(
-    Config
-    #SITLConfig
-
-)
+from .config import Config
 
 from . mappingSM import MappingSM
