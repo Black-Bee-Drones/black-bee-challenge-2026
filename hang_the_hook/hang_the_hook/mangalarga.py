@@ -117,7 +117,7 @@ def mangalarga():
         print_exc()
 
     finally:
-        if nectar.ok():
+        if nectar.is_initialized():
             nectar.shutdown()
 
         if rclpy.ok():
