@@ -61,9 +61,9 @@ class Initialize(State):
             # ---- Nectar ----
             config = (
                 SITL_GAZEBO_CONFIG if SIM_MODE
-                else MavlinkConfig(connection_string="/dev/AMA1")
+                else MavrosConfig(connection_string="/dev/AMA1")
             )
-            drone = DroneFactory.create("mavlink", config)
+            drone = DroneFactory.create("mavros", config)
 
             # ---- Line Detector ----
             linedetector = LineDetector(
