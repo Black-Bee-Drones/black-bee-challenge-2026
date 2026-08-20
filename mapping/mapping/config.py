@@ -10,7 +10,7 @@ try:
 except ImportError:  # pragma: no cover - only missing outside a sourced ROS2 env
     get_package_share_directory = None
 
-from mapping.utils.coverage import hfov_from_dfov
+
 
 
 class LandingMode(str, Enum):
@@ -200,6 +200,9 @@ class Config:
 
     @classmethod
     def load(cls, filepath: Optional[str] = None) -> 'Config':
+        
+        from mapping.utils import hfov_from_dfov
+        
         """Load, profile-resolve, and validate config.yml into a frozen Config.
 
         Args:

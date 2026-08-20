@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import cv2
 import numpy as np
 
-from mapping.utils.geo_projection import CapturePose
+from .geo_projection import CapturePose
 
 
 @dataclass

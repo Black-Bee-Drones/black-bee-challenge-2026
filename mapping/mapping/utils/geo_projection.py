@@ -25,7 +25,7 @@ from typing import Tuple
 
 import numpy as np
 
-from mapping.config import ArenaVertices
+from mapping.config import Config, ArenaVertices
 from mapping.utils.coverage import camera_footprint
 
 

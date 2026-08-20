@@ -70,28 +70,8 @@ class Inicialize(State):
 
         try:
             yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
-<<<<<<< HEAD
-            if self.config.drone_type == 'mavros':
-                
-                drone_config = MavrosConfig(
-                    pose_source=PoseSource.GPS,
-                    start_driver=False,
-                    connection_string=self.config.conection_string
-                )
-
-            elif self.config.drone_type == 'mavlink':
-                drone_config = MavlinkConfig(
-                    pose_source=PoseSource.GPS,
-                    start_driver=False,
-                    connection_string=self.config.conection_string
-                )
-
-            else:
-                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type!\033[0m')
-=======
             if self.config.drone_type != 'mavros':
                 yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type (only "mavros" is supported)!\033[0m')
->>>>>>> origin/mapping
                 return ABORT
 
             pose_source = (
