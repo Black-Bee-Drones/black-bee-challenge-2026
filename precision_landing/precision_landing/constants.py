@@ -10,7 +10,7 @@ FRAMES_FOLDER = ''
 
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
 
-DETECTOR_CONFIDENCE_THRESHOLD = 0.6
+DETECTOR_CONFIDENCE_THRESHOLD = 0.3
 
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
@@ -20,7 +20,7 @@ MAX_ALTITUDE = 6 #meters
 
 SEARCH_TIME = 120 #seconds (2min)
 FIND_TIME = 120 #seconds (2min)
-PRECISION_LANDING_TIME = 120
+PRECISION_LANDING_TIME = 600
 
 MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
@@ -29,12 +29,12 @@ WAYPOINTS = [ (3, 3), (3, 0),
              (0, -3), (-1, -3), (-2, -3), (-3, -3), 
              (-3, -2), (-3, -1), (-3, 0), (-3, 1), (-3, 2), (-3, 3)] #Need to update these for the arena size of 14x14
 
-CONTROLER_P_XY = 0.4
+CONTROLER_P_XY = 0.250 if SIM_MODE else 0.123
 CONTROLER_I_XY = 0.0
 CONTROLER_D_XY = 0.0
-CONTROLER_OUTPUT_LIMITS_XY = (-0.22, 0.22)
+CONTROLER_OUTPUT_LIMITS_XY = (-0.44, 0.44)
 CONTROLER_INTEGRAL_LIMITS_XY = (-0.01, 0.01)
-PRECISE_DOWN_TOLERANCE_PX = 30
+PRECISE_DOWN_TOLERANCE_PX = 100
 
 CONTROLER_P_Z = 0.20
 CONTROLER_I_Z = 0.0
