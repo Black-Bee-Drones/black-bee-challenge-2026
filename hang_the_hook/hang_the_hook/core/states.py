@@ -61,7 +61,7 @@ class Initialize(State):
             # ---- Nectar ----
             config = (
                 SITL_GAZEBO_CONFIG if SIM_MODE
-                else MavrosConfig(connection_string="/dev/AMA1")
+                else MavrosConfig(connection_string="serial:///dev/ttyAMA1:921600")
             )
             drone = DroneFactory.create("mavros", config)
 
