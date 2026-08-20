@@ -159,7 +159,7 @@ class Takeoff(State):
 
         try:
             YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
-            ok = self.drone.takeoff(TAKEOFF_HEIGHT)
+            ok = self.drone.takeoff(altitude=TAKEOFF_HEIGHT, max_retries=5)
 
             YASMIN_LOG_INFO("Takeoff complete.")
             return SUCCEED if ok else ABORT
