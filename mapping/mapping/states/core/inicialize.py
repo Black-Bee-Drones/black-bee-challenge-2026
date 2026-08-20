@@ -8,7 +8,7 @@ from yasmin_ros.yasmin_node import YasminNode
 
 
 
-from nectar.control import DroneFactory, MavrosConfig, PoseSource
+from nectar.control import DroneFactory, MavrosConfig, PoseSource, MavlinkConfig
 from nectar.vision import ImageHandler
 
 from mapping.config import Config, PoseSourceOption
@@ -67,24 +67,36 @@ class Inicialize(State):
             return ABORT
 
         #Drone
-
+        
         try:
-            yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
-            if self.config.drone_type != 'mavros':
-                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type (only "mavros" is supported)!\033[0m')
-                return ABORT
-
+            
             pose_source = (
                 PoseSource.GPS
                 if self.config.pose_source == PoseSourceOption.GPS
                 else PoseSource.VISION
             )
+            
+            
+            yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
+            if self.config.drone_type == 'mavros':
+                
+                drone_config = MavrosConfig(
+                    pose_source=pose_source,
+                    start_driver=False,
+                    connection_string=self.config.connection_string
+                )
 
-            drone_config = MavrosConfig(
-                pose_source=pose_source,
-                start_driver=self.config.start_driver,
-                connection_string=self.config.connection_string,
-            )
+            elif self.config.drone_type == 'mavlink':
+                drone_config = MavlinkConfig(
+                    pose_source=pose_source,
+                    start_driver=False,
+                    connection_string=self.config.conection_string
+                )
+
+            else:
+                yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type!\033[0m')
+                return ABORT
+
 
             drone = DroneFactory.create(self.config.drone_type, drone_config)
 

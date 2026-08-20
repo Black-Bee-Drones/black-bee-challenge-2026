@@ -9,9 +9,9 @@
 active_profile: "simulation"           # "simulation" | "real"
 
 drone:
-  type: "mavros"                       # único tipo suportado pelo nectar-sdk (ArduPilot/PX4)
+  type: "mavlink"                      
   pose_source: "gps"                   # "gps" (regulamento exige coordenadas geográficas) | "vision"
-  start_driver: false                  # true se o mavros ainda não estiver rodando e o SDK deve subi-lo
+  start_driver: false              
 
 takeoff:
   # 3.0m em vez do original 5.6m: mais baixo = footprint menor = base ocupa
