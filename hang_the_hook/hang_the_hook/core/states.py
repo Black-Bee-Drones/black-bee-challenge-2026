@@ -61,7 +61,7 @@ class Initialize(State):
             # ---- Nectar ----
             config = (
                 SITL_GAZEBO_CONFIG if SIM_MODE
-                else MavlinkConfig()
+                else MavlinkConfig(connection_string="/dev/AMA1")
             )
             drone = DroneFactory.create("mavlink", config)
 
