@@ -75,3 +75,4 @@ class Config:
     controller_yaw_output_max: float = 1.0
     controller_yaw_integral_min: float = -1.0
     controller_yaw_integral_max: float = 1.0
+    
