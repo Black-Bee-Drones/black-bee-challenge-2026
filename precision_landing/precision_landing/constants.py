@@ -3,14 +3,13 @@
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
-SIM_MODE = True
+SIM_MODE = False
 
-CAMERA_SOURCE = '/down_camera' #We will use "webcam" for the drone
-FRAMES_FOLDER = ''
+CAMERA_SOURCE = "webcam" #We will use "webcam" for the drone
 
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
 
-DETECTOR_CONFIDENCE_THRESHOLD = 0.3
+DETECTOR_CONFIDENCE_THRESHOLD = 0.6
 
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
@@ -24,10 +23,11 @@ PRECISION_LANDING_TIME = 600
 
 MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
-WAYPOINTS = [ (3, 3), (3, 0),
-             (3, -1), (3, -2), (3, -3), (2, -3), (1, -3),
-             (0, -3), (-1, -3), (-2, -3), (-3, -3), 
-             (-3, -2), (-3, -1), (-3, 0), (-3, 1), (-3, 2), (-3, 3)] #Need to update these for the arena size of 14x14
+WAYPOINTS = [(-5, 6),  (-2, 6),  (1, 6),  (4, 6),  (7, 6),
+(-5, 3),  (-2, 3),  (1, 3),  (4, 3),  (7, 3),
+(-5, 0),  (-2, 0),  (1, 0),  (4, 0),  (7, 0),
+(-5,-3),  (-2,-3),  (1,-3),  (4,-3),  (7,-3),
+(-5,-6),  (-2,-6),  (1,-6),  (4,-6),  (7,-6)] 
 
 CONTROLER_P_XY = 0.250 if SIM_MODE else 0.123
 CONTROLER_I_XY = 0.0
