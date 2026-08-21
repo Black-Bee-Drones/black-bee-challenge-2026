@@ -4,11 +4,11 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from nectar.control import MavrosDrone, MavlinkDrone, MoveReference
 from package_delivery.constants import Config
 
-class Delivery(State):
-    def __init__(self, config: Config = Config):
+class Gripper(State):
+    def __init__(self, target_has_pkg: bool, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
-        self.has_thePkg = config.has_thePkg
+        self.target_has_pkg = target_has_pkg
     
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
@@ -20,9 +20,12 @@ class Delivery(State):
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT 
-
         
-        pwm = (self.config.servo_closed_pwm if self.has_thePkg else self.config.servo_open_pwm)
+        if 'has_thePkg' not in blackboard:
+            yasmin.YASMIN_LOG_ERROR('Flag - has the pkg - not found.')
+            return ABORT
+        
+        pwm = (self.config.servo_closed_pwm if self.target_has_pkg else self.config.servo_open_pwm)
 
         try:
             yasmin.YASMIN_LOG_INFO(f'Set {pwm} pwm value')
@@ -39,6 +42,7 @@ class Delivery(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Gripper failed: {e}')
             return ABORT
-
+        blackboard['has_thePkg'] = self.target_has_pkg
         yasmin.YASMIN_LOG_INFO('Completed successfully.')
         return SUCCEED
+    
