@@ -22,8 +22,6 @@ class Takeoff(State):
         try:
             yasmin.YASMIN_LOG_INFO("Starting TAKEOFF...")
 
-            drone.set_home() #Sets the current gps position as 'home'
-            drone.arm()
             try:
                 drone.takeoff(TAKEOFF_HEIGHT, max_retries=5, timeout=30.0, precision=0.2)
             except:

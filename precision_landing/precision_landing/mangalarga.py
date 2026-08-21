@@ -4,6 +4,8 @@ import yasmin
 from yasmin_ros import set_ros_loggers
 from yasmin import StateMachine
 from yasmin_ros.basic_outcomes import SUCCEED, FAIL, TIMEOUT, ABORT
+import nectar
+from yasmin_ros.yasmin_node import YasminNode
 
 from precision_landing.states import (
     Initialize,
@@ -55,6 +57,9 @@ def main():
     rclpy.init()
 
     set_ros_loggers()
+
+    nectar.use_executor(YasminNode.get_instance()._executor)
+
     pl_sm = PL()
 
     try:
