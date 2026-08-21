@@ -67,13 +67,13 @@ class Initialize(State):
 
             # ---- Line Detector ----
             linedetector = LineDetector(
-                color="blue",
+                color="blue_line",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV,
             )
 
             hosedetector = LineDetector(
-                color="red",
+                color="red_hose",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV
             )
