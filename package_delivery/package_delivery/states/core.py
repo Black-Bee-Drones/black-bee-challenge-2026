@@ -34,6 +34,22 @@ class Initialize(State):
         self.config = config
 
     def execute(self, blackboard: Blackboard):
+        # Start Simulation Time
+        try:
+            yasmin.YASMIN_LOG_INFO('Initializing Start time...')
+            self.start_time = self.node.get_clock().now()
+
+            blackboard['start_time'] = self.start_time
+            yasmin.YASMIN_LOG_INFO('successful Start time!')
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f'Start time failed: {e}')
+            return ABORT
+        
         # Drone
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Drone...')

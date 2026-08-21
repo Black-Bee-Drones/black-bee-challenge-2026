@@ -30,6 +30,7 @@ class Delivery(State):
             if not drone.do_servo(aux_out=self.config.servo_channel,pwm_value=pwm):
                 yasmin.YASMIN_LOG_ERROR('Failed to do servo.')
                 return ABORT
+            drone.delay(self.config.servo_action_delay)
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
