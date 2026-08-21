@@ -17,10 +17,7 @@ from package_delivery.states.core import (
 from package_delivery.states import (
     SearchBox,
     Approach,
-    Delivery,
-    SearchLaunchBase,
-    PrecisionLand,
-    Wait,
+    Gripper,
 )
 
 
@@ -31,6 +28,12 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "INITIALIZE",
             Initialize(),
+            transitions={SUCCEED: "GRIP_PKG", ABORT: ABORT}
+        )
+        
+        self.add_state(
+            "GRIP_PKG",
+            Gripper(target_has_pkg=True),
             transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
         )
 
@@ -50,37 +53,24 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "APPROACH",
             Approach(),
-            transitions={SUCCEED: "DELIVERY", ABORT: "LAND"}
+            transitions={SUCCEED: "DROP_PKG", ABORT: "LAND"}
         )
 
         self.add_state(
-            "DELIVERY",
-            Delivery(),
-            transitions={SUCCEED: "SEARCH_LAUNCH_BASE", ABORT: "LAND"}
+            "DROP_PKG",
+            Gripper(target_has_pkg=False),
+            transitions={SUCCEED: "RTL", ABORT: ABORT}
         )
-
-        self.add_state(
-            "SEARCH_LAUNCH_BASE",
-            SearchLaunchBase(),
-            transitions={SUCCEED: "PRECISION_LAND", ABORT: "LAND"}
-        )
-
-        self.add_state(
-            "PRECISION_LAND",
-            PrecisionLand(),
-            transitions={SUCCEED: "LAND", ABORT: "LAND"}
-        )
-
+        
         self.add_state(
             "LAND",
             Land(),
-            transitions={SUCCEED: "LAND", ABORT: ABORT}
+            transitions={SUCCEED: SUCCEED, ABORT: ABORT}
         )
 
-        # This state must have different outcomes.
         self.add_state(
-            "WAIT",
-            Wait(),
+            "RTL",
+            Rtl(),
             transitions={SUCCEED: SUCCEED, ABORT: ABORT}
         )
 
