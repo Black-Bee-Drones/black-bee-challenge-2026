@@ -23,7 +23,9 @@ from precision_landing.constants import (
     CONTROLER_OUTPUT_LIMITS_Z,
     CONTROLER_INTEGRAL_LIMITS_Z,
     PRECISE_DOWN_TOLERANCE_PX,
-    MAX_ALTITUDE
+    MAX_ALTITUDE,
+    FINAL_LANDING_TOLERANCE,
+    FINAL_LANDING_HEIGHT,
 )
 
 class Precision_landing(State):
@@ -78,7 +80,6 @@ class Precision_landing(State):
                 return ABORT
              
             camera: ImageHandler = blackboard["camera"]
-            camera.open()
              
             start_time = self.node.get_clock().now() #gets the start time of the state
             precision_landing_time = Duration(seconds=PRECISION_LANDING_TIME) #gets the max time in seconds before TIMEOUT
@@ -106,7 +107,7 @@ class Precision_landing(State):
              
                             erro_x = erro_x_pixel / self.PIXEL_POR_METRO(drone.get_altitude(), 60, IMAGE_WIDTH)#HFOV
                             erro_y = erro_y_pixel / self.PIXEL_POR_METRO(drone.get_altitude(), 47, IMAGE_HEIGHT)#VFOV
-                            #erro_z = drone.get_altitude() - 0.7                        
+                            erro_z = drone.get_altitude() - FINAL_LANDING_HEIGHT                       
              
                             output_x = self.pid_x.update(erro_x)
                             output_y = self.pid_y.update(erro_y)
@@ -115,7 +116,7 @@ class Precision_landing(State):
                             drone.move_velocity(
                                 vx = output_y,  
                                 vy = output_x,
-                                vz = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX) else 0.0,
+                                vz = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0,
                                 vyaw = 0.0,
                             )
                             drone.delay(0.5)
@@ -124,9 +125,9 @@ class Precision_landing(State):
 
                 if not TARGET_FOUND:
 
-                    ROGUE_HEIGHT = drone.get_altitude()
+                    alt = drone.get_altitude()
 
-                    if ROGUE_HEIGHT <= 1.5:
+                    if (alt <= FINAL_LANDING_HEIGHT) and (abs(erro_x) <= FINAL_LANDING_TOLERANCE and abs(erro_y) <= FINAL_LANDING_TOLERANCE):
                         #TAKES THE LAND WHEN DETECTION IS LOST
                         #NOTE talvez até fazer uma função para tentar dar refind
                         yasmin.YASMIN_LOG_INFO("TAKING LAST LAND")
@@ -135,7 +136,7 @@ class Precision_landing(State):
                         drone.land()
                         return SUCCEED
 
-                    elif ROGUE_HEIGHT < MAX_ALTITUDE -0.7:
+                    elif alt < MAX_ALTITUDE -0.7:
                         #TRY TO GO UP AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
                         drone.move_velocity(vx=0,vy=0,vz=0)

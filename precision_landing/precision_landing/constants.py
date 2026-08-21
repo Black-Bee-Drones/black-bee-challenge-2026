@@ -3,13 +3,13 @@
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
-SIM_MODE = False
+SIM_MODE = True
 
-CAMERA_SOURCE = "webcam" #We will use "webcam" for the drone
+CAMERA_SOURCE = "/down_camera" #We will use "webcam" for the drone
 
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
 
-DETECTOR_CONFIDENCE_THRESHOLD = 0.6
+DETECTOR_CONFIDENCE_THRESHOLD = 0.4
 
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
@@ -23,11 +23,7 @@ PRECISION_LANDING_TIME = 600
 
 MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
-WAYPOINTS = [(-5, 6),  (-2, 6),  (1, 6),  (4, 6),  (7, 6),
-(-5, 3),  (-2, 3),  (1, 3),  (4, 3),  (7, 3),
-(-5, 0),  (-2, 0),  (1, 0),  (4, 0),  (7, 0),
-(-5,-3),  (-2,-3),  (1,-3),  (4,-3),  (7,-3),
-(-5,-6),  (-2,-6),  (1,-6),  (4,-6),  (7,-6)] 
+WAYPOINTS = [(0, 0), (0, -3), (3, -3)]
 
 CONTROLER_P_XY = 0.250 if SIM_MODE else 0.123
 CONTROLER_I_XY = 0.0
@@ -41,3 +37,6 @@ CONTROLER_I_Z = 0.0
 CONTROLER_D_Z = 0.0
 CONTROLER_OUTPUT_LIMITS_Z = (-0.8, 0.8)
 CONTROLER_INTEGRAL_LIMITS_Z = (-0.1, 0.1)
+
+FINAL_LANDING_TOLERANCE = 0.2
+FINAL_LANDING_HEIGHT = 1.2

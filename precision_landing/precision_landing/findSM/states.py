@@ -50,7 +50,6 @@ class Search(State): #Sub-state that will only move around the arena until it de
             if not camera:
                 yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
                 return ABORT
-            camera.open()
             drone.delay(0.5)
 
             aruco = Aruco(marker_dict=MARKER_DICT, tag_size=ARUCO_SIZE)
@@ -79,8 +78,8 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         yasmin.YASMIN_LOG_INFO(f"Bbox of ARUCO: {bbox}")
                     
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
-                        drone.move_to(yaw=-yaw_angle)
-                        drone.move_to(x=0.7, reference= MoveReference.BODY)
+                        #drone.move_to(yaw=-yaw_angle)
+                        #drone.move_to(x=0.7, reference= MoveReference.BODY)
                         #Moves the drone a little bit closer to the aruco
                         frame = camera.take_photo()
                         bbox2, id = aruco.detect(frame.image, draw=True)
@@ -144,8 +143,6 @@ class FindTargetBase(State):
             if not camera:
                 yasmin.YASMIN_LOG_ERROR("Camera or ImageHandler not initialized")
                 return ABORT
-
-            camera.open()
 
             start_time = self.node.get_clock().now() #gets the start time of the state
             find_time = Duration(seconds=FIND_TIME) #gets the max time in seconds before TIMEOUT
