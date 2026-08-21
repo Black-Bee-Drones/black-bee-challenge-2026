@@ -32,7 +32,17 @@ HOSE_COUNTER             = 0     # runtime counter (initial value)
 FOWARD_SPEED_BLUE_LINE = 0.5   # m/s – cruise speed while following blue line
 
 
+# ── Seek-Line Recovery (growing square search) ─────────────────────────────
+SEEK_SQUARE_BASE_SIDE = 2.0    # m – side length of the first square
+SEEK_SQUARE_SPEED     = 0.4    # m/s – forward speed during square legs
+SEEK_MAX_SQUARES      = 3      # number of growing squares before aborting
+SEEK_SQUARE_GROWTH    = 1.5    # side-length multiplier per iteration
+MAX_LOST_FRAMES       = 15     # consecutive frames without detection to trigger seek
+SEARCH_TIMEOUT        = 20.0   # s – time without any detection in SEARCH before triggering seek
+
+
 # ── State-Machine Outcomes ───────────────────────────────────────────────────
 FOUND_RED  = "found_red"
 FOUND_BLUE = "found_blue"
 SEARCH     = "search"
+SEEK       = "seek"

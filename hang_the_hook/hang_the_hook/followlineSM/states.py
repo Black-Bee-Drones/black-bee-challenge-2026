@@ -1,5 +1,7 @@
 from datetime import datetime
+from time import time
 import os
+import math
 
 from math import dist as math_dist, isnan as math_isnan
 import cv2
@@ -42,17 +44,33 @@ from hang_the_hook.followlineSM.constants import (
     HOSE_COUNTER,
     FOUND_RED,
     FOUND_BLUE,
-    SEARCH
+    SEARCH,
+    SEEK,
+    SEEK_SQUARE_BASE_SIDE,
+    SEEK_SQUARE_SPEED,
+    SEEK_MAX_SQUARES,
+    SEEK_SQUARE_GROWTH,
+    MAX_LOST_FRAMES,
+    SEARCH_TIMEOUT,
 )
 
 class SearchBlueLine(State):
+    '''
+    Searches for both blue and red lines while the drone is hovering.
+    Captures frames continuously and counts consecutive stable detections
+    (center position within CENTER_VARIATION pixels).
+    Returns FOUND_BLUE when the blue line is confirmed (MIN_BLUE_FRAMES),
+    FOUND_RED when the red hose is confirmed (MIN_RED_FRAMES),
+    SEEK if no line is detected within SEARCH_TIMEOUT seconds,
+    or ABORT on any failure.
+    '''
+
     def __init__(self):
-        super().__init__(outcomes=[FOUND_BLUE, FOUND_RED, ABORT])
+        super().__init__(outcomes=[FOUND_BLUE, FOUND_RED, SEEK, ABORT])
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
         try:
-            # Retrieve the line linedetector and image handler from the Blackboard
             linedetector: LineDetector = blackboard["line_detect"]
             hosedetector: LineDetector = blackboard["hose_detect"]
             camera: ImageHandler = blackboard["camera"]
@@ -67,19 +85,26 @@ class SearchBlueLine(State):
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
 
-            # Start the image handler to process frames and detect lines
             camera.open()
+            last_detection_time = time()
 
-            # Main loop for line following
             while True:
+                if (time() - last_detection_time) >= SEARCH_TIMEOUT:
+                    self.node.get_logger().warn(
+                        f"SearchBlueLine: no detection for {SEARCH_TIMEOUT}s — transitioning to SEEK"
+                    )
+                    return SEEK
+
                 frame = camera.take_photo()
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
                 resultRed, _, cxRed, cyRed, _, _, _ = hosedetector.detect_line(frame, draw=True)
 
-                #Skips if no line detected
+                any_detection = False
+
                 if cxBlue is None or math_isnan(cxBlue) or cyBlue is None or math_isnan(cyBlue):
                     counterBlue = 0
                 else:
+                    any_detection = True
                     distanceBlue = math_dist((cxBlue, cyBlue), (oldcxBlue, oldcyBlue))
                     if distanceBlue < CENTER_VARIATION:
                         counterBlue += 1
@@ -91,6 +116,7 @@ class SearchBlueLine(State):
                 if cxRed is None or math_isnan(cxRed) or cyRed is None or math_isnan(cyRed):
                     counterRed = 0
                 else:
+                    any_detection = True
                     distanceRed = math_dist((cxRed, cyRed), (oldcxRed, oldcyRed))
                     if distanceRed < CENTER_VARIATION:
                         counterRed += 1
@@ -98,6 +124,9 @@ class SearchBlueLine(State):
                         counterRed = 0
                     oldcxRed = cxRed
                     oldcyRed = cyRed
+
+                if any_detection:
+                    last_detection_time = time()
 
                 if counterRed >= MIN_RED_FRAMES:
                     counterRed = 0
@@ -110,7 +139,7 @@ class SearchBlueLine(State):
                     now = datetime.now().strftime("%Y%m%d_%H%M%S")
                     cv2.imwrite(f"../images/{now}.png", resultBlue)
                     blackboard["angle_blue"] = angleBlue
-                    blackboard["center_x_blue"] = cxBlue     # Image X → drone lateral (Y) axis
+                    blackboard["center_x_blue"] = cxBlue
                     break
 
             return FOUND_BLUE
@@ -121,9 +150,130 @@ class SearchBlueLine(State):
             if camera:
                 camera.close()
 
-class FollowBlueLine(State):
+class SeekLine(State):
+    '''
+    Recovery state activated when the drone loses sight of the blue line.
+    Flies a growing square pattern centered on the point where the line
+    was lost. Each iteration the square side grows by SEEK_SQUARE_GROWTH.
+    Up to SEEK_MAX_SQUARES attempts are made (default 3).
+    During every straight leg the camera keeps scanning for both blue
+    and red lines. Returns FOUND_BLUE / FOUND_RED on detection, or
+    ABORT after all squares are exhausted without finding any line.
+    '''
+
     def __init__(self):
-        super().__init__(outcomes=[SEARCH, ABORT])
+        super().__init__(outcomes=[FOUND_BLUE, FOUND_RED, ABORT])
+        self.node = YasminNode.get_instance()
+
+    def _check_lines(self, frame, linedetector, hosedetector, counters):
+        blue_count, red_count = counters
+
+        _, _, cxBlue, _, angleBlue, _, _ = linedetector.detect_line(frame, draw=False)
+        _, _, cxRed, _, _, _, _ = hosedetector.detect_line(frame, draw=False)
+
+        if cxBlue is not None and not math_isnan(cxBlue):
+            blue_count += 1
+            if blue_count >= MIN_BLUE_FRAMES:
+                return (FOUND_BLUE, angleBlue, cxBlue), (blue_count, red_count)
+        else:
+            blue_count = 0
+
+        if cxRed is not None and not math_isnan(cxRed):
+            red_count += 1
+            if red_count >= MIN_RED_FRAMES:
+                return (FOUND_RED, None, None), (blue_count, red_count)
+        else:
+            red_count = 0
+
+        return None, (blue_count, red_count)
+
+    def _fly_leg(self, drone, camera, linedetector, hosedetector,
+                 leg_duration, counters):
+        leg_start = time()
+        while (time() - leg_start) < leg_duration:
+            frame = camera.take_photo()
+            if frame is not None:
+                result, counters = self._check_lines(
+                    frame, linedetector, hosedetector, counters
+                )
+                if result is not None:
+                    return result, counters
+            drone.move_velocity(
+                vx=SEEK_SQUARE_SPEED, vy=0.0, vz=0.0, vyaw=0.0,
+                reference=MoveReference.BODY,
+            )
+        drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
+        return None, counters
+
+    def execute(self, blackboard: Blackboard):
+        try:
+            drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+            camera: ImageHandler = blackboard["camera"]
+            linedetector: LineDetector = blackboard["line_detect"]
+            hosedetector: LineDetector = blackboard["hose_detect"]
+
+            if not drone or not camera or not linedetector or not hosedetector:
+                self.node.get_logger().error("SeekLine: missing blackboard entries")
+                return ABORT
+
+            drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
+            self.node.get_logger().warn("SeekLine: line lost — starting square search")
+
+            camera.open()
+            counters = (0, 0)
+
+            for sq in range(SEEK_MAX_SQUARES):
+                side = SEEK_SQUARE_BASE_SIDE * (SEEK_SQUARE_GROWTH ** sq)
+                leg_duration = side / SEEK_SQUARE_SPEED
+                self.node.get_logger().info(
+                    f"SeekLine: square {sq + 1}/{SEEK_MAX_SQUARES}  "
+                    f"side={side:.1f}m  leg_time={leg_duration:.1f}s"
+                )
+
+                for leg in range(4):
+                    result, counters = self._fly_leg(
+                        drone, camera, linedetector, hosedetector,
+                        leg_duration, counters,
+                    )
+                    if result is not None:
+                        outcome, angleBlue, cxBlue = result
+                        drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
+                        if outcome == FOUND_BLUE:
+                            blackboard["angle_blue"] = angleBlue
+                            blackboard["center_x_blue"] = cxBlue
+                            self.node.get_logger().info("SeekLine: blue line recovered")
+                        else:
+                            self.node.get_logger().info("SeekLine: red line found")
+                        return outcome
+
+                    drone.move_to(yaw=-90, reference=MoveReference.BODY)
+
+            drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
+            self.node.get_logger().error(
+                f"SeekLine: {SEEK_MAX_SQUARES} squares completed — aborting"
+            )
+            return ABORT
+
+        except Exception as e:
+            self.node.get_logger().error(f"SeekLine failed: {e}")
+            return ABORT
+        finally:
+            if camera:
+                camera.close()
+
+class FollowBlueLine(State):
+    '''
+    Follows the detected blue line using PID controllers for lateral
+    (vy) and yaw (vyaw) corrections while moving forward at constant
+    speed. Continuously checks each frame for the blue line. If the
+    line is not detected for MAX_LOST_FRAMES consecutive frames, stops
+    the drone and transitions to SEEK. When corrections converge
+    (vy ≈ 0, vyaw ≈ 0), transitions back to SEARCH to re-confirm
+    the line position.
+    '''
+
+    def __init__(self):
+        super().__init__(outcomes=[SEARCH, SEEK, ABORT])
         self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
@@ -154,11 +304,13 @@ class FollowBlueLine(State):
             pid_angle.set_setpoint(0.0)
 
             camera.open()
+            lost_frames = 0
             while True:
                 frame = camera.take_photo()
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
 
                 if cxBlue is not None and not math_isnan(cxBlue) and cyBlue is not None and not math_isnan(cyBlue):
+                    lost_frames = 0
                     vy = pid_cy.update(cxBlue)
                     vyaw = pid_angle.update(angleBlue)
                     log_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors", "error_log.csv"))
@@ -166,8 +318,14 @@ class FollowBlueLine(State):
                         f.write(f"{cxBlue}, {angleBlue}, {datetime.now().strftime('%M:%S')}\n")
                     self.node.get_logger().info(f"Blue line detected: {cxBlue}, {cyBlue}, {angleBlue}")
                 else:
-                    self.node.get_logger().info("Blue line not detected, holding corrections")
-                    # Hold last PID outputs — don't update with fake data
+                    lost_frames += 1
+                    self.node.get_logger().info(
+                        f"Blue line not detected ({lost_frames}/{MAX_LOST_FRAMES})"
+                    )
+                    if lost_frames >= MAX_LOST_FRAMES:
+                        drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, reference=MoveReference.BODY)
+                        self.node.get_logger().warn("Line lost — transitioning to SEEK")
+                        return SEEK
                     vy = 0.0
                     vyaw = 0.0
 
