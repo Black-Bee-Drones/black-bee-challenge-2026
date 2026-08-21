@@ -34,6 +34,7 @@ class Initialize(State):
         self.config = config
 
     def execute(self, blackboard: Blackboard):
+        blackboard['has_thePkg'] = self.config.has_thePkg
         # Start Simulation Time
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Start time...')
