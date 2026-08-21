@@ -45,9 +45,9 @@ class Initialize(State):
 
             config = (
                 SITL_GAZEBO_CONFIG if SIM_MODE
-                else MavrosConfig(pose_source=PoseSource.GPS, expect_lidar=True)
+                else MavrosConfig(pose_source=PoseSource.GPS)
             )
-            drone = DroneFactory.create("mavros", config, self.node._executor)
+            drone = DroneFactory.create("mavros", config)
             blackboard["drone"] = drone
             yasmin.YASMIN_LOG_INFO("Drone succesfully loaded.")
 
