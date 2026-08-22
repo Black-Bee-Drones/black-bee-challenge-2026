@@ -32,6 +32,7 @@ class Initialize(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
+        self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
         blackboard['has_thePkg'] = self.config.has_thePkg
@@ -130,7 +131,7 @@ class Initialize(State):
                     width=self.config.image_width, 
                     height=self.config.image_width
                 )
-            elif self.config.image_source == 'ros':
+            elif self.config.sim_mode or self.config.image_source == 'ros':
                 cam_config = ROSConfig(
                     topic=self.config.sim_image_source, 
                     compressed=self.config.sim_image_compressed,
@@ -210,12 +211,12 @@ class Initialize(State):
 
         cv2.imwrite(raw_file, result.image)
         cv2.imwrite(annotated_file, result.annotated_image)
+        return result
 
 
 class Takeoff(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
-
         self.config = config
 
     def execute(self, blackboard: Blackboard):
@@ -294,7 +295,7 @@ class Rtl(State):
 
         yasmin.YASMIN_LOG_INFO("RTL...")
         try:
-            self.drone.rtl(altitude=self.config.rtl_altitude, RTLMethod=RTLMethod.NAVIGATE, land=True)
+            drone.rtl(altitude=self.config.rtl_altitude, RTLMethod=RTLMethod.NAVIGATE, land=True)
             yasmin.YASMIN_LOG_INFO("Return to launch initiated.")
             return SUCCEED
         except Exception as e:

@@ -3,7 +3,11 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Config:
-    target_box: tuple = (2, 2)
+    target_box: tuple = (
+        (-35.363285, 149.165242),     # box 1: lat, long
+        (1, 1),     # box 2: lat, long
+        (2, 2),     # box 3: lat, long
+    )
 
     # Simulation
     sim_mode: bool = True

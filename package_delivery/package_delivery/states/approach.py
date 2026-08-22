@@ -24,7 +24,7 @@ class Approach(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT, TIMEOUT, FAIL])
         self.config = config
-        self.node - YasminNode.get_instance()
+        self.node = YasminNode.get_instance()
 
     def execute(self, blackboard: Blackboard):
         self.mission_start_time = blackboard.get("start_time")
@@ -119,6 +119,7 @@ class Approach(State):
                 if abs(error_z) < self.config.dropoff_tolerance:
                     yasmin.YASMIN_LOG_INFO("Approaching succeeded! Delivering package...")
                     return SUCCEED
+                
             yasmin.YASMIN_LOG_ERROR("Approaching box timed out.")
             return TIMEOUT
                 
