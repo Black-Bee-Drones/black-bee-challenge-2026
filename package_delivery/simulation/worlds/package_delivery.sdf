@@ -11,7 +11,7 @@
     gz sim -v4 -r outdoor_field.sdf
 -->
 <sdf version="1.9">
-  <world name="outdoor_field">
+  <world name='package_delivery'>
 
     <!-- Physics -->
     <physics name="1ms" type="ignore">
@@ -217,7 +217,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/box_50x50x20/meshes/box_50x50x20.obj</uri>
+              <uri>model://box_50x50x20/meshes/box_50x50x20.obj</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -225,7 +225,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/box_50x50x20/meshes/box_50x50x20.obj</uri>
+              <uri>model://box_50x50x20/meshes/box_50x50x20.obj</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -254,7 +254,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_yellow_base/meshes/blue_yellow_base.glb</uri>
+              <uri>model://blue_yellow_base/meshes/blue_yellow_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -262,7 +262,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_yellow_base/meshes/blue_yellow_base.glb</uri>
+              <uri>model://blue_yellow_base/meshes/blue_yellow_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -291,7 +291,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_yellow_base/meshes/blue_yellow_base.glb</uri>
+              <uri>model://blue_yellow_base/meshes/blue_yellow_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -299,7 +299,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_yellow_base/meshes/blue_yellow_base.glb</uri>
+              <uri>model://blue_yellow_base/meshes/blue_yellow_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -328,7 +328,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_yellow_base/meshes/blue_yellow_base.glb</uri>
+              <uri>model://blue_yellow_base/meshes/blue_yellow_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -336,7 +336,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_yellow_base/meshes/blue_yellow_base.glb</uri>
+              <uri>model://blue_yellow_base/meshes/blue_yellow_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -365,7 +365,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/box_50x50x20/meshes/box_50x50x20.obj</uri>
+              <uri>model://box_50x50x20/meshes/box_50x50x20.obj</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -373,7 +373,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/box_50x50x20/meshes/box_50x50x20.obj</uri>
+              <uri>model://box_50x50x20/meshes/box_50x50x20.obj</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -402,7 +402,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/box_50x50x20/meshes/box_50x50x20.obj</uri>
+              <uri>model://box_50x50x20/meshes/box_50x50x20.obj</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -410,7 +410,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/box_50x50x20/meshes/box_50x50x20.obj</uri>
+              <uri>model://box_50x50x20/meshes/box_50x50x20.obj</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -439,7 +439,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_base/meshes/blue_base.glb</uri>
+              <uri>model://blue_base/meshes/blue_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -447,7 +447,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_base/meshes/blue_base.glb</uri>
+              <uri>model://blue_base/meshes/blue_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -476,7 +476,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_base/meshes/blue_base.glb</uri>
+              <uri>model://blue_base/meshes/blue_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -484,7 +484,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_base/meshes/blue_base.glb</uri>
+              <uri>model://blue_base/meshes/blue_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -513,7 +513,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_base/meshes/blue_base.glb</uri>
+              <uri>model://blue_base/meshes/blue_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -521,7 +521,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>file:///home/ana-machado/gazebo_models/blue_base/meshes/blue_base.glb</uri>
+              <uri>model://blue_base/meshes/blue_base.glb</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
