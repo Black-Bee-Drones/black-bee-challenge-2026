@@ -3,13 +3,13 @@
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
-SIM_MODE = True
+SIM_MODE = False
 
-CAMERA_SOURCE = "/down_camera" #We will use "webcam" for the drone
+CAMERA_SOURCE = "webcam" #We will use "webcam" for the drone
 
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
 
-DETECTOR_CONFIDENCE_THRESHOLD = 0.4
+DETECTOR_CONFIDENCE_THRESHOLD = 0.6
 
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
