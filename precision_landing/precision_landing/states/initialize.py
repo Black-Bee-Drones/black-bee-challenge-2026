@@ -107,7 +107,7 @@ class Initialize(State):
 
     def camera_callback(self, image): #Runs everytime we call camera.take_photo()
         try:
-            os.makedirs(self.photos_folder, exist_ok=True)
+            #os.makedirs(self.photos_folder, exist_ok=True)
             
             timestamp = self.node.get_clock().now().nanoseconds
             
