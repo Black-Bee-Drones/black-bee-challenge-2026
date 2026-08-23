@@ -125,7 +125,7 @@ class Precision_landing(State):
                                 vz = output_z,
                                 vyaw = 0.0,
                             )
-                            drone.delay(0.3)
+                            drone.delay(0.4)
                             #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
                             break
 
@@ -149,6 +149,7 @@ class Precision_landing(State):
 
 =======
                         drone.move_velocity(vx=0,vy=0,vz=0)
+                        drone.move_to(z=MAX_ALTITUDE)
                     else:
                         #NÃO SEI OQUE FAZER AQUI
                         drone.move_velocity(vx=0,vy=0,vz=0)
