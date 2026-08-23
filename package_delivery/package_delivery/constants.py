@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass, field
 from ament_index_python.packages import get_package_share_directory
-
+from pathlib import Path
 
 @dataclass
 class Config:
@@ -63,6 +63,7 @@ class Config:
     # Detector
     model_source = "share/models/best.pt"
     conf_threshold = 0.6
+    photos_folder = Path.home() / "ros2_ws" / "black-bee-challenge-2026" / "package_delivery" 
 
     # --- PIDController ---
     # PID xy

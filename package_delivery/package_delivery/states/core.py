@@ -268,8 +268,9 @@ class Takeoff(State):
 
 
 class Land(State):
-    def __init__(self):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
+        self.config = config
 
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':

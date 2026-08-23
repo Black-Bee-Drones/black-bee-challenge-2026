@@ -1,3 +1,7 @@
+import os
+import time
+import cv2
+
 from rclpy.time import Time, Duration
 import math
 
@@ -92,28 +96,22 @@ class Approach(State):
                 results = model.predict(frame, self.config.conf_threshold)
                 target_found = bool(results) and bool(results[0].detections)
 
+                result: PredictResult = results[0]
+                detection: Detection = result.detections[0]
+                self.save_detections(frame, detection, self.config.photos_folder)
+                x1, y1, x2, y2 = detection.box_xyxy
+                target_x = (x1 + x2) // 2
+                target_y = (y1 + y2) // 2
+
                 if not target_found:
                     lost += 1
                     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance})...")
                     drone.move_to(x=0.0, y=0.0, z=0.0)  
-                    if lost >= 3:
-                        if lost >= 5:
-                            if lost >= self.config.lost_tolerance:
-                                yasmin.YASMIN_LOG_ERROR("Lost detection exceeded: restarting state...")
-                                return FAIL
-                            yasmin.YASMIN_LOG_ERROR("Lost detection again: going up...")
-                            drone.move_to(x=0.0, y=0.0, z=0.8)  
-                            drone.delay(0.2)
-                            continue
-                        yasmin.YASMIN_LOG_ERROR("Lost detection: trying again...")
+                    if lost >= self.config.lost_tolerance:
+                        yasmin.YASMIN_LOG_ERROR("Lost detection exceeded: restarting state...")
+                        return FAIL
                     drone.delay(0.2)
                     continue
-
-                result: PredictResult = results[0]
-                detection: Detection = result.detections[0]
-                x1, y1, x2, y2 = detection.box_xyxy
-                target_x = (x1 + x2) // 2
-                target_y = (y1 + y2) // 2
                 
                 # result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
                 # detections = result.filter_by_class([self.config.box_class_name])
@@ -181,4 +179,22 @@ class Approach(State):
             if now - self.mission_start_time > Duration(seconds=self.config.mission_timeout):
                 return True
         return now - self.state_start_time > Duration(seconds=self.config.approach_timeout)
+
+    def save_detections(self, frame, detection: Detection, save_dir: str) -> None:
+        # nao sei se ta certo, tentei fazer com base no codigo do roncas da sae
+        os.makedirs(os.path.join(save_dir, "images"), exist_ok=True)
+        os.makedirs(os.path.join(save_dir, "labels"), exist_ok=True)
+        image_height, image_width = frame.shape[:2]
+        annotated = frame
     
+        name = f"{int(time.time() * 1000)}"
+        image_path = os.path.join(save_dir, "images", f"{name}.jpg")
+        label_path = os.path.join(save_dir, "labels", f"{name}.jpg")
+    
+        x1, y1, x2, y2 = detection.box_xyxy
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), 1)
+    
+        cv2.imwrite(image_path, frame)
+        cv2.imwrite(label_path, annotated)
+
+        return
