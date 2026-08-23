@@ -103,6 +103,7 @@ class Approach(State):
                         return FAIL
                     continue
 
+                lost = 0
                 result: PredictResult = results[0]
                 detection: Detection = result.detections[0]
                 self.save_detections(frame, detection, self.config.photos_folder)
@@ -110,22 +111,8 @@ class Approach(State):
                 target_x = (x1 + x2) // 2
                 target_y = (y1 + y2) // 2
 
-                # result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
-                # detections = result.filter_by_class([self.config.box_class_name])
-                
-                # # tolerates some missed detections before giving up, until the timeout
-                # if not detections:
-                #     lost += 1
-                #     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance}) Holding position...")
-                #     drone.move_velocity(0.0, 0.0, 0.0)
- 
-                #     if lost >= self.config.lost_tolerance:
-                #         yasmin.YASMIN_LOG_ERROR("Lost detection exceeded, aborting approach.")
-                #         return FAIL
-                #     continue
- 
-                # lost = 0
-                # best_det = max(detections, key=lambda d: d.confidence)
+                h, w = frame.shape[:2]
+                yasmin.YASMIN_LOG_WARN(f"frame shape: {w}x{h} | box_xyxy: {detection.box_xyxy}")
  
                 error_x_px = self.config.image_width // 2 - target_x
                 error_y_px = self.config.image_height // 2 - target_y
@@ -154,6 +141,23 @@ class Approach(State):
                     pid_cx.reset(); pid_cy.reset(); pid_cz.reset()
                     return SUCCEED
                 
+                # result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
+                # detections = result.filter_by_class([self.config.box_class_name])
+                
+                # # tolerates some missed detections before giving up, until the timeout
+                # if not detections:
+                #     lost += 1
+                #     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance}) Holding position...")
+                #     drone.move_velocity(0.0, 0.0, 0.0)
+ 
+                #     if lost >= self.config.lost_tolerance:
+                #         yasmin.YASMIN_LOG_ERROR("Lost detection exceeded, aborting approach.")
+                #         return FAIL
+                #     continue
+ 
+                # lost = 0
+                # best_det = max(detections, key=lambda d: d.confidence)
+
             yasmin.YASMIN_LOG_ERROR("Approaching box timed out.")
             return TIMEOUT
                 

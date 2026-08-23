@@ -140,7 +140,7 @@ class Initialize(State):
                 image_source = self.config.image_source
                 cam_config = OpenCVConfig(
                     width=self.config.image_width, 
-                    height=self.config.image_width
+                    height=self.config.image_height,
                 )
 
             camera = ImageHandler(
