@@ -22,10 +22,14 @@ class SearchBox(State):
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT 
 
-        # yasmin.YASMIN_LOG_INFO(f'Going to Box: {target}...')
+        if self.config.sim_mode:
+            target_box = self.config.sim_target_box
+        else:
+            target_box = self.config.target_box
+
         drone.move_to_gps(
-            latitude=self.config.target_box[self.i_box][0],
-            longitude=self.config.target_box[self.i_box][1],
+            latitude=target_box[self.i_box][0],
+            longitude=target_box[self.i_box][1],
             altitude=self.config.safe_altitude,
         )
 

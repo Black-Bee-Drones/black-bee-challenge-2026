@@ -10,6 +10,8 @@ from yasmin_ros.yasmin_node import YasminNode
 
 from datetime import datetime
 
+from dart import DART
+
 import nectar
 from nectar.control import (
     DroneFactory,
@@ -51,7 +53,8 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Start time failed: {e}')
             return ABORT
-        
+
+
         # Drone
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Drone...')
@@ -84,7 +87,8 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'DroneFactory failed: {e}')
             return ABORT
-        
+
+
         # PID controller
         try:
             yasmin.YASMIN_LOG_INFO("Initializing PID Controller...")
@@ -164,11 +168,22 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
             return ABORT 
-                
-        # Detector - box
+
+
+        # Detector
         try:
-            # yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
-            # self.detector_box = Detector(
+            yasmin.YASMIN_LOG_INFO("Initializing Detector...")
+
+            if self.config.sim_mode:
+                model_source = self.config.sim_model_source
+            else:
+                model_source = self.config.model_source
+            model = DART(model_source, train__device="cpu")     # Problema do meu pc
+            blackboard["model"] = model
+            yasmin.YASMIN_LOG_INFO("Successfully initialized Detector!")
+            return SUCCEED
+    
+            # Detector(
             #     model_source=self.config.box_model_source,
             #     confidence_threshold=self.config.box_conf,
             # )
@@ -179,17 +194,17 @@ class Initialize(State):
             # blackboard['detector_box'] = self.detector_box
             # blackboard.set('detector_box_callback', self.detector_box_callback)
             # yasmin.YASMIN_LOG_INFO('successful start Detector(box)!')
-            return SUCCEED
+            
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
             return ABORT
 
         except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
+            yasmin.YASMIN_LOG_ERROR(f'Detector failed: {e}')
             return ABORT
 
-    def detector_box_callback(self, image : np.ndarray):
+    def detector_box_callback(self, image: np.ndarray):
         # start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
         # now = datetime.fromtimestamp(
         # self.node.get_clock().now().nanoseconds / 1e9)

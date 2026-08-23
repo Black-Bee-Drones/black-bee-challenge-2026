@@ -15,7 +15,12 @@ from nectar.control import (
 from nectar.vision import (
     ImageHandler,
 )
-from nectar.ai import Detector, DetectionResult
+
+from dart import (
+    DART,
+    PredictResult,
+    Detection,
+)
 
 from package_delivery.constants import Config
 
@@ -44,10 +49,10 @@ class Approach(State):
             return ABORT
         camera: ImageHandler = blackboard["camera"]
 
-        if "detector_box" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("Detector(box) not available.")
+        if "model" not in blackboard:
+            yasmin.YASMIN_LOG_ERROR("DART model not available.")
             return ABORT
-        detector_box: Detector = blackboard["detector_box"]
+        model: DART = blackboard["model"]
 
         if "pid_cx" not in blackboard:
             yasmin.YASMIN_LOG_ERROR("X PID Controller not available.")
@@ -71,31 +76,61 @@ class Approach(State):
         pid_cy.set_setpoint(0.0)
         pid_cz.set_setpoint(0.0)
 
+        drone.move_velocity(0.0, 0.0, 0.0)
+        drone.move_to(0.0, 0.0, self.config.safe_altitude)
+        drone.delay(2)
+
         try:
             lost = 0
             while not self.timed_out():
                 frame = camera.take_photo()
                 if frame is None:
                     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle.")
+                    drone.delay(0.1)
                     continue
- 
-                result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
-                detections = result.filter_by_class([self.config.box_class_name])
-                
-                # tolerates some missed detections before giving up, until the timeout
-                if not detections:
+
+                results = model.predict(frame, self.config.conf_threshold)
+                target_found = bool(results) and bool(results[0].detections)
+
+                if not target_found:
                     lost += 1
-                    yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance}) Holding position...")
-                    drone.move_velocity(0.0, 0.0, 0.0)
- 
-                    if lost >= self.config.lost_tolerance:
-                        yasmin.YASMIN_LOG_ERROR("Lost detection exceeded, aborting approach.")
-                        return FAIL
+                    yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance})...")
+                    drone.move_to(x=0.0, y=0.0, z=0.0)  
+                    if lost >= 3:
+                        if lost >= 5:
+                            if lost >= self.config.lost_tolerance:
+                                yasmin.YASMIN_LOG_ERROR("Lost detection exceeded: restarting state...")
+                                return FAIL
+                            yasmin.YASMIN_LOG_ERROR("Lost detection again: going up...")
+                            drone.move_to(x=0.0, y=0.0, z=0.8)  
+                            drone.delay(0.2)
+                            continue
+                        yasmin.YASMIN_LOG_ERROR("Lost detection: trying again...")
+                    drone.delay(0.2)
                     continue
+
+                result: PredictResult = results[0]
+                detection: Detection = result.detections[0]
+                x1, y1, x2, y2 = detection.box_xyxy
+                target_x = (x1 + x2) // 2
+                target_y = (y1 + y2) // 2
+                
+                # result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
+                # detections = result.filter_by_class([self.config.box_class_name])
+                
+                # # tolerates some missed detections before giving up, until the timeout
+                # if not detections:
+                #     lost += 1
+                #     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance}) Holding position...")
+                #     drone.move_velocity(0.0, 0.0, 0.0)
  
-                lost = 0
-                best_det = max(detections, key=lambda d: d.confidence)
-                target_x, target_y = best_det.center
+                #     if lost >= self.config.lost_tolerance:
+                #         yasmin.YASMIN_LOG_ERROR("Lost detection exceeded, aborting approach.")
+                #         return FAIL
+                #     continue
+ 
+                # lost = 0
+                # best_det = max(detections, key=lambda d: d.confidence)
  
                 error_x_px = self.config.image_width // 2 - target_x
                 error_y_px = self.config.image_height // 2 - target_y
@@ -104,20 +139,26 @@ class Approach(State):
  
                 error_x = self.ppm(error_x_px, altitude, 86, self.config.image_width)
                 error_y = self.ppm(error_y_px, altitude, 47, self.config.image_height)
-                error_z = altitude - self.config.dropoff_altitude
+                error_z = self.config.dropoff_altitude - altitude
  
                 vx = pid_cy.update(error_y)
                 vy = pid_cx.update(-error_x)
  
-                if max(abs(error_x), abs(error_y)) < self.config.approach_tolerance:
-                    vz = pid_cz.update(error_z)
-                else:
-                    vz = 0.0
+                aligned = max(abs(error_x), abs(error_y)) < self.config.approach_tolerance
+                vz = pid_cz.update(error_z) if aligned else 0.0
  
                 drone.move_velocity(vx, vy, vz)
- 
-                if abs(error_z) < self.config.dropoff_tolerance:
+
+                yasmin.YASMIN_LOG_INFO(
+                    f"Detection at: error_x={error_x:.2f}, error_y={error_y:.2f}, "
+                    f"error_z={error_z:.2f} | vx={vx:.2f}, vy={vy:.2f}, vz={vz:.2f} | alt={altitude:.2f}"
+                )
+
+                drone.delay(0.1)
+
+                if aligned and abs(error_z) < self.config.dropoff_tolerance:
                     yasmin.YASMIN_LOG_INFO("Approaching succeeded! Delivering package...")
+                    pid_cx.reset(); pid_cy.reset(); pid_cz.reset()
                     return SUCCEED
                 
             yasmin.YASMIN_LOG_ERROR("Approaching box timed out.")
@@ -126,6 +167,7 @@ class Approach(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Approaching box failed: {e}")
             return ABORT
+
 
     def ppm(self, delta_pixel: int, altitude: float, fov_degrees: float, frame_px: int) -> float:
         angle_rad = math.radians(fov_degrees) / 2

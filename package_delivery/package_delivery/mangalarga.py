@@ -5,7 +5,7 @@ import yasmin
 from yasmin import StateMachine
 from yasmin_ros import set_ros_loggers
 from yasmin_ros.yasmin_node import YasminNode
-from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin_ros.basic_outcomes import SUCCEED, ABORT, TIMEOUT, FAIL
 
 from package_delivery.states.core import (
     Initialize,
@@ -53,7 +53,12 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "APPROACH",
             Approach(),
-            transitions={SUCCEED: "DROP_PKG", ABORT: "LAND"}
+            transitions={
+                SUCCEED: "DROP_PKG", 
+                ABORT: "LAND",
+                TIMEOUT: "LAND",
+                FAIL: "APPROACH",
+            }
         )
 
         self.add_state(

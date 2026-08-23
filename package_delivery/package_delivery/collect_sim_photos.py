@@ -6,7 +6,6 @@ import logging
 import nectar
 from nectar.vision import ImageHandler, ROSConfig
 
-import rclpy
 from rclpy.node import Node
 
 from package_delivery.constants import Config
@@ -65,7 +64,7 @@ class PhotoCollector(Node):
     def stop(self):
         self.camera.cleanup()
         path = os.path.abspath(self.output_folder)
-        log.info(f"\033[95m Collection finished: {self.frame_number} photos saved to {path}\033[0m")
+        log.info(f"\033[95mCollection finished: {self.frame_number} photos saved to {path}\033[0m")
 
 
 def main():
