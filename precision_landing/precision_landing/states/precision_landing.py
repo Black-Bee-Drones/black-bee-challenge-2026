@@ -1,7 +1,7 @@
 import math
 import yasmin
 from yasmin import State, Blackboard
-from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin_ros.basic_outcomes import SUCCEED, ABORT, TIMEOUT
 from yasmin_ros.yasmin_node import YasminNode
 
 from rclpy.duration import Duration
@@ -34,7 +34,7 @@ from precision_landing.constants import (
 
 class Precision_landing(State):
     def __init__(self):
-        super().__init__(outcomes=[SUCCEED, ABORT])
+        super().__init__(outcomes=[SUCCEED, ABORT, TIMEOUT])
         self.node = YasminNode.get_instance()
         
         self.pid_x = PIDController(
@@ -125,7 +125,7 @@ class Precision_landing(State):
                                 vz = output_z,
                                 vyaw = 0.0,
                             )
-                            drone.delay(0.5)
+                            drone.delay(0.3)
                             #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
                             break
 
@@ -143,9 +143,18 @@ class Precision_landing(State):
                     elif alt < MAX_ALTITUDE:
                         #TRY TO WAIT AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
+<<<<<<< HEAD
                         drone.move_velocity(vx=output_x,vy=output_y, vz = output_z)
                     drone.delay(0.5)
 
+=======
+                        drone.move_velocity(vx=0,vy=0,vz=0)
+                    else:
+                        #NÃO SEI OQUE FAZER AQUI
+                        drone.move_velocity(vx=0,vy=0,vz=0)
+            
+            return TIMEOUT
+>>>>>>> 5a18978 (Third day testing changes)
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"PRECISION_LANDING Failed: {e}")
