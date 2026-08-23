@@ -81,7 +81,6 @@ class Approach(State):
         pid_cz.set_setpoint(0.0)
 
         drone.move_velocity(0.0, 0.0, 0.0)
-        drone.move_to(0.0, 0.0, self.config.safe_altitude)
         drone.delay(2)
 
         try:

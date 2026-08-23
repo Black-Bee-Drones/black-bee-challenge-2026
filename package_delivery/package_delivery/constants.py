@@ -69,15 +69,15 @@ class Config:
     # PID xy
     xy_output_lim: tuple = (-0.5, 0.5)
     xy_integral_lim: tuple = (-1.0, 1.0)
-    x_kp: float = 0.2
+    x_kp: float = 0.25
     x_ki: float = 0.0
     x_kd: float = 0.0
-    y_kp: float = 0.0
+    y_kp: float = 0.5
     y_ki: float = 0.0
     y_kd: float = 0.0
 
     # PID z
-    z_kp: float = 0.5
+    z_kp: float = 0.25
     z_kd: float = 0.0
     z_ki: float = 0.0
     z_output_lim: tuple = (-1.0, 1.0)
