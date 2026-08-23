@@ -96,13 +96,6 @@ class Approach(State):
                 results = model.predict(frame, self.config.conf_threshold)
                 target_found = bool(results) and bool(results[0].detections)
 
-                result: PredictResult = results[0]
-                detection: Detection = result.detections[0]
-                self.save_detections(frame, detection, self.config.photos_folder)
-                x1, y1, x2, y2 = detection.box_xyxy
-                target_x = (x1 + x2) // 2
-                target_y = (y1 + y2) // 2
-
                 if not target_found:
                     lost += 1
                     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance})...")
@@ -112,7 +105,14 @@ class Approach(State):
                         return FAIL
                     drone.delay(0.2)
                     continue
-                
+
+                result: PredictResult = results[0]
+                detection: Detection = result.detections[0]
+                self.save_detections(frame, detection, self.config.photos_folder)
+                x1, y1, x2, y2 = detection.box_xyxy
+                target_x = (x1 + x2) // 2
+                target_y = (y1 + y2) // 2
+
                 # result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
                 # detections = result.filter_by_class([self.config.box_class_name])
                 
