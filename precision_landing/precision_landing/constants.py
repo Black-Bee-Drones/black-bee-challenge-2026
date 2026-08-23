@@ -17,13 +17,15 @@ IMAGE_HEIGHT = 640
 TAKEOFF_HEIGHT = 5 #Meters
 MAX_ALTITUDE = 6 #meters
 
-SEARCH_TIME = 120 #seconds (2min)
+SEARCH_TIME = 160 #seconds (2min 40s)
 FIND_TIME = 120 #seconds (2min)
-PRECISION_LANDING_TIME = 600
+PRECISION_LANDING_TIME = 120
 
 MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
-WAYPOINTS = [(0, 0), (0, -3), (3, -3)]
+WAYPOINTS = [(0,0), (-4,5), (-2,5), (0,5), (2,5), (3,5), (5,5), (5,3), (3,3), (0,3),
+(-2,3), (-4,3), (-4,1), (-2,1), (2,1), (5,1), (5,-2), (2,-2), (-1,-2), (-4,-2),
+(-4,-4), (-2,-4), (1,-4), (3,-4), (5, -4)]
 
 CONTROLER_P_XY = 0.250 if SIM_MODE else 0.123
 CONTROLER_I_XY = 0.0
