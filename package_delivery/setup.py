@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'mangalarga = package_delivery.mangalarga:main'
+            'mangalarga = package_delivery.mangalarga:main',
+            'collect_sim_photos = package_delivery.collect_sim_photos:main',
         ],
     },
 )
