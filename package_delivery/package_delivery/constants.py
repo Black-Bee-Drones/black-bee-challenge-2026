@@ -24,8 +24,8 @@ class Config:
 
     # Camera
     image_source : str = 'webcam'
-    image_width: int = 640          # pixels
-    image_height: int = 480         # pixels
+    image_width: int = 320          # pixels
+    image_height: int = 240         # pixels
 
     # Approach
     approach_timeout: int = 60         # seconds
@@ -63,13 +63,13 @@ class Config:
     # Detector
     model_source = "share/models/best.pt"
     conf_threshold = 0.6
-    photos_folder = Path.home() / "ros2_ws" / "black-bee-challenge-2026" / "package_delivery" 
+    photos_folder = Path.home() / "ros2_ws" / "src" / "black-bee-challenge-2026" / "package_delivery" 
 
     # --- PIDController ---
     # PID xy
-    xy_output_lim: tuple = (-1.0, 1.0)
+    xy_output_lim: tuple = (-0.5, 0.5)
     xy_integral_lim: tuple = (-1.0, 1.0)
-    x_kp: float = 0.25
+    x_kp: float = 0.2
     x_ki: float = 0.0
     x_kd: float = 0.0
     y_kp: float = 0.0

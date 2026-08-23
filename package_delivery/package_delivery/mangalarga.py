@@ -56,7 +56,7 @@ class PackageDelivery(StateMachine):
             transitions={
                 SUCCEED: "DROP_PKG", 
                 ABORT: "LAND",
-                TIMEOUT: "LAND",
+                TIMEOUT: "LAND",    # só pra teste
                 FAIL: "APPROACH",
             }
         )

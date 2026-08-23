@@ -152,7 +152,7 @@ class Approach(State):
                     f"error_z={error_z:.2f} | vx={vx:.2f}, vy={vy:.2f}, vz={vz:.2f} | alt={altitude:.2f}"
                 )
 
-                drone.delay(0.1)
+                drone.delay(2)
 
                 if aligned and abs(error_z) < self.config.dropoff_tolerance:
                     yasmin.YASMIN_LOG_INFO("Approaching succeeded! Delivering package...")
@@ -182,19 +182,20 @@ class Approach(State):
 
     def save_detections(self, frame, detection: Detection, save_dir: str) -> None:
         # nao sei se ta certo, tentei fazer com base no codigo do roncas da sae
-        os.makedirs(os.path.join(save_dir, "images"), exist_ok=True)
         os.makedirs(os.path.join(save_dir, "labels"), exist_ok=True)
         image_height, image_width = frame.shape[:2]
-        annotated = frame
     
         name = f"{int(time.time() * 1000)}"
-        image_path = os.path.join(save_dir, "images", f"{name}.jpg")
         label_path = os.path.join(save_dir, "labels", f"{name}.jpg")
     
         x1, y1, x2, y2 = detection.box_xyxy
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), 1)
+        cv2.rectangle(frame, 
+                      (int(x1), int(y1)), 
+                      (int(x2), int(y2)), 
+                      (255, 0, 0),
+                      2,
+                    )
     
-        cv2.imwrite(image_path, frame)
-        cv2.imwrite(label_path, annotated)
+        cv2.imwrite(label_path, frame)
 
         return
