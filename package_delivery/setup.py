@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from setuptools import find_packages, setup
 
 package_name = 'package_delivery'
@@ -10,6 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'models'), glob('models/*.pt')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,7 +27,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'mangalarga = package_delivery.mangalarga:main'
+            'mangalarga = package_delivery.mangalarga:main',
+            'collect_sim_photos = package_delivery.collect_sim_photos:main',
         ],
     },
 )

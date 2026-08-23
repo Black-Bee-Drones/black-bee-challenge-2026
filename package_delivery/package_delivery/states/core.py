@@ -73,7 +73,7 @@ class Initialize(State):
                 drone = DroneFactory.create("mavros", SITL_GAZEBO_CONFIG)
             else:
                 drone = DroneFactory.create(self.config.drone_type, drone_config)
-            
+
             blackboard['drone'] = drone
             yasmin.YASMIN_LOG_INFO(f'Successful start Drone("{self.config.drone_type}")!')
         
@@ -140,7 +140,6 @@ class Initialize(State):
             self.detector_box.load()
 
             blackboard['detector_box'] = self.detector_box
-            blackboard.set('detector_box_callback', self.detector_box_callback)
             yasmin.YASMIN_LOG_INFO('Successful start Detector(box)!')
 
         except KeyboardInterrupt:
@@ -197,30 +196,30 @@ class Initialize(State):
 
 
     def detector_box_callback(self, image : np.ndarray):
-        start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
-        now = datetime.fromtimestamp(
-        self.node.get_clock().now().nanoseconds / 1e9)
+        # start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
+        # now = datetime.fromtimestamp(
+        # self.node.get_clock().now().nanoseconds / 1e9)
 
-        pkg_path = pathlib.Path.home() / 'ros2_ws' / \
-            start.strftime('pkgdelivery-%Y-%m-%d_%H-%M-%S')
-        raw_path = pkg_path / 'box'
-        annotated_path = pkg_path / 'box_annotated'
+        # pkg_path = pathlib.Path.home() / 'ros2_ws' / \
+        #     start.strftime('pkgdelivery-%Y-%m-%d_%H-%M-%S')
+        # raw_path = pkg_path / 'box'
+        # annotated_path = pkg_path / 'box_annotated'
 
-        raw_file = raw_path / now.strftime('raw-%Y-%m-%d_%H-%M-%S-%f.png')
-        annotated_file = annotated_path / \
-            now.strftime('annotated-%Y-%m-%d_%H-%M-%S-%f.png')
+        # raw_file = raw_path / now.strftime('raw-%Y-%m-%d_%H-%M-%S-%f.png')
+        # annotated_file = annotated_path / \
+        #     now.strftime('annotated-%Y-%m-%d_%H-%M-%S-%f.png')
 
-        os.makedirs(pkg_path, exist_ok=True)
-        os.makedirs(raw_path, exist_ok=True)
-        os.makedirs(annotated_path, exist_ok=True)
+        # os.makedirs(pkg_path, exist_ok=True)
+        # os.makedirs(raw_path, exist_ok=True)
+        # os.makedirs(annotated_path, exist_ok=True)
 
-        result = self.detector_box.detect(image)
-        result.image = image
-        result.annotated_image = self.detector_box.draw_detections(image, result)
+        # result = self.detector_box.detect(image)
+        # result.image = image
+        # result.annotated_image = self.detector_box.draw_detections(image, result)
 
-        cv2.imwrite(raw_file, result.image)
-        cv2.imwrite(annotated_file, result.annotated_image)
-        return result
+        # cv2.imwrite(raw_file, result.image)
+        # cv2.imwrite(annotated_file, result.annotated_image)
+        return image
 
 
 class Takeoff(State):

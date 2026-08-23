@@ -1,5 +1,6 @@
+import os
+from ament_index_python.packages import get_package_share_directory
 from dataclasses import dataclass, field
-
 
 @dataclass
 class Config:
@@ -20,12 +21,12 @@ class Config:
     )
 
     # Model - v3 box - 
-    box_model_source: str = "/home/jotavio/ros2_ws/src/black-bee-challenge-2026/package_delivery/package_delivery/models/best.pt"
+    box_model_source: str = os.path.join(get_package_share_directory('package_delivery'), 'models', 'best.pt')
     box_class_name: str = "box"
     box_conf: float = 0.25
 
     # Camera
-    image_source : str = 'webcam'   # 'ros' for Simulation Mode 
+    image_source : str = 'webcam'
     image_width: int = 640          # pixels
     image_height: int = 480         # pixels
 
@@ -33,7 +34,7 @@ class Config:
     approach_timeout: int = 60         # seconds
     approach_tolerance: float = 0.20   # meters
     dropoff_altitude: float = 0.80     # meters
-    dropoff_tolerance: float = 0.10    # meters
+    dropoff_tolerance: float = 0.20    # meters
 
     safe_altitude: float = 2.0 # meters
     max_altitude: float = 6.0  # meters
@@ -56,12 +57,12 @@ class Config:
     delivery_boxes: list = field(default_factory=list)
     
     # Gripper Controller
-    has_thePkg : bool = True   # flag to verify if the drone has the package (True)              
-    servo_channel : int = 0           # aux_out (0-7 maps to AUX physical outputs 1-8)
+    has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
+    servo_channel : int = 0         # aux_out (0-7 maps to AUX physical outputs 1-8)
     servo_open_pwm : int = 1800
     servo_closed_pwm : int = 1200     
     servo_action_delay = 1.0    # sleep time
-    
+
 
     # PIDController ###
     # PID xy
