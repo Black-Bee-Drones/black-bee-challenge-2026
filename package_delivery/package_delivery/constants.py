@@ -14,6 +14,11 @@ class Config:
     sim_image_source: str = "/down_camera"
     sim_image_compressed: bool = False
 
+    # Model - v3 box - 
+    box_model_source: str = "/home/jotavio/ros2_ws/src/black-bee-challenge-2026/package_delivery/package_delivery/models/best.pt"
+    box_class_name: str = "box"
+
+
     # Camera
     image_source : str = 'webcam'   # 'ros' for Simulation Mode 
     image_width: int = 640          # pixels

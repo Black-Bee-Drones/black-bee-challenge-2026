@@ -170,6 +170,11 @@ class Initialize(State):
                 model_source=self.config.box_model_source,
                 confidence_threshold=self.config.box_conf,
             )
+            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
+            self.detector_box = Detector(
+                model_source=self.config.box_model_source,
+                confidence_threshold=self.config.box_conf,
+            )
 
             yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
             self.detector_box.load()
@@ -177,6 +182,7 @@ class Initialize(State):
             blackboard['detector_box'] = self.detector_box
             blackboard.set('detector_box_callback', self.detector_box_callback)
             yasmin.YASMIN_LOG_INFO('successful start Detector(box)!')
+            return SUCCEED
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
@@ -186,7 +192,7 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
             return ABORT
 
-    def detector_box_callback(self, image : np.ndarray) -> DetectionResult:
+    def detector_box_callback(self, image : np.ndarray):
         start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
         now = datetime.fromtimestamp(
         self.node.get_clock().now().nanoseconds / 1e9)
@@ -204,10 +210,9 @@ class Initialize(State):
         os.makedirs(raw_path, exist_ok=True)
         os.makedirs(annotated_path, exist_ok=True)
 
-        result = self.detector_gate.detect(image)
+        result = self.detector_box.detect(image)
         result.image = image
-        result.annotated_image = self.detector_gate.draw_detections(
-            image, result)
+        result.annotated_image = self.detector_box.draw_detections(image, result)
 
         cv2.imwrite(raw_file, result.image)
         cv2.imwrite(annotated_file, result.annotated_image)
