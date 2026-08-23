@@ -207,3 +207,6 @@ sae_hook_arena_*.sdf
 
 # --- Models: KEEP tracked (.pt weights live here on purpose) ---
 # share/models/*.pt is committed
+
+# Package Delivery Labels
+labels/
