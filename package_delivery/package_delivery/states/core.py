@@ -122,27 +122,58 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'PID failed: {e}')
             return ABORT
 
-        
+
+        # Detector - box
+        try:
+            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
+            self.detector_box = Detector(
+                model_source=self.config.box_model_source,
+                confidence_threshold=self.config.box_conf,
+            )
+            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
+            self.detector_box = Detector(
+                model_source=self.config.box_model_source,
+                confidence_threshold=self.config.box_conf,
+            )
+
+            yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
+            self.detector_box.load()
+
+            blackboard['detector_box'] = self.detector_box
+            blackboard.set('detector_box_callback', self.detector_box_callback)
+            yasmin.YASMIN_LOG_INFO('Successful start Detector(box)!')
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+
+        except Exception as e:
+            yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
+            return ABORT
+
+
         # Camera (Image Handler)
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Camera...')
-            if self.config.image_source == 'webcam':
-                cam_config = OpenCVConfig(
-                    width=self.config.image_width, 
-                    height=self.config.image_width
-                )
-            elif self.config.sim_mode or self.config.image_source == 'ros':
+            if (self.config.sim_mode):
+                image_source = self.config.sim_image_source
                 cam_config = ROSConfig(
                     topic=self.config.sim_image_source, 
                     compressed=self.config.sim_image_compressed,
                 )
-            
+            else:
+                image_source = self.config.image_source
+                cam_config = OpenCVConfig(
+                    width=self.config.image_width, 
+                    height=self.config.image_height,
+                )
+
             camera = ImageHandler(
-                image_source=self.config.image_source,
+                image_source=image_source,
                 config=cam_config,
-                image_processing_callback=self.detector_box_callback
+                image_processing_callback=self.detector_box_callback,
             )
-            
+
             yasmin.YASMIN_LOG_INFO('Open camera...')
             camera.open()
 
@@ -162,35 +193,8 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
             return ABORT 
-                
-        # Detector - box
-        try:
-            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
-            self.detector_box = Detector(
-                model_source=self.config.box_model_source,
-                confidence_threshold=self.config.box_conf,
-            )
-            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
-            self.detector_box = Detector(
-                model_source=self.config.box_model_source,
-                confidence_threshold=self.config.box_conf,
-            )
+        return SUCCEED
 
-            yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
-            self.detector_box.load()
-
-            blackboard['detector_box'] = self.detector_box
-            blackboard.set('detector_box_callback', self.detector_box_callback)
-            yasmin.YASMIN_LOG_INFO('successful start Detector(box)!')
-            return SUCCEED
-
-        except KeyboardInterrupt:
-            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
-            return ABORT
-
-        except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
-            return ABORT
 
     def detector_box_callback(self, image : np.ndarray):
         start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)

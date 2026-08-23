@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 @dataclass
 class Config:
     target_box: tuple = (
-        (-35.363285, 149.165242),     # box 1: lat, long
+        (0, 0),     # box 1: lat, long
         (1, 1),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
@@ -13,11 +13,16 @@ class Config:
     sim_mode: bool = True
     sim_image_source: str = "/down_camera"
     sim_image_compressed: bool = False
+    sim_target_box: tuple = (
+        (-35.363292, 149.165253),   # box 1: lat, long
+        (-35.363284, 149.165271),   # box 2: lat, long
+        (-35.363291, 149.165307),   # box 3: lat, long
+    )
 
     # Model - v3 box - 
     box_model_source: str = "/home/jotavio/ros2_ws/src/black-bee-challenge-2026/package_delivery/package_delivery/models/best.pt"
     box_class_name: str = "box"
-
+    box_conf: float = 0.25
 
     # Camera
     image_source : str = 'webcam'   # 'ros' for Simulation Mode 
@@ -62,11 +67,11 @@ class Config:
     # PID xy
     xy_output_lim: tuple = (-1.0, 1.0)
     xy_integral_lim: tuple = (-1.0, 1.0)
-    x_kp: float = 0.5
-    x_ki: float = 0.1
+    x_kp: float = 0.25
+    x_ki: float = 0.0
     x_kd: float = 0.0
-    y_kp: float = 0.5
-    y_ki: float = 0.1
+    y_kp: float = 0.25
+    y_ki: float = 0.0
     y_kd: float = 0.0
 
     # PID z

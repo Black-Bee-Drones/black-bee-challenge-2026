@@ -210,3 +210,4 @@ sae_hook_arena_*.sdf
 
 package_delivery/data
 package_delivery/outputs
+package_delivery/labels
