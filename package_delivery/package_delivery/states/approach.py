@@ -81,7 +81,6 @@ class Approach(State):
         pid_cz.set_setpoint(0.0)
 
         drone.move_velocity(0.0, 0.0, 0.0)
-        drone.delay(2)
 
         try:
             lost = 0
@@ -89,7 +88,6 @@ class Approach(State):
                 frame = camera.take_photo()
                 if frame is None:
                     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle.")
-                    drone.delay(0.1)
                     continue
 
                 results = model.predict(frame, self.config.conf_threshold)
@@ -100,9 +98,9 @@ class Approach(State):
                     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance})...")
                     drone.move_to(x=0.0, y=0.0, z=0.0)  
                     if lost >= self.config.lost_tolerance:
-                        yasmin.YASMIN_LOG_ERROR("Lost detection exceeded: restarting state...")
+                        yasmin.YASMIN_LOG_ERROR("Lost detection exceeded: moving up and restarting state...")
+                        drone.move_to(x=0.0, y=0.0, z=0.8)  
                         return FAIL
-                    drone.delay(0.2)
                     continue
 
                 result: PredictResult = results[0]
@@ -151,8 +149,6 @@ class Approach(State):
                     f"error_z={error_z:.2f} | vx={vx:.2f}, vy={vy:.2f}, vz={vz:.2f} | alt={altitude:.2f}"
                 )
 
-                drone.delay(2)
-
                 if aligned and abs(error_z) < self.config.dropoff_tolerance:
                     yasmin.YASMIN_LOG_INFO("Approaching succeeded! Delivering package...")
                     pid_cx.reset(); pid_cy.reset(); pid_cz.reset()
@@ -182,7 +178,6 @@ class Approach(State):
     def save_detections(self, frame, detection: Detection, save_dir: str) -> None:
         # nao sei se ta certo, tentei fazer com base no codigo do roncas da sae
         os.makedirs(os.path.join(save_dir, "labels"), exist_ok=True)
-        image_height, image_width = frame.shape[:2]
     
         name = f"{int(time.time() * 1000)}"
         label_path = os.path.join(save_dir, "labels", f"{name}.jpg")
@@ -194,7 +189,5 @@ class Approach(State):
                       (255, 0, 0),
                       2,
                     )
-    
         cv2.imwrite(label_path, frame)
-
         return
