@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 @dataclass
 class Config:
     target_box: tuple = (
-        (-35.363285, 149.165242),     # box 1: lat, long
+        (-35.363285, 149.165242),   # box 1: lat, long
         (1, 1),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
@@ -15,7 +15,7 @@ class Config:
     sim_image_compressed: bool = False
 
     # Camera
-    image_source : str = 'webcam'   # 'ros' for Simulation Mode 
+    image_source : str = 'webcam'
     image_width: int = 640          # pixels
     image_height: int = 480         # pixels
 

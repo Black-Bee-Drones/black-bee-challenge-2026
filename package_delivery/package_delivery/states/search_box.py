@@ -9,6 +9,7 @@ class SearchBox(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
+        self.i_box = 0
 
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
@@ -23,10 +24,12 @@ class SearchBox(State):
 
         # yasmin.YASMIN_LOG_INFO(f'Going to Box: {target}...')
         drone.move_to_gps(
-            latitude=self.config.target_box[0],
-            longitude=self.config.target_box[1],
+            latitude=self.config.target_box[self.i_box][0],
+            longitude=self.config.target_box[self.i_box][1],
             altitude=self.config.safe_altitude,
         )
+
+        self.i_box += 1
         
         yasmin.YASMIN_LOG_INFO('Completed successfully.')
         return SUCCEED

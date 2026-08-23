@@ -126,19 +126,21 @@ class Initialize(State):
         # Camera (Image Handler)
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Camera...')
-            if self.config.image_source == 'webcam':
-                cam_config = OpenCVConfig(
-                    width=self.config.image_width, 
-                    height=self.config.image_width
-                )
-            elif self.config.sim_mode or self.config.image_source == 'ros':
+            if (self.config.sim_mode):
+                image_source = self.config.sim_image_source
                 cam_config = ROSConfig(
                     topic=self.config.sim_image_source, 
                     compressed=self.config.sim_image_compressed,
                 )
-            
+            else:
+                image_source = self.config.image_source
+                cam_config = OpenCVConfig(
+                    width=self.config.image_width, 
+                    height=self.config.image_width
+                )
+
             camera = ImageHandler(
-                image_source=self.config.image_source,
+                image_source=image_source,
                 config=cam_config,
                 image_processing_callback=self.detector_box_callback
             )
@@ -165,18 +167,19 @@ class Initialize(State):
                 
         # Detector - box
         try:
-            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
-            self.detector_box = Detector(
-                model_source=self.config.box_model_source,
-                confidence_threshold=self.config.box_conf,
-            )
+            # yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
+            # self.detector_box = Detector(
+            #     model_source=self.config.box_model_source,
+            #     confidence_threshold=self.config.box_conf,
+            # )
 
-            yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
-            self.detector_box.load()
+            # yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
+            # self.detector_box.load()
 
-            blackboard['detector_box'] = self.detector_box
-            blackboard.set('detector_box_callback', self.detector_box_callback)
-            yasmin.YASMIN_LOG_INFO('successful start Detector(box)!')
+            # blackboard['detector_box'] = self.detector_box
+            # blackboard.set('detector_box_callback', self.detector_box_callback)
+            # yasmin.YASMIN_LOG_INFO('successful start Detector(box)!')
+            return SUCCEED
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
@@ -186,32 +189,33 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
             return ABORT
 
-    def detector_box_callback(self, image : np.ndarray) -> DetectionResult:
-        start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
-        now = datetime.fromtimestamp(
-        self.node.get_clock().now().nanoseconds / 1e9)
+    def detector_box_callback(self, image : np.ndarray):
+        # start = datetime.fromtimestamp(self.start_time.nanoseconds / 1e9)
+        # now = datetime.fromtimestamp(
+        # self.node.get_clock().now().nanoseconds / 1e9)
 
-        pkg_path = pathlib.Path.home() / 'ros2_ws' / \
-            start.strftime('pkgdelivery-%Y-%m-%d_%H-%M-%S')
-        raw_path = pkg_path / 'box'
-        annotated_path = pkg_path / 'box_annotated'
+        # pkg_path = pathlib.Path.home() / 'ros2_ws' / \
+        #     start.strftime('pkgdelivery-%Y-%m-%d_%H-%M-%S')
+        # raw_path = pkg_path / 'box'
+        # annotated_path = pkg_path / 'box_annotated'
 
-        raw_file = raw_path / now.strftime('raw-%Y-%m-%d_%H-%M-%S-%f.png')
-        annotated_file = annotated_path / \
-            now.strftime('annotated-%Y-%m-%d_%H-%M-%S-%f.png')
+        # raw_file = raw_path / now.strftime('raw-%Y-%m-%d_%H-%M-%S-%f.png')
+        # annotated_file = annotated_path / \
+        #     now.strftime('annotated-%Y-%m-%d_%H-%M-%S-%f.png')
 
-        os.makedirs(pkg_path, exist_ok=True)
-        os.makedirs(raw_path, exist_ok=True)
-        os.makedirs(annotated_path, exist_ok=True)
+        # os.makedirs(pkg_path, exist_ok=True)
+        # os.makedirs(raw_path, exist_ok=True)
+        # os.makedirs(annotated_path, exist_ok=True)
 
-        result = self.detector_gate.detect(image)
-        result.image = image
-        result.annotated_image = self.detector_gate.draw_detections(
-            image, result)
+        # result = self.detector_gate.detect(image)
+        # result.image = image
+        # result.annotated_image = self.detector_gate.draw_detections(
+        #     image, result)
 
-        cv2.imwrite(raw_file, result.image)
-        cv2.imwrite(annotated_file, result.annotated_image)
-        return result
+        # cv2.imwrite(raw_file, result.image)
+        # cv2.imwrite(annotated_file, result.annotated_image)
+        # return result
+        return image
 
 
 class Takeoff(State):
