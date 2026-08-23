@@ -9,7 +9,7 @@ class Gripper(State):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
         self.target_has_pkg = target_has_pkg
-    
+
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
             drone : MavrosDrone = blackboard.get('drone')

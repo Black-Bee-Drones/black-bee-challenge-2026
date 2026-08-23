@@ -278,7 +278,7 @@ class Land(State):
 
         elif self.config.drone_type == 'mavlink':
             drone : MavlinkDrone = blackboard.get('drone')
-        
+
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT

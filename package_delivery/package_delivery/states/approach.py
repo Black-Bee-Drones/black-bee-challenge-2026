@@ -99,7 +99,7 @@ class Approach(State):
                     drone.move_to(x=0.0, y=0.0, z=0.0)  
                     if lost >= self.config.lost_tolerance:
                         yasmin.YASMIN_LOG_ERROR("Lost detection exceeded: moving up and restarting state...")
-                        drone.move_to(x=0.0, y=0.0, z=0.8)  
+                        drone.move_to(x=0.0, y=0.0, z=0.2)  
                         return FAIL
                     continue
 
@@ -111,15 +111,15 @@ class Approach(State):
                 target_x = (x1 + x2) // 2
                 target_y = (y1 + y2) // 2
 
-                h, w = frame.shape[:2]
-                yasmin.YASMIN_LOG_WARN(f"frame shape: {w}x{h} | box_xyxy: {detection.box_xyxy}")
+                # h, w = frame.shape[:2]
+                # yasmin.YASMIN_LOG_WARN(f"frame shape: {w}x{h} | box_xyxy: {detection.box_xyxy}")
  
                 error_x_px = self.config.image_width // 2 - target_x
                 error_y_px = self.config.image_height // 2 - target_y
  
                 altitude = drone.get_altitude()
  
-                error_x = self.ppm(error_x_px, altitude, 86, self.config.image_width)
+                error_x = self.ppm(error_x_px, altitude, 60, self.config.image_width)
                 error_y = self.ppm(error_y_px, altitude, 47, self.config.image_height)
                 error_z = self.config.dropoff_altitude - altitude
  

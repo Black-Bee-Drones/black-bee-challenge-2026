@@ -34,6 +34,6 @@ class SearchBox(State):
         )
 
         self.i_box += 1
-        
+
         yasmin.YASMIN_LOG_INFO('Completed successfully.')
         return SUCCEED

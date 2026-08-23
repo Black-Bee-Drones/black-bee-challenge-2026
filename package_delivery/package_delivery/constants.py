@@ -24,14 +24,14 @@ class Config:
 
     # Camera
     image_source : str = 'webcam'
-    image_width: int = 320          # pixels
-    image_height: int = 240         # pixels
+    image_width: int = 640          # pixels
+    image_height: int = 480         # pixels
 
     # Approach
     approach_timeout: int = 60         # seconds
-    approach_tolerance: float = 0.20   # meters
+    approach_tolerance: float = 0.40   # meters
     dropoff_altitude: float = 0.80     # meters
-    dropoff_tolerance: float = 0.10    # meters
+    dropoff_tolerance: float = 0.40    # meters
 
     # Drone
     safe_altitude: float = 2.0 # meters
