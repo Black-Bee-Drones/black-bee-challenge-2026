@@ -9,8 +9,8 @@ SIM_MODE = False
 
 
 # ── Flight Configuration ─────────────────────────────────────────────────────
-RTL_ALTITUDE   = 1.5   # Return-to-launch altitude (meters)
-TAKEOFF_HEIGHT = 1.5   # Default take-off height   (meters)
+RTL_ALTITUDE   = 2.0   # Return-to-launch altitude (meters)
+TAKEOFF_HEIGHT = 2.0  # Default take-off height   (meters)
 
 
 # ── Image Handler ────────────────────────────────────────────────────────────
