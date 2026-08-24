@@ -73,7 +73,7 @@ class Initialize(State):
             )
 
             hosedetector = LineDetector(
-                color="green",
+                color="blue",
                 estimation_method=RotatedRect(),
                 color_space=ColorSpace.HSV
             )
