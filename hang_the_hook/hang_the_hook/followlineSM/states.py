@@ -302,9 +302,12 @@ class FollowBlueLine(State):
 
             pid_cy.set_setpoint(FRAME_WIDTH / 2)
             pid_angle.set_setpoint(0.0)
+            pid_cy.tune(CX_KP, CX_KI, CX_KD)
+            pid_angle.tune(ANGLE_KP, ANGLE_KI, ANGLE_KD)
 
             camera.open()
             lost_frames = 0
+            log_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors", "error_log.csv"))
             while True:
                 frame = camera.take_photo()
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
@@ -313,9 +316,9 @@ class FollowBlueLine(State):
                     lost_frames = 0
                     vy = pid_cy.update(cxBlue)
                     vyaw = pid_angle.update(angleBlue)
-                    log_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors", "error_log.csv"))
+                    cx_error = cxBlue - FRAME_WIDTH / 2
                     with open(log_file, "a") as f:
-                        f.write(f"{cxBlue}, {angleBlue}, {datetime.now().strftime('%M:%S')}\n")
+                        f.write(f"{cx_error}, {angleBlue}, {datetime.now().strftime('%M:%S')}\n")
                     self.node.get_logger().info(f"Blue line detected: {cxBlue}, {cyBlue}, {angleBlue}")
                 else:
                     lost_frames += 1

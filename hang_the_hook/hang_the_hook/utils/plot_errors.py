@@ -22,11 +22,7 @@ def plot_log(csv_path: str = None):
     print(f"Lendo dados de log de: {csv_path}")
 
     try:
-        # Load CSV (handles optional header or no header)
         df = pd.read_csv(csv_path, skipinitialspace=True)
-        if list(df.columns) != ["cx_error", "angle_error", "time"]:
-            # If no header was present, reload specifying header names
-            df = pd.read_csv(csv_path, names=["cx_error", "angle_error", "time"], skipinitialspace=True)
     except Exception as e:
         print(f"[ERROR] Falha ao ler o arquivo CSV: {e}")
         return
