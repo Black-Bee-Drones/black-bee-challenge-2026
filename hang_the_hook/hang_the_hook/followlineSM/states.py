@@ -85,6 +85,7 @@ class SearchBlueLine(State):
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
 
+            camera.open()
             last_detection_time = time()
 
             while True:
@@ -145,6 +146,9 @@ class SearchBlueLine(State):
         except Exception as e:
             print(f"Blue line searching failed: {e}")
             return ABORT
+        finally:
+            if camera:
+                camera.close()
 
 class SeekLine(State):
     '''
