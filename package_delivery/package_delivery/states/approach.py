@@ -15,7 +15,7 @@ from nectar.control import (
 from nectar.vision import (
     ImageHandler,
 )
-from nectar.ai import Detector, DetectionResult
+from nectar.ai import DetectionResult
 
 from package_delivery.constants import Config
 
@@ -44,10 +44,10 @@ class Approach(State):
             return ABORT
         camera: ImageHandler = blackboard["camera"]
 
-        if "detector_box" not in blackboard:
-            yasmin.YASMIN_LOG_ERROR("Detector(box) not available.")
-            return ABORT
-        detector_box: Detector = blackboard["detector_box"]
+        # if "detector_box" not in blackboard:
+        #     yasmin.YASMIN_LOG_ERROR("Detector(box) not available.")
+        #     return ABORT
+        # detector_box: Detector = blackboard["detector_box"]
 
         if "pid_cx" not in blackboard:
             yasmin.YASMIN_LOG_ERROR("X PID Controller not available.")
@@ -74,12 +74,15 @@ class Approach(State):
         try:
             lost = 0
             while not self.timed_out():
-                frame = camera.take_photo()
-                if frame is None:
-                    yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle.")
-                    continue
+                # frame = camera.take_photo()
+                # if frame is None:
+                #     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle.")
+                #     continue
  
-                result: DetectionResult = detector_box.detect(frame, conf=self.config.box_conf)
+                result: DetectionResult = camera.take_photo()
+                if result is None:
+                    yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle")
+                    continue
                 detections = result.filter_by_class([self.config.box_class_name])
                 
                 # tolerates some missed detections before giving up, until the timeout
