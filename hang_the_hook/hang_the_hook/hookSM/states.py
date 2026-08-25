@@ -9,8 +9,8 @@ from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
 from hang_the_hook.core.constants import(
-    FRAME_HEIGHT,
-    FRAME_WIDTH,
+    IMAGE_HEIGHT,
+    IMAGE_WIDTH,
 )
 
 from hang_the_hook.hookSM.constants import *
@@ -116,8 +116,8 @@ class Align(State):
 
         # --- The desired alignment is between hose's and camera's center, plus shift.
         # --- And also 0 degrees of yaw between camera-hose
-        target_x = (FRAME_WIDTH // 2) + SHIFT
-        target_y = (FRAME_HEIGHT // 2) + SHIFT
+        target_x = (IMAGE_WIDTH // 2) + SHIFT
+        target_y = (IMAGE_HEIGHT // 2) + SHIFT
         self.pid_cx.set_setpoint(target_x)
         self.pid_cy.set_setpoint(target_y)
         self.pid_angle.set_setpoint(0.0)
@@ -185,8 +185,8 @@ class Descend(State):
         self.hosedetector = blackboard['hose_detect']
 
         self.camera.open()
-        target_x = (FRAME_WIDTH // 2) + SHIFT
-        target_y = (FRAME_HEIGHT // 2) + SHIFT
+        target_x = (IMAGE_WIDTH // 2) + SHIFT
+        target_y = (IMAGE_HEIGHT // 2) + SHIFT
 
         while True:
 
