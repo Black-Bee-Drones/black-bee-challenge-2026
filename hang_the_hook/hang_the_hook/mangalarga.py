@@ -95,7 +95,10 @@ def mangalarga():
         rclpy.init()
         yasmin_set_ros_loggers()
 
-        nectar.use_executor(YasminNode.get_instance()._executor)
+        executor = YasminNode.get_instance()._executor
+        assert executor is not None, "Executor is not initialized"
+
+        nectar.use_executor(executor)
 
         mangalarga_sm = HangTheHookSM()
 
