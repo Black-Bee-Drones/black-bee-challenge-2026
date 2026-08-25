@@ -33,6 +33,7 @@ class Config:
     # Approach
     approach_timeout: int = 90         # seconds
     approach_tolerance: float = 0.20   # meters
+    approach_tolerance_px: int = 150      # pixels
     dropoff_altitude: float = 0.80     # meters
     dropoff_tolerance: float = 0.20    # meters
 

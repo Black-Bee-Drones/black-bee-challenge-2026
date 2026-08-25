@@ -113,15 +113,15 @@ class Approach(State):
  
                 vx = pid_cy.update(error_y)
                 vy = pid_cx.update(-error_x)
- 
-                if max(abs(error_x), abs(error_y)) < self.config.approach_tolerance:
-                    vz = pid_cz.update(error_z)
-                else:
-                    vz = 0.0
+
+                px_aligned = max(abs(error_x_px), abs(error_y)) < self.config.approach_tolerance_px;
+                vz = pid_cz.update(error_z) if px_aligned else 0.0
+
+                aligned = max(abs(error_x), abs(error_y)) < self.config.approach_tolerance
  
                 drone.move_velocity(vx, vy, vz)
  
-                if abs(error_z) < self.config.dropoff_tolerance:
+                if (abs(error_z) < self.config.dropoff_tolerance) and aligned:
                     yasmin.YASMIN_LOG_INFO("Approaching succeeded! Delivering package...")
                     return SUCCEED
                 
