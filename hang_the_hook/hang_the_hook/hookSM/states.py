@@ -47,7 +47,7 @@ class FindHose(State):
         self.camera       = blackboard['camera']
         self.hosedetector = blackboard['hose_detect']
 
-	self.camera.open()
+        self.camera.open()
         frame = self.camera.take_photo()
 
         # --- Runs detect line and update is_valid flag
@@ -124,7 +124,7 @@ class Align(State):
 
         # --- Starting time to apply timeout to state
         timer: float = time()
-	self.camera.open()
+        self.camera.open()
 
         while True:
 
@@ -184,7 +184,7 @@ class Descend(State):
         self.camera       = blackboard['camera']
         self.hosedetector = blackboard['hose_detect']
 
-	self.camera.open()
+        self.camera.open()
         target_x = (FRAME_WIDTH // 2) + SHIFT
         target_y = (FRAME_HEIGHT // 2) + SHIFT
 
