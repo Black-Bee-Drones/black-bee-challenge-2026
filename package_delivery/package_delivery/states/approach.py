@@ -70,6 +70,8 @@ class Approach(State):
         pid_cx.set_setpoint(0.0)
         pid_cy.set_setpoint(0.0)
         pid_cz.set_setpoint(0.0)
+        
+        drone.delay(1)
 
         try:
             lost = 0

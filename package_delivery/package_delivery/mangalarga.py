@@ -40,7 +40,7 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "TAKEOFF",
             Takeoff(),
-            transitions={SUCCEED: "SEARCH_BOX", ABORT: "LAND"}
+            transitions={SUCCEED: "SEARCH_BOX", ABORT: "RTL"}
 
         )
 

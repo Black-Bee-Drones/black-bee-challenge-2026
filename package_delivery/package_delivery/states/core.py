@@ -237,11 +237,9 @@ class Takeoff(State):
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT
 
-        yasmin.YASMIN_LOG_INFO(
-            f'Taking off to altitude: {self.config.takeoff_altitude} m...')
-
         try:
-            drone.takeoff(self.config.takeoff_altitude)
+            drone.takeoff(self.config.takeoff_altitude,max_retries=5, timeout=30.0, precision=0.2)
+            yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m...')
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
@@ -301,8 +299,9 @@ class Rtl(State):
             return ABORT
 
         yasmin.YASMIN_LOG_INFO("RTL...")
+        drone.delay(1)
         try:
-            drone.rtl(altitude=self.config.rtl_altitude, RTLMethod=RTLMethod.NAVIGATE, land=True)
+            drone.rtl(altitude=self.config.rtl_altitude, method=RTLMethod.NAVIGATE, land=True)
             yasmin.YASMIN_LOG_INFO("Return to launch initiated.")
             return SUCCEED
         except Exception as e:

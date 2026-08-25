@@ -23,7 +23,7 @@ class Config:
     # Model - v3 box - 
     box_model_source: str = os.path.join(get_package_share_directory('package_delivery'), 'models', 'best.pt')
     box_class_name: str = "box"
-    box_conf: float = 0.25
+    box_conf: float = 0.65      # before: 0.25
 
     # Camera
     image_source : str = 'webcam'
@@ -31,13 +31,13 @@ class Config:
     image_height: int = 480         # pixels
 
     # Approach
-    approach_timeout: int = 60         # seconds
+    approach_timeout: int = 90         # seconds
     approach_tolerance: float = 0.20   # meters
     dropoff_altitude: float = 0.80     # meters
     dropoff_tolerance: float = 0.20    # meters
 
     safe_altitude: float = 2.0 # meters
-    max_altitude: float = 6.0  # meters
+    max_altitude: float = 5.0  # meters
     
     drone_type: str = 'mavlink'
     connection_string: str = 'udp:127.0.0.1:14551'
@@ -50,7 +50,7 @@ class Config:
     center_threshold_xy: float = 0.2  # meters
     center_threshold_z: float = 0.2  # meters
     center_threshold_yaw: float = 5.0  # degrees
-    lost_tolerance: int = 5
+    lost_tolerance: int = 30
     land_altitude: float = 1.0  # meters
     
     # waypoints: boxes
