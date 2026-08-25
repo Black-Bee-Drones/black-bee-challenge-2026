@@ -73,9 +73,9 @@ class Initialize(State):
             )
 
             hosedetector = LineDetector(
-                color="yellow",
+                color="red_hose",
                 estimation_method=RotatedRect(),
-                color_space=ColorSpace.HSV
+                color_space=ColorSpace.LAB
             )
 
             # ---- Camera ----
