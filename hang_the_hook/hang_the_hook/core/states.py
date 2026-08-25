@@ -221,12 +221,12 @@ class End(State):
             self.drone.delay(3)
             YASMIN_LOG_INFO("Landing complete.")
 
-            if "camera" in blackboard:
-                blackboard["camera"].close()
-
             return SUCCEED
 
         except Exception as e:
             YASMIN_LOG_ERROR(f"Landing failed: {e}")
             print_exc()
             return ABORT
+        finally:
+            if "camera" in blackboard:
+                blackboard["camera"].close()

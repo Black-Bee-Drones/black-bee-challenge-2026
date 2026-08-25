@@ -85,7 +85,6 @@ class SearchBlueLine(State):
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
 
-            camera.open()
             last_detection_time = time()
 
             while True:
@@ -146,9 +145,6 @@ class SearchBlueLine(State):
         except Exception as e:
             print(f"Blue line searching failed: {e}")
             return ABORT
-        finally:
-            if camera:
-                camera.close()
 
 class SeekLine(State):
     '''
@@ -219,7 +215,6 @@ class SeekLine(State):
             drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
             self.node.get_logger().warn("SeekLine: line lost — starting square search")
 
-            camera.open()
             counters = (0, 0)
 
             for sq in range(SEEK_MAX_SQUARES):
@@ -257,9 +252,6 @@ class SeekLine(State):
         except Exception as e:
             self.node.get_logger().error(f"SeekLine failed: {e}")
             return ABORT
-        finally:
-            if camera:
-                camera.close()
 
 class FollowBlueLine(State):
     '''
@@ -305,7 +297,6 @@ class FollowBlueLine(State):
             pid_cy.tune(CX_KP, CX_KI, CX_KD)
             pid_angle.tune(ANGLE_KP, ANGLE_KI, ANGLE_KD)
 
-            camera.open()
             lost_frames = 0
             log_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors", "error_log.csv"))
             while True:
@@ -347,6 +338,3 @@ class FollowBlueLine(State):
                 except Exception:
                     pass
             return ABORT
-        finally:
-            if camera:
-                camera.close()
