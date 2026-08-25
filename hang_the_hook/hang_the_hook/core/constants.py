@@ -14,18 +14,18 @@ TAKEOFF_HEIGHT = 2.0  # Default take-off height   (meters)
 
 
 # ── Image Handler ────────────────────────────────────────────────────────────
-IMAGE_WIDTH          = 640
-IMAGE_HEIGHT         = 480
-SIM_IMAGE_COMPRESSED = False
+IMAGE_WIDTH      = 640
+IMAGE_HEIGHT     = 480
+IMAGE_COMPRESSED = False
 
-# Image source options:
-#   "webcam"                        → in-built camera of personal machine
-#   "/down_camera"                  → MAVRos topic for SIM drone camera
-#   "/mavros/camera/image_captured" → real drone
-IMAGE_SOURCE = "webcam"
+# Image source per mode:
+#   SIM  → "/down_camera"                  (tópico ROS do Gazebo)
+#   REAL → "webcam"                        (câmera onboard via OpenCV)
+#          "/mavros/camera/image_captured"  (tópico ROS do drone real)
+SIM_IMAGE_SOURCE  = "/down_camera"
+REAL_IMAGE_SOURCE = "webcam"
 
-FRAME_WIDTH  = 1280
-FRAME_HEIGHT = 980
+IMAGE_SOURCE = SIM_IMAGE_SOURCE if SIM_MODE else REAL_IMAGE_SOURCE
 
 
 # ── PID – Eixo X (Lateral) ──────────────────────────────────────────────────

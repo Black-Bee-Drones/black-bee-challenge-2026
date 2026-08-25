@@ -23,7 +23,7 @@ class HangTheHookSM(StateMachine):
             Initialize(),
             transitions={
                 SUCCEED: "TAKEOFF",
-                ABORT: ABORT
+                ABORT: "END"
             }
         )
 

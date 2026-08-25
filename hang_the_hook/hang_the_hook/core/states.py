@@ -20,7 +20,7 @@ from hang_the_hook.core.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
     IMAGE_SOURCE,
-    SIM_IMAGE_COMPRESSED,
+    IMAGE_COMPRESSED,
     PID_X_KP, PID_X_KI, PID_X_KD, PID_X_OUTPUT_LIMITS, PID_X_INTEGRAL_LIMITS,
     PID_Y_KP, PID_Y_KI, PID_Y_KD, PID_Y_OUTPUT_LIMITS, PID_Y_INTEGRAL_LIMITS,
     PID_YAW_KP, PID_YAW_KI, PID_YAW_KD, PID_YAW_OUTPUT_LIMITS, PID_YAW_INTEGRAL_LIMITS,
@@ -82,7 +82,7 @@ class Initialize(State):
             if SIM_MODE:
                 cam_config = ROSConfig(
                     topic=IMAGE_SOURCE,
-                    compressed=SIM_IMAGE_COMPRESSED,
+                    compressed=IMAGE_COMPRESSED,
                 )
             else:
                 cam_config = OpenCVConfig(width=IMAGE_WIDTH, height=IMAGE_HEIGHT)
