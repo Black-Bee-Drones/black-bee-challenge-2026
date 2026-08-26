@@ -29,6 +29,7 @@ setup(
         'console_scripts': [
             'mangalarga = package_delivery.mangalarga:main',
             'collect_sim_photos = package_delivery.collect_sim_photos:main',
+            'test_servo = package_delivery.test_servo:main',
         ],
     },
 )
