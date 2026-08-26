@@ -29,7 +29,7 @@ class Config:
     # Model - v3 box - 
     box_model_source: str = os.path.join(get_package_share_directory('package_delivery'), 'models', 'best.pt')
     box_class_name: str = "box"
-    box_conf: float = 0.65      # before: 0.25
+    box_conf: float = 0.45      # before: 0.25
 
     # Camera
     image_source : str = 'webcam'
@@ -76,11 +76,11 @@ class Config:
     xy_output_lim: tuple = (-1.0, 1.0)
     xy_integral_lim: tuple = (-1.0, 1.0)   
     
-    x_kp: float = 0.30
+    x_kp: float = 0.123
     x_ki: float = 0.0
     x_kd: float = 0.02    
     
-    y_kp: float = 0.30
+    y_kp: float = 0.123
     y_ki: float = 0.0
     y_kd: float = 0.02
 
