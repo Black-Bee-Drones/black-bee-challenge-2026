@@ -2,6 +2,8 @@ import rclpy
 
 import nectar
 
+from threading import Thread
+
 from traceback import print_exc
 
 from yasmin import StateMachine, Blackboard
@@ -13,6 +15,7 @@ from yasmin_viewer import YasminViewerPub
 from hang_the_hook.core.states import Initialize, Takeoff, ReturnToLaunch, End
 from hang_the_hook.followlineSM.followlineSM import FollowLineSM
 from hang_the_hook.hookSM.hookSM import hookSM
+from hang_the_hook.utils.camera_publisher import CameraPublisher
 
 class HangTheHookSM(StateMachine):
     def __init__(self):
@@ -100,6 +103,12 @@ def mangalarga():
 
         nectar.use_executor(executor)
 
+        camera_node = CameraPublisher()
+        executor.add_node(camera_node)
+
+        executor_thread = Thread(target=executor.spin, daemon=True)
+        executor_thread.start()
+
         mangalarga_sm = HangTheHookSM()
 
         # Initialize a fresh Blackboard specifically for the mangalarga sequence
@@ -113,13 +122,17 @@ def mangalarga():
 
     except KeyboardInterrupt:
         print("Stopping by keyboard interrupt...")
-        mangalarga_sm.cancel_state()
+        if mangalarga_sm is not None:
+            mangalarga_sm.cancel_state()
 
     except Exception as e:
         print(f"Mangalarga finished with exception: {e}")
         print_exc()
 
     finally:
+        if camera_node is not None:
+            camera_node.destroy_node()
+
         if nectar.is_initialized():
             nectar.shutdown()
 

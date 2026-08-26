@@ -37,15 +37,17 @@ class FindHose(State):
         if not blackboard_check(
             blackboard=blackboard,
             args=(
-                "drone",
-                "camera",
+                'drone',
+                'camera',
                 'hose_detect',
+                'findhose_state_counter'
                 )
             ): return ABORT
 
         self.drone        = blackboard['drone']
         self.camera       = blackboard['camera']
         self.hosedetector = blackboard['hose_detect']
+        self.counter      = blackboard['findhose_state_counter']
 
         self.camera.open()
         frame = self.camera.take_photo()
@@ -102,6 +104,8 @@ class Align(State):
         self.pid_cy       = blackboard["pid_cy"]
         self.pid_angle    = blackboard["pid_angle"]
         self.hosedetector = blackboard["hose_detect"]
+
+        self.camera.open()
 
         # --- Reseting PID for every new Align call
         # --- Grants PID values to be 0
