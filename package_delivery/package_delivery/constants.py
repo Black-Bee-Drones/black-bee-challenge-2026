@@ -11,8 +11,8 @@ class Config:
     # )
     
     target_box: tuple = (
-        (-35.363284, 149.165271),     # box 1: lat, long
-        (1, 1),     # box 2: lat, long
+        (-22.415338, -45.447946),     # box 1: lat, long
+        (-22.415377, -45.447988),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
 
@@ -66,8 +66,8 @@ class Config:
     # Gripper Controller
     has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
     servo_channel : int = 6         # aux_out (0-7 maps to AUX physical outputs 1-8)
-    servo_open_pwm : int = 1800     # padeiro deu os valores
-    servo_closed_pwm : int = 1000   # padeiro deu os valores   
+    servo_open_pwm : int = 1000     # padeiro deu os valores
+    servo_closed_pwm : int = 1800   # padeiro deu os valores   
     servo_action_delay = 3.0    # sleep time
 
 
