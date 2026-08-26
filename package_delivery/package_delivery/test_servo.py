@@ -29,12 +29,12 @@ def main():
 
     # Valores necessários pelo Gripper
     blackboard["drone"] = drone
-    blackboard["has_thePkg"] = False
+    blackboard["has_thePkg"] = True
 
     # False -> servo_open_pwm
     # True  -> servo_closed_pwm
     gripper = Gripper(
-        target_has_pkg=False,
+        target_has_pkg=True,
         config=config
     )
 
