@@ -57,13 +57,13 @@ class Initialize(State):
             yasmin.YASMIN_LOG_INFO('Initializing Drone...')
             if self.config.drone_type == 'mavros':
                 drone_config = MavrosConfig(
-                    pose_source=PoseSource.VISION,
+                    pose_source=PoseSource.GPS,
                     connection_string=self.config.connection_string
                 )
 
             elif self.config.drone_type == 'mavlink':
                 drone_config = MavlinkConfig(
-                    pose_source=PoseSource.VISION,
+                    pose_source=PoseSource.GPS,
                     connection_string=self.config.connection_string
                 )
             else:

@@ -114,7 +114,7 @@ class Approach(State):
                 vx = pid_cy.update(error_y)
                 vy = pid_cx.update(-error_x)
 
-                px_aligned = max(abs(error_x_px), abs(error_y)) < self.config.approach_tolerance_px;
+                px_aligned = max(abs(error_x_px), abs(error_y_px)) < self.config.approach_tolerance_px
                 vz = pid_cz.update(error_z) if px_aligned else 0.0
 
                 aligned = max(abs(error_x), abs(error_y)) < self.config.approach_tolerance

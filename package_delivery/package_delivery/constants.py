@@ -17,7 +17,7 @@ class Config:
     )
 
     # Simulation
-    sim_mode: bool = True
+    sim_mode: bool = False
     sim_image_source: str = "/down_camera"
     sim_image_compressed: bool = False
     sim_target_box: tuple = (
@@ -37,9 +37,9 @@ class Config:
     image_height: int = 480         # pixels
 
     # Approach
-    approach_timeout: int = 90         # seconds
+    approach_timeout: int = 80         # seconds
     approach_tolerance: float = 0.20   # meters
-    approach_tolerance_px: int = 150      # pixels
+    approach_tolerance_px: int = 100   # pixels
     dropoff_altitude: float = 0.80     # meters
     dropoff_tolerance: float = 0.20    # meters
 
@@ -47,25 +47,26 @@ class Config:
     max_altitude: float = 5.0  # meters
     
     drone_type: str = 'mavlink'
-    connection_string: str = 'udp:127.0.0.1:14551'
+    #connection_string: str = 'udp:127.0.0.1:14551' #STIL
+    connection_string: str = "/dev/ttyTHS1"   # ou /dev/ttyUSB0, dependendo de como conectou (baud=921600 for tests)
     
     # Takeoff and Land
     takeoff_altitude: float = safe_altitude
-    rtl_altitude: float = 1.2   # meters
+    rtl_altitude: float = 1.5   # meters
     
     # Center
     center_threshold_xy: float = 0.2  # meters
     center_threshold_z: float = 0.2  # meters
     center_threshold_yaw: float = 5.0  # degrees
-    lost_tolerance: int = 135
+    lost_tolerance: int = 80
     land_altitude: float = 1.0  # meters
     
     # Gripper Controller
     has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
-    servo_channel : int = 0         # aux_out (0-7 maps to AUX physical outputs 1-8)
-    servo_open_pwm : int = 1800
-    servo_closed_pwm : int = 1200     
-    servo_action_delay = 1.0    # sleep time
+    servo_channel : int = 6         # aux_out (0-7 maps to AUX physical outputs 1-8)
+    servo_open_pwm : int = 1000     # padeiro deu os valores
+    servo_closed_pwm : int = 1800   # padeiro deu os valores   
+    servo_action_delay = 3.0    # sleep time
 
 
     # PIDController ###
