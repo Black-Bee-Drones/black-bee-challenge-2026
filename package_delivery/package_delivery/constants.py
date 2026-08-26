@@ -46,7 +46,7 @@ class Config:
     lost_tolerance: int = 13
 
     altitude_inc: float = 0.8 # meters
-    safe_altitude: float = 2.5 # meters
+    safe_altitude: float = 3 # meters
     max_altitude: float = 5.0  # meters
     
     drone_type: str = 'mavlink'
