@@ -115,8 +115,8 @@ class Approach(State):
                 best_det = max(detections, key=lambda d: d.confidence)
                 target_x, target_y = best_det.center
  
-                error_x_px = self.config.image_width // 2 - target_x
-                error_y_px = self.config.image_height // 2 - target_y
+                error_x_px = target_x - self.config.image_width // 2
+                error_y_px = target_y - self.config.image_height // 2
  
                 altitude = drone.get_altitude()
  
@@ -125,7 +125,7 @@ class Approach(State):
                 error_z = altitude - self.config.dropoff_altitude
  
                 vx = pid_cy.update(error_y)
-                vy = pid_cx.update(-error_x)
+                vy = pid_cx.update(error_x)
 
                 px_aligned = max(abs(error_x_px), abs(error_y_px)) < self.config.approach_tolerance_px
                 vz = pid_cz.update(error_z) if px_aligned else 0.0
