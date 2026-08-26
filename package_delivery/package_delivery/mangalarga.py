@@ -53,7 +53,7 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "APPROACH",
             Approach(),
-            transitions={SUCCEED: "DROP_PKG", ABORT: "LAND"}
+            transitions={SUCCEED: "DROP_PKG", ABORT: "RTL"}
         )
 
         self.add_state(

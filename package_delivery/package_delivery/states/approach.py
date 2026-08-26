@@ -74,30 +74,43 @@ class Approach(State):
         drone.delay(1)
 
         try:
-            lost = 0
+            lost : int = 0
+            aligned_frames : int = 0
             while not self.timed_out():
-                # frame = camera.take_photo()
-                # if frame is None:
-                #     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle.")
-                #     continue
- 
+                
                 result: DetectionResult = camera.take_photo()
+                
                 if result is None:
                     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle")
                     continue
+                
                 detections = result.filter_by_class([self.config.box_class_name])
                 
-                # tolerates some missed detections before giving up, until the timeout
+                # Box Not Detect!
                 if not detections:
                     lost += 1
+                    aligned_frames = 0
                     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance}) Holding position...")
+                    
                     drone.move_velocity(0.0, 0.0, 0.0)
  
                     if lost >= self.config.lost_tolerance:
-                        yasmin.YASMIN_LOG_ERROR("Lost detection exceeded, aborting approach.")
-                        return FAIL
+                        yasmin.YASMIN_LOG_WARN("Detection lost. Increasing altitude to restart search...")
+                        fly_to: float = drone.get_altitude() + self.config.altitude_inc
+                        if fly_to < self.config.max_altitude:
+                            drone.move_to(z=(drone.get_altitude() + self.config.altitude_inc))
+                        pid_cx.reset()
+                        pid_cy.reset()
+                        pid_cz.reset()
+                        pid_cx.set_setpoint(0.0)
+                        pid_cy.set_setpoint(0.0)
+                        pid_cz.set_setpoint(0.0)
+                        yasmin.YASMIN_LOG_INFO("Restarting box detection")
+                        lost = 0
+                        aligned_frames = 0
                     continue
- 
+
+                # BOX DETECT
                 lost = 0
                 best_det = max(detections, key=lambda d: d.confidence)
                 target_x, target_y = best_det.center
@@ -118,15 +131,26 @@ class Approach(State):
                 vz = pid_cz.update(error_z) if px_aligned else 0.0
 
                 aligned = max(abs(error_x), abs(error_y)) < self.config.approach_tolerance
- 
+                
                 drone.move_velocity(vx, vy, vz)
+                
+                if aligned:
+                    aligned_frames += 1
+                    yasmin.YASMIN_LOG_INFO(
+                        f"Box aligned "
+                        f"({aligned_frames}/"
+                        f"{self.config.required_frames})"
+                    )
+                else:
+                    aligned_frames = 0
  
-                if (abs(error_z) < self.config.dropoff_tolerance) and aligned:
-                    yasmin.YASMIN_LOG_INFO("Approaching succeeded! Delivering package...")
+                if (abs(error_z) < self.config.dropoff_tolerance) and aligned_frames >= self.config.required_frames:
+                    drone.move_velocity(0.0, 0.0, 0.0)
+                    yasmin.YASMIN_LOG_INFO(f"Approach confirmed with {aligned_frames} consecutive aligned frames. Stopping drone before delivery.")
                     return SUCCEED
                 
             yasmin.YASMIN_LOG_ERROR("Approaching box timed out.")
-            return TIMEOUT
+            return ABORT
                 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Approaching box failed: {e}")

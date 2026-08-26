@@ -11,7 +11,7 @@ class Config:
     # )
     
     target_box: tuple = (
-        (0, 0),     # box 1: lat, long
+        (-35.363284, 149.165271),     # box 1: lat, long
         (1, 1),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
@@ -42,13 +42,16 @@ class Config:
     approach_tolerance_px: int = 100   # pixels
     dropoff_altitude: float = 0.80     # meters
     dropoff_tolerance: float = 0.20    # meters
+    required_frames: int = 3
+    lost_tolerance: int = 13
 
+    altitude_inc: float = 0.8 # meters
     safe_altitude: float = 2.5 # meters
     max_altitude: float = 5.0  # meters
     
     drone_type: str = 'mavlink'
     #connection_string: str = 'udp:127.0.0.1:14551' #STIL
-    connection_string: str = "/dev/ttyTHS1"   # ou /dev/ttyUSB0, dependendo de como conectou (baud=921600 for tests)
+    connection_string: str = '/dev/ttyAMA1' # '/dev/ttyAMA1' # "/dev/ttyTHS1" ou /dev/ttyUSB0, dependendo de como conectou (baud=921600 for tests)
     
     # Takeoff and Land
     takeoff_altitude: float = safe_altitude
@@ -58,7 +61,6 @@ class Config:
     center_threshold_xy: float = 0.2  # meters
     center_threshold_z: float = 0.2  # meters
     center_threshold_yaw: float = 5.0  # degrees
-    lost_tolerance: int = 80
     land_altitude: float = 1.0  # meters
     
     # Gripper Controller
