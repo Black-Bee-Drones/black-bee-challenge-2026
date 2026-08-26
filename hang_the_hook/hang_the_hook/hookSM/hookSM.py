@@ -45,4 +45,4 @@ class hookSM(StateMachine):
             }
         )
 
-        self.set_start_state('FIND_HOSE')
+        self.set_start_state('ALIGN')

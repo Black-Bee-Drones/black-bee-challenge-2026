@@ -73,7 +73,7 @@ class Align(State):
 
     '''
     Align centers drone's camera with found line's center.\n
-    Shifts center by the same amount of hook-camera offset.\n
+    Shifts center by the same amount of hook-camera offset.
     '''
 
     def __init__(self) -> None:
@@ -120,7 +120,7 @@ class Align(State):
 
         # --- The desired alignment is between hose's and camera's center, plus shift.
         # --- And also 0 degrees of yaw between camera-hose
-        target_x = (IMAGE_WIDTH // 2) + SHIFT
+        target_x = (IMAGE_WIDTH // 2)
         target_y = (IMAGE_HEIGHT // 2) + SHIFT
         self.pid_cx.set_setpoint(target_x)
         self.pid_cy.set_setpoint(target_y)
@@ -128,7 +128,6 @@ class Align(State):
 
         # --- Starting time to apply timeout to state
         timer: float = time()
-        self.camera.open()
 
         while True:
 
