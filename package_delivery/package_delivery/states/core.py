@@ -58,13 +58,15 @@ class Initialize(State):
             if self.config.drone_type == 'mavros':
                 drone_config = MavrosConfig(
                     pose_source=PoseSource.GPS,
-                    connection_string=self.config.connection_string
+                    connection_string=self.config.connection_string,
+                    arm_timeout=15.0
                 )
 
             elif self.config.drone_type == 'mavlink':
                 drone_config = MavlinkConfig(
                     pose_source=PoseSource.GPS,
-                    connection_string=self.config.connection_string
+                    connection_string=self.config.connection_string,
+                    arm_timeout=15.0,
                 )
             else:
                 yasmin.YASMIN_LOG_ERROR('Invalid drone_type.')
