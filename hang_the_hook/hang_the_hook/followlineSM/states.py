@@ -1,7 +1,6 @@
 from datetime import datetime
 from time import time
 import os
-import math
 
 from math import dist as math_dist, isnan as math_isnan
 import cv2
@@ -11,20 +10,13 @@ from yasmin_ros.yasmin_node import YasminNode
 
 from nectar.vision import (
     ImageHandler,
-    OpenCVConfig,
     LineDetector,
-    RotatedRect,
-    ColorSpace,
 )
 
 from nectar.control import (
     PIDController,
-    AltitudeSource,
     MavrosDrone,
     MavlinkDrone,
-    DroneFactory,
-    MavrosConfig,
-    PoseSource,
     MoveReference,
 )
 
@@ -54,6 +46,24 @@ from hang_the_hook.followlineSM.constants import (
     SEARCH_TIMEOUT,
 )
 
+# Absolute path so cv2.imwrite doesn't depend on the process's cwd.
+_IMAGES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "images"))
+_LOG_FILE = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "utils", "errors", "error_log.csv")
+)
+
+
+def _save_debug_image(frame) -> None:
+    """Best-effort snapshot save. Never raises: a logging/IO failure
+    should not abort the mission."""
+    try:
+        os.makedirs(_IMAGES_DIR, exist_ok=True)
+        now = datetime.now().strftime("%Y%m%d_%H%M%S")
+        cv2.imwrite(os.path.join(_IMAGES_DIR, f"{now}.png"), frame)
+    except Exception as e:
+        print(f"Warning: failed to save debug image: {e}")
+
+
 class SearchBlueLine(State):
     '''
     Searches for both blue and red lines while the drone is hovering.
@@ -74,16 +84,17 @@ class SearchBlueLine(State):
             linedetector: LineDetector = blackboard["line_detect"]
             hosedetector: LineDetector = blackboard["hose_detect"]
             camera: ImageHandler = blackboard["camera"]
-            counterBlue = 0
-            counterRed = 0
-            oldcxBlue = 0
-            oldcyBlue = 0
-            oldcxRed = 0
-            oldcyRed = 0
 
             if not linedetector or not camera or not hosedetector:
                 print("One or more detectors or image handler not initialized.")
                 return ABORT
+
+            counterBlue = 0
+            counterRed = 0
+            oldcxBlue = None
+            oldcyBlue = None
+            oldcxRed = None
+            oldcyRed = None
 
             last_detection_time = time()
 
@@ -95,6 +106,9 @@ class SearchBlueLine(State):
                     return SEEK
 
                 frame = camera.take_photo()
+                if frame is None:
+                    continue
+
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
                 resultRed, _, cxRed, cyRed, _, _, _ = hosedetector.detect_line(frame, draw=True)
 
@@ -102,25 +116,35 @@ class SearchBlueLine(State):
 
                 if cxBlue is None or math_isnan(cxBlue) or cyBlue is None or math_isnan(cyBlue):
                     counterBlue = 0
+                    oldcxBlue = None
+                    oldcyBlue = None
                 else:
                     any_detection = True
-                    distanceBlue = math_dist((cxBlue, cyBlue), (oldcxBlue, oldcyBlue))
-                    if distanceBlue < CENTER_VARIATION:
-                        counterBlue += 1
+                    if oldcxBlue is None or oldcyBlue is None:
+                        counterBlue = 1
                     else:
-                        counterBlue=0
+                        distanceBlue = math_dist((cxBlue, cyBlue), (oldcxBlue, oldcyBlue))
+                        if distanceBlue < CENTER_VARIATION:
+                            counterBlue += 1
+                        else:
+                            counterBlue = 0
                     oldcxBlue = cxBlue
                     oldcyBlue = cyBlue
 
                 if cxRed is None or math_isnan(cxRed) or cyRed is None or math_isnan(cyRed):
                     counterRed = 0
+                    oldcxRed = None
+                    oldcyRed = None
                 else:
                     any_detection = True
-                    distanceRed = math_dist((cxRed, cyRed), (oldcxRed, oldcyRed))
-                    if distanceRed < CENTER_VARIATION:
-                        counterRed += 1
+                    if oldcxRed is None or oldcyRed is None:
+                        counterRed = 1
                     else:
-                        counterRed = 0
+                        distanceRed = math_dist((cxRed, cyRed), (oldcxRed, oldcyRed))
+                        if distanceRed < CENTER_VARIATION:
+                            counterRed += 1
+                        else:
+                            counterRed = 0
                     oldcxRed = cxRed
                     oldcyRed = cyRed
 
@@ -128,23 +152,19 @@ class SearchBlueLine(State):
                     last_detection_time = time()
 
                 if counterRed >= MIN_RED_FRAMES:
-                    counterRed = 0
-                    now = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    cv2.imwrite(f"../images/{now}.png", resultRed)
+                    _save_debug_image(resultRed)
                     return FOUND_RED
 
                 if counterBlue >= MIN_BLUE_FRAMES:
-                    counterBlue = 0
-                    now = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    cv2.imwrite(f"../images/{now}.png", resultBlue)
+                    _save_debug_image(resultBlue)
                     blackboard["angle_blue"] = angleBlue
                     blackboard["center_x_blue"] = cxBlue
-                    break
+                    return FOUND_BLUE
 
-            return FOUND_BLUE
         except Exception as e:
             print(f"Blue line searching failed: {e}")
             return ABORT
+
 
 class SeekLine(State):
     '''
@@ -253,6 +273,7 @@ class SeekLine(State):
             self.node.get_logger().error(f"SeekLine failed: {e}")
             return ABORT
 
+
 class FollowBlueLine(State):
     '''
     Follows the detected blue line using PID controllers for lateral
@@ -260,19 +281,28 @@ class FollowBlueLine(State):
     speed. Continuously checks each frame for the blue line. If the
     line is not detected for MAX_LOST_FRAMES consecutive frames, stops
     the drone and transitions to SEEK. When corrections converge
-    (vy ≈ 0, vyaw ≈ 0), transitions back to SEARCH to re-confirm
-    the line position.
+    (vy ≈ 0, vyaw ≈ 0) ON A FRAME WHERE THE LINE WAS ACTUALLY SEEN,
+    transitions back to SEARCH to re-confirm the line position.
     '''
 
     def __init__(self):
         super().__init__(outcomes=[SEARCH, SEEK, ABORT])
         self.node = YasminNode.get_instance()
 
-    def execute(self, blackboard: Blackboard):
-        drone: MavrosDrone | MavlinkDrone
-        camera: ImageHandler
+    def _log_error(self, cx_error, angleBlue) -> None:
+        """Best-effort CSV logging. Never raises: a logging failure must
+        not abort line following."""
         try:
-            drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+            os.makedirs(os.path.dirname(_LOG_FILE), exist_ok=True)
+            with open(_LOG_FILE, "a") as f:
+                f.write(f"{cx_error}, {angleBlue}, {datetime.now().strftime('%M:%S')}\n")
+        except Exception as e:
+            self.node.get_logger().warn(f"FollowBlueLine: failed to write error log: {e}")
+
+    def execute(self, blackboard: Blackboard):
+        drone: MavrosDrone | MavlinkDrone = None
+        try:
+            drone = blackboard["drone"]
             pid_cy: PIDController = blackboard["pid_cy"]
             pid_angle: PIDController = blackboard["pid_angle"]
             linedetector: LineDetector = blackboard["line_detect"]
@@ -298,18 +328,25 @@ class FollowBlueLine(State):
             pid_angle.tune(ANGLE_KP, ANGLE_KI, ANGLE_KD)
 
             lost_frames = 0
-            log_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors", "error_log.csv"))
+
             while True:
                 frame = camera.take_photo()
+                if frame is None:
+                    continue
+
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
 
-                if cxBlue is not None and not math_isnan(cxBlue) and cyBlue is not None and not math_isnan(cyBlue):
+                line_detected = (
+                    cxBlue is not None and not math_isnan(cxBlue)
+                    and cyBlue is not None and not math_isnan(cyBlue)
+                )
+
+                if line_detected:
                     lost_frames = 0
                     vy = pid_cy.update(cxBlue)
                     vyaw = pid_angle.update(angleBlue)
                     cx_error = cxBlue - FRAME_WIDTH / 2
-                    with open(log_file, "a") as f:
-                        f.write(f"{cx_error}, {angleBlue}, {datetime.now().strftime('%M:%S')}\n")
+                    self._log_error(cx_error, angleBlue)
                     self.node.get_logger().info(f"Blue line detected: {cxBlue}, {cyBlue}, {angleBlue}")
                 else:
                     lost_frames += 1
@@ -325,10 +362,12 @@ class FollowBlueLine(State):
 
                 drone.move_velocity(vx=FOWARD_SPEED_BLUE_LINE, vy=vy, vz=0.0, vyaw=vyaw, reference=MoveReference.BODY)
 
-                if abs(vy) < 0.01 and abs(vyaw) < 0.01:
-                    break
-
-            return SEARCH
+                # BUGFIX: only treat this as "converged" when the line was
+                # actually seen this frame. Previously vy/vyaw were forced
+                # to 0.0 on lost frames too, which made a single missed
+                # frame look like convergence and returned SEARCH early.
+                if line_detected and abs(vy) < 0.01 and abs(vyaw) < 0.01:
+                    return SEARCH
 
         except Exception as e:
             print(f"Follow blue line failed: {e}")
