@@ -9,7 +9,7 @@ from yasmin import Blackboard, State
 from yasmin_ros.basic_outcomes import ABORT, SUCCEED
 from yasmin_ros.yasmin_node import YasminNode
 
-from nectar.control import AltitudeSource, MavrosDrone, MoveReference
+from nectar.control import AltitudeSource, MavrosDrone, MoveReference, MavlinkConfig
 from nectar.vision import C920Config, ImageHandler
 
 from mapping.config import Config
@@ -17,36 +17,6 @@ from mapping.utils.geo_projection import CapturePose
 from mapping.utils.image_pipeline import pick_sharpest
 
 NEXT = 'next'
-
-# nectar-sdk's C920Cam only supports these 3 fixed capture profiles (see
-# C920Config.profile) -- camera.resolution in config.yml must match one
-# exactly when source == "c920", or the real camera silently captures at
-# a different resolution than every GSD/pixel calculation downstream
-# assumes (detect_bases.py, plan_coverage.py) is built around.
-_C920_PROFILE_RESOLUTIONS = {0: (640, 480), 1: (1280, 720), 2: (1920, 1080)}
-
-
-def _c920_profile_for(resolution: Tuple[int, int]) -> int:
-    """Map a configured camera.resolution to the matching C920Cam capture
-    profile index.
-
-    Args:
-        resolution: (width_px, height_px) requested in config.yml's
-            camera.resolution.
-
-    Returns:
-        The C920Config.profile index (0, 1, or 2) whose fixed resolution
-        matches `resolution` exactly.
-    """
-    for profile, profile_resolution in _C920_PROFILE_RESOLUTIONS.items():
-        if profile_resolution == tuple(resolution):
-            return profile
-    raise ValueError(
-        f'camera.resolution {tuple(resolution)!r} has no matching C920Cam profile '
-        f'(supported: {list(_C920_PROFILE_RESOLUTIONS.values())}) -- pick one of '
-        f'those for camera.resolution, or use source: "webcam" for a non-C920 USB camera.'
-    )
-
 
 class CaptureWaypoint(State):
     """Flies to each planned waypoint (relative to the takeoff/arena
@@ -69,25 +39,6 @@ class CaptureWaypoint(State):
         # (REP-103) -- converted to the FRD sign pixel_to_local() expects
         # in _tilt_deg() below, not here.
         self._latest_attitude_rad: Optional[Tuple[float, float]] = None
-
-    def _ensure_camera(self) -> None:
-        if self.image_handler is None:
-            camera_config = None
-            if self.config.camera.source == 'c920':
-                # Auto-detected by ImageHandler otherwise (config=None) --
-                # but nectar's default C920Config().profile is 1 (1280x720),
-                # not necessarily camera.resolution here, so it must be
-                # passed explicitly for the real camera to actually capture
-                # at the resolution the rest of the pipeline assumes.
-                camera_config = C920Config(
-                    profile=_c920_profile_for(self.config.camera.resolution),
-                    fallback_device_index=self.config.camera.c920_fallback_device_index,
-                )
-            self.image_handler = ImageHandler(
-                image_source=self.config.camera.source,
-                config=camera_config,
-            )
-            self.image_handler.open()
 
     def _ensure_attitude_sub(self) -> None:
         # nectar-sdk doesn't expose roll/pitch for the MAVROS backend
@@ -180,7 +131,8 @@ class CaptureWaypoint(State):
             case); ABORT if no photo could be captured at this waypoint, or
             if an exception/KeyboardInterrupt occurs while moving/capturing.
         """
-        self._ensure_camera()
+        #self._ensure_camera()
+        self.image_handler = blackboard.get('camera_down')
         if self.config.detection.tilt_compensation:
             self._ensure_attitude_sub()
 
@@ -193,7 +145,7 @@ class CaptureWaypoint(State):
             f'x={waypoint.x:.2f}m y={waypoint.y:.2f}m (from takeoff)'
         )
 
-        drone: MavrosDrone = blackboard.get('drone')
+        drone: MavrosDrone | MavlinkConfig = blackboard.get('drone')
 
         try:
             if self.takeoff_heading is None:
@@ -271,19 +223,19 @@ class CaptureWaypoint(State):
         return SUCCEED
 
 
-def _demo() -> None:
-    # ponytail self-check: _c920_profile_for()'s resolution -> profile
-    # mapping, no ROS/camera hardware needed.
-    assert _c920_profile_for((1920, 1080)) == 2
-    assert _c920_profile_for([1280, 720]) == 1
-    assert _c920_profile_for((640, 480)) == 0
-    try:
-        _c920_profile_for((800, 600))
-        assert False, 'expected ValueError for an unsupported resolution'
-    except ValueError:
-        pass
-    print('capture_waypoint self-check OK')
+# def _demo() -> None:
+#     # # ponytail self-check: _c920_profile_for()'s resolution -> profile
+#     # # mapping, no ROS/camera hardware needed.
+#     # assert _c920_profile_for((1920, 1080)) == 2
+#     # assert _c920_profile_for([1280, 720]) == 1
+#     # assert _c920_profile_for((640, 480)) == 0
+#     # try:
+#     #     _c920_profile_for((800, 600))
+#     #     assert False, 'expected ValueError for an unsupported resolution'
+#     # except ValueError:
+#     #     pass
+#     print('capture_waypoint self-check OK')
 
 
-if __name__ == '__main__':
-    _demo()
+# if __name__ == '__main__':
+#     _demo()

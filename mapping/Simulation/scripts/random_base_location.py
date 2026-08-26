@@ -9,8 +9,8 @@ from pathlib import Path
 
 import yaml
 
-SEED = 42  # fixed seed: same 5 bases, same positions, every run
-random.seed(SEED)
+# SEED = 42  # fixed seed: same 5 bases, same positions, every run
+# random.seed(SEED)
 
 NUMBER_OF_BASES = 5
 

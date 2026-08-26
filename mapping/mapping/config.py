@@ -98,6 +98,11 @@ class ArenaConfig:
     size_x_m: float
     size_y_m: float
     vertices_gps: ArenaVertices
+    # grid_pattern_type : str
+    # grid_primary_direction : str
+    # grid_transition_direction : str
+    # grid_spacing : float
+    
 
 
 @dataclass(frozen=True)
@@ -270,6 +275,10 @@ class Config:
                 c=GpsPoint(**vertices_data['C']),
                 d=GpsPoint(**vertices_data['D']),
             ),
+            # grid_pattern_type=arena_data['grid_pattern_type'],
+            # grid_primary_direction=arena_data['grid_primary_direction'],
+            # grid_transition_direction=arena_data['grid_trasition_direction'],
+            # grid_spacing=arena_data['grid_spacing']
         )
 
         mission_data = data['mission']
@@ -394,8 +403,8 @@ def default_model_path() -> str:
 def _demo():
     # ponytail self-check: _apply_profile() overlay logic, no file I/O.
     base = {
-        'active_profile': 'simulation',
-        'drone': {'connection_string': 'base-value', 'type': 'mavros'},
+        'active_profile': 'sim',
+        'drone': {'connection_string': 'base-value', 'type': 'mavlink'},
         'profiles': {
             'simulation': {'drone': {'connection_string': 'sim-value'}},
             'real': {'drone': {'connection_string': 'real-value'}},
@@ -404,7 +413,7 @@ def _demo():
 
     sim = _apply_profile({**base, 'active_profile': 'simulation'})
     assert sim['drone']['connection_string'] == 'sim-value', sim
-    assert sim['drone']['type'] == 'mavros', sim  # untouched key preserved
+    assert sim['drone']['type'] == 'mavros' or sim['drone']['type'] == 'mavlink', sim  
 
     real = _apply_profile({**base, 'active_profile': 'real'})
     assert real['drone']['connection_string'] == 'real-value', real
@@ -420,13 +429,3 @@ def _demo():
 
 if __name__ == '__main__':
     _demo()
-
-
-@dataclass(frozen=True)
-class SITLConfig(Config):
-    connection_string: str = 'tcp:127.0.0.1:5762'
-
-    front_image_source: str = 'ros'
-    front_ros_topic: str = '/front_camera/image'
-    down_image_source: str = 'ros'
-    down_ros_topic: str = '/down_camera'

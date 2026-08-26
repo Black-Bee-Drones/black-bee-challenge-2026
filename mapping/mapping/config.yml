@@ -6,12 +6,16 @@
 # Escolhe qual bloco de profiles: (no final do arquivo) sobrescreve os campos
 # que mudam entre simulação e campo (drone.connection_string, simulation.mode,
 # camera.source/detection_override, arena.vertices_gps). Ver profiles: abaixo.
-active_profile: "simulation"           # "simulation" | "real"
+active_profile: "sim"           # "sim" | "real"
 
 drone:
-  type: "mavlink"                      
-  pose_source: "gps"                   # "gps" (regulamento exige coordenadas geográficas) | "vision"
-  start_driver: false              
+  type: "mavros"
+  connection_string: "tcp:127.0.0.1:5760"                      
+  pose_source: "gps"                   
+  start_driver: false 
+
+simulation:             
+  mode: true
 
 takeoff:
   # 3.0m em vez do original 5.6m: mais baixo = footprint menor = base ocupa
@@ -21,9 +25,10 @@ takeoff:
   altitude: 3.0                        # também é a altitude de varredura (câmera apontada para baixo)
 
 land:
-  mode: "LAND"                         # "LAND" | "RTL"
+  mode: "RTL"                         # "LAND" | "RTL"
 
 camera:
+  source: "/down_camera"
   # Especificações da câmera REAL (C920), usadas pelo planejamento de voo
   # (compute_grid()) — NÃO mudar pra bater com a câmera simulada aqui; é
   # pra isso que existe o `detection_override` do perfil simulation abaixo.
@@ -55,6 +60,7 @@ camera:
     # 0.0. Ver seção 3.2/8 do README para o porquê da conta e o sinal.
     yaw_offset_deg: -90.0
 
+
 calibration:
   # Deixe em branco para usar a calibração já salva em
   # nectar-sdk/nectar/nectar/vision/camera/calibration/{camera_matrix,camera_distortion}.txt
@@ -66,8 +72,18 @@ calibration:
     gamma: 1.0
 
 arena:
+  vertices_gps:
+    A: {lat: -35.36319912, lon: 149.16515989}
+    B: {lat: -35.36319912, lon: 149.16531411}
+    C: {lat: -35.36332488, lon: 149.16515989}
+    D: {lat: -35.36332488, lon: 149.16531411}
   size_x_m: 14.0
   size_y_m: 14.0
+  # grid_pattern_type : "COLUMNS"
+  # grid_primary_direction : "FOWARD"
+  # grid_transition_direction : "RIGHT"
+  # grid_spacing : 1.0
+
   # 4 vértices da arena, nomeados EXATAMENTE como os organizadores vão falar
   # no dia da prova (A/B/C/D) — não é ordem de bússola/N-S-L-O, pois isso
   # depende de para onde o drone aponta ao decolar (só se sabe na hora):
@@ -128,9 +144,9 @@ mosaic:
 # (overlay raso: drone/simulation/camera/arena) -- o resto de cada seção
 # acima continua valendo para os dois perfis.
 profiles:
-  simulation:
+  sim:
     drone:
-      connection_string: "tcp:127.0.0.1:5760"
+      connection_string: "tcp:127.0.0.1:5762"
     simulation:
       mode: true
     camera:
@@ -153,16 +169,16 @@ profiles:
         D: {lat: -35.36332488, lon: 149.16531411}
   real:
     drone:
-      connection_string: "<PREENCHER>"
+      connection_string: "/dev/ttyAMA1"
     simulation:
       mode: false
     camera:
-      source: "c920"                   # dispositivo de vídeo real em campo (sem detection_override: câmera real já bate com camera: acima)
+      source: "webcam"                   # dispositivo de vídeo real em campo (sem detection_override: câmera real já bate com camera: acima)
     arena:
       vertices_gps:
         # <PREENCHER> com as coordenadas reais da arena informadas pelos
         # organizadores antes de qualquer voo em campo/competição.
-        A: {lat: 0.0, lon: 0.0}
-        B: {lat: 0.0, lon: 0.0}
-        C: {lat: 0.0, lon: 0.0}
-        D: {lat: 0.0, lon: 0.0}
+        A: {lat: -22.4137435, lon: -45.4465702}
+        B: {lat: -22.4138488, lon: -45.4464600}
+        C: {lat: -22.4139693, lon: -45.4465546}
+        D: {lat: -22.4138759, lon: -45.4466709}

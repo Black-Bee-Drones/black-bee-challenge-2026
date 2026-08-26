@@ -2,7 +2,7 @@ import yasmin
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 
-from nectar.control import MavrosDrone
+from nectar.control import MavrosDrone, MavlinkConfig
 
 from mapping.config import Config
 
@@ -31,20 +31,19 @@ class Takeoff(State):
             an exception/KeyboardInterrupt occurs during arming/takeoff.
         """
 
-        if self.config.drone_type != 'mavros':
-            yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')
-            return ABORT
+        # if self.config.drone_type != 'mavros':
+        #     yasmin.YASMIN_LOG_INFO('\033[31mDrone Type Not Found (only MavrosDrone is supported)!\033[0m')
+        #     return ABORT
 
-        drone: MavrosDrone = blackboard.get('drone')
+        drone: MavrosDrone | MavlinkConfig = blackboard.get('drone')
 
 
         yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m ... ')
 
         try:
-            #drone.set_home()
-            #drone.arm()
-            drone.takeoff(self.config.takeoff_altitude)
+            drone.takeoff(self.config.takeoff_altitude,adjust_altitude=False)
             drone.delay(3)
+            drone.move_to(x=0.0,y=0.0,z=(3-drone.get_altitude()))
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_INFO('    \033[31mExecution interrupted by user!\033[0m')

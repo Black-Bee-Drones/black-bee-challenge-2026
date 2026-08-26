@@ -1,4 +1,5 @@
 from datetime import datetime
+import traceback
 
 import yasmin
 
@@ -9,7 +10,7 @@ from yasmin_ros.yasmin_node import YasminNode
 
 
 from nectar.control import DroneFactory, MavrosConfig, PoseSource, MavlinkConfig
-from nectar.vision import ImageHandler
+from nectar.vision import ImageHandler, ROSConfig, OpenCVConfig
 
 from mapping.config import Config, PoseSourceOption
 
@@ -67,6 +68,23 @@ class Inicialize(State):
             return ABORT
 
         #Drone
+        # try:
+        #     yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
+        #     if self.config.drone_type != 'mavros':
+        #         yasmin.YASMIN_LOG_INFO('\033[31m Invalid Drone Type (only "mavros" is supported)!\033[0m')
+        #         return ABORT
+
+        #     pose_source = (
+        #         PoseSource.GPS
+        #         if self.config.pose_source == PoseSourceOption.GPS
+        #         else PoseSource.VISION
+        #     )
+
+        #     drone_config = MavrosConfig(
+        #         pose_source=pose_source,
+        #         start_driver=self.config.start_driver,
+        #         connection_string=self.config.connection_string,
+        #     )
         
         try:
             
@@ -76,21 +94,21 @@ class Inicialize(State):
                 else PoseSource.VISION
             )
             
-            
             yasmin.YASMIN_LOG_INFO(f'Inicializing Drone Config ("{self.config.drone_type}")...')
+            
             if self.config.drone_type == 'mavros':
                 
                 drone_config = MavrosConfig(
                     pose_source=pose_source,
-                    start_driver=False,
+                    start_driver=self.config.start_driver,
                     connection_string=self.config.connection_string
                 )
 
             elif self.config.drone_type == 'mavlink':
                 drone_config = MavlinkConfig(
-                    pose_source=pose_source,
-                    start_driver=False,
-                    connection_string=self.config.conection_string
+                    pose_source=PoseSource.GPS,
+                    start_driver=self.config.start_driver,
+                    connection_string="/dev/ttyAMA1"
                 )
 
             else:
@@ -110,6 +128,7 @@ class Inicialize(State):
 
         except Exception as error:
             yasmin.YASMIN_LOG_ERROR(f'[31mDRONE FACTORY FAILED: {error}')
+        
             return ABORT
         
         #Camera
@@ -118,19 +137,39 @@ class Inicialize(State):
 
             yasmin.YASMIN_LOG_INFO('Initializing Camera(down)...')
 
+            if self.config.sim_mode == True:
+                cam_config = ROSConfig(
+                    topic=self.config.camera.source,
+                    compressed=False
+                )
+            else:
+                cam_config = OpenCVConfig(
+                    width=640,
+                    height=480,
+                    device_index=0
+                )
+                
+        
             camera_down = ImageHandler(
                 image_source=self.config.camera.source,
+                config=cam_config,
+            
             )
+            
 
             yasmin.YASMIN_LOG_INFO('Opening camera (down)...')
             camera_down.open()
-            camera_down.run()
+            # camera_down.run()
             time.sleep(2)
 
             
             
             yasmin.YASMIN_LOG_INFO('Take testing photo (down)...')
-            camera_down.take_photo()
+           
+            frame = camera_down.take_photo(timeout_sec=15)
+            if frame is None:
+                yasmin.YASMIN_LOG_WARN("Failed to get frame from camera.")
+                return ABORT
             
             blackboard.set('camera_down', camera_down)
             yasmin.YASMIN_LOG_INFO('\033[32mSuccessful Start Camera(down)!\033[0m')
@@ -143,6 +182,7 @@ class Inicialize(State):
         
         except Exception as error:
             yasmin.YASMIN_LOG_ERROR(f'Camera(down) failed: {error}')
+            yasmin.YASMIN_LOG_INFO(traceback.format_exc())
             return ABORT
 
         yasmin.YASMIN_LOG_INFO('\033[32mInicialize Successfully Completed!\033[0m')

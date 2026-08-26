@@ -58,10 +58,15 @@ class PublishResults(State):
                 self.config.arena.size_y_m,
                 self.config.arena.vertices_gps,
             )
-
-            output_dir = self.config.output.directory or os.path.expanduser(
-                '~/.ros/mapping_results'
-            )
+            
+            if self.config.sim_mode == True:
+                output_dir = self.config.output.directory or os.path.expanduser(
+                    '~/.ros/mapping_results'
+                )
+            else:
+                output_dir = self.config.output.directory or os.path.expanduser(
+                    '~/ros2_ws/src/mapping/results'
+                )
             run_dir = os.path.join(output_dir, datetime.now().strftime('%Y%m%d_%H%M%S'))
             os.makedirs(run_dir, exist_ok=True)
 

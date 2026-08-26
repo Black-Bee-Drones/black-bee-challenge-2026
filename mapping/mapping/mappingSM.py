@@ -38,13 +38,13 @@ class MappingSM(StateMachine):
         self.add_state(
             'TAKEOFF',
             Takeoff(config),
-            transitions={SUCCEED: 'PLAN_COVERAGE', ABORT: ABORT}
+            transitions={SUCCEED: 'PLAN_COVERAGE', ABORT: "LAND"}
         )
 
         self.add_state(
             'PLAN_COVERAGE',
             PlanCoverage(config),
-            transitions={SUCCEED: 'CAPTURE_WAYPOINT', ABORT: ABORT}
+            transitions={SUCCEED: 'CAPTURE_WAYPOINT', ABORT: "LAND"}
         )
 
         self.add_state(
@@ -53,14 +53,14 @@ class MappingSM(StateMachine):
             transitions={
                 CAPTURE_NEXT: 'CAPTURE_WAYPOINT',
                 SUCCEED: 'DETECT_BASES',
-                ABORT: ABORT,
+                ABORT: 'LAND',
             }
         )
 
         self.add_state(
             'DETECT_BASES',
             DetectBases(config),
-            transitions={SUCCEED: 'PUBLISH_RESULTS', ABORT: ABORT}
+            transitions={SUCCEED: 'PUBLISH_RESULTS', ABORT: "LAND"}
         )
 
         self.add_state(

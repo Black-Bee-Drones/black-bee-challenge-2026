@@ -1,5 +1,7 @@
 import rclpy
 
+import nectar
+
 import yasmin
 from yasmin_ros.yasmin_node import YasminNode
 from yasmin_ros.basic_outcomes import SUCCEED
@@ -25,6 +27,12 @@ def main(args=None):
     set_ros_loggers()
 
     config = Config.load()
+    
+    executor = YasminNode.get_instance()._executor
+    assert executor is not None, 'Executor is not initialized'
+
+    nectar.use_executor(executor)
+
 
     try:
         yasmin.YASMIN_LOG_INFO('Inicializing the State Machine...')
@@ -34,17 +42,13 @@ def main(args=None):
 
     except Exception as error:
         yasmin.YASMIN_LOG_ERROR(f'Mapping State Machine Failed: {error}!')
+        
+    finally:
+        if nectar.is_initialized():
+            nectar.shutdown()
 
-    else:
-        if final_outcome == SUCCEED:
-            yasmin.YASMIN_LOG_INFO(final_outcome)
-        else:
-            yasmin.YASMIN_LOG_ERROR(final_outcome)
-
-    YasminNode.destroy_instance()
-
-    if rclpy.ok():
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':
