@@ -11,8 +11,8 @@ class Config:
     # )
     
     target_box: tuple = (
-        (-22.415338, -45.447946),     # box 1: lat, long
-        (-22.415377, -45.447988),     # box 2: lat, long
+        (-22.4153391, -45.4479390),     # box 1: lat, long
+        (-22.4153820, -45.4479658),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
 
