@@ -24,6 +24,7 @@ from precision_landing.constants import (
     CONTROLER_INTEGRAL_LIMITS_Z,
     PRECISE_DOWN_TOLERANCE_PX,
     MAX_ALTITUDE,
+    TAKEOFF_HEIGHT,
     FINAL_LANDING_TOLERANCE,
     FINAL_LANDING_HEIGHT,
 )
@@ -140,7 +141,7 @@ class Precision_landing(State):
                         #TRY TO GO UP AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
                         drone.move_velocity(vx=0,vy=0,vz=0)
-                        drone.move_to(z=MAX_ALTITUDE, reference=MoveReference.TAKEOFF)
+                        drone.move_to(z=TAKEOFF_HEIGHT, reference=MoveReference.WORLD)
                     else:
                         #NÃO SEI OQUE FAZER AQUI
                         drone.move_velocity(vx=0,vy=0,vz=0)

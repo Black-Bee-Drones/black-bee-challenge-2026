@@ -85,8 +85,8 @@ class Search(State): #Sub-state that will only move around the arena until it de
                             yasmin.YASMIN_LOG_INFO(f"DIDN'T DETECT shape..., retaking photo")
                             yasmin.YASMIN_LOG_INFO(f"{i}")
                             drone.move_to(yaw=yaw_angle)
-                            drone.move_to(x=1, reference=MoveReference.BODY)
-                            
+                            drone.move_to(x=1.0, reference=MoveReference.BODY)
+
                             frame = camera.take_photo()
                             bbox2, id = aruco.detect(frame.image)
 
@@ -100,7 +100,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
-                    drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
+                    drone.move_to(x=x, y=y, reference=MoveReference.TAKEOFF)
                     idx += 1
                     drone.delay(0.5)
                 else:
