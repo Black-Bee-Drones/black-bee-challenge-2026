@@ -6,25 +6,14 @@ from yasmin import(
     Blackboard,
     YASMIN_LOG_INFO,
     YASMIN_LOG_ERROR,
-    YASMIN_LOG_WARN
+    YASMIN_LOG_DEBUG
 )
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
 from hang_the_hook.utils.blackboard_utils import blackboard_check
 
-from hang_the_hook.core.constants import (
-    RTL_ALTITUDE,
-    TAKEOFF_HEIGHT,
-    SIM_MODE,
-    IMAGE_WIDTH,
-    IMAGE_HEIGHT,
-    IMAGE_SOURCE,
-    IMAGE_COMPRESSED,
-    PID_X_KP, PID_X_KI, PID_X_KD, PID_X_OUTPUT_LIMITS, PID_X_INTEGRAL_LIMITS,
-    PID_Y_KP, PID_Y_KI, PID_Y_KD, PID_Y_OUTPUT_LIMITS, PID_Y_INTEGRAL_LIMITS,
-    PID_YAW_KP, PID_YAW_KI, PID_YAW_KD, PID_YAW_OUTPUT_LIMITS, PID_YAW_INTEGRAL_LIMITS,
-)
+from hang_the_hook.core.constants import *
 
 from nectar.control import(
     DroneFactory,
@@ -118,6 +107,21 @@ class Initialize(State):
                 output_limits=PID_YAW_OUTPUT_LIMITS,
                 integral_limits=PID_YAW_INTEGRAL_LIMITS,
             )
+
+            # ---- Quickly verifies altitude source ----
+            while True:
+                altitude = drone.get_altitude() #type: ignore # Yes, it exists, trust me
+                if altitude is None:
+                    altitude_reference_loss_counter += 1
+                    YASMIN_LOG_DEBUG(f'Lost height reference, altitude_loss_counter: {altitude_reference_loss_counter}')
+                else:
+                    altitude_reference_loss_counter = 0
+                    break
+                drone.delay(0.1) #type: ignore # Yes, it exists, trust me
+
+                if altitude_reference_loss_counter >= MAX_ALTITUDE_REFERENCE_LOSS:
+                    YASMIN_LOG_DEBUG(f'Could not resolve altitude reference fault after {altitude_reference_loss_counter} iterations during state DESCEND, returning to launch')
+                    return ABORT
 
             log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "utils", "errors"))
             os.makedirs(log_dir, exist_ok=True)

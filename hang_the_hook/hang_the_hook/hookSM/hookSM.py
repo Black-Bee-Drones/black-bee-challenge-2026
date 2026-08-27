@@ -10,37 +10,38 @@ from hang_the_hook.hookSM.constants import(
     FIND_HOSE,
     ALIGN,
     DESCEND,
+    RTL
 )
 
 class hookSM(StateMachine):
-    def __init__(self):
-        super().__init__(outcomes=[SUCCEED, ABORT])
+    def __init__(self) -> None:
+        super().__init__(outcomes=[SUCCEED, ABORT, RTL])
 
         self.add_state(
-            "FIND_HOSE",
+            'FIND_HOSE',
             FindHose(),
             transitions={
-                FIND_HOSE: 'FIND_HOSE',
                 ALIGN: 'ALIGN',
-                ABORT: ABORT
+                RTL: RTL
             }
         )
 
         self.add_state(
-            "ALIGN",
+            'ALIGN',
             Align(),
             transitions={
                 DESCEND: 'DESCEND',
-                ABORT: ABORT
+                FIND_HOSE: 'FIND_HOSE',
+                RTL: RTL
             }
         )
         self.add_state(
-            "DESCEND",
+            'DESCEND',
             Descend(),
             transitions={
                 FIND_HOSE: 'FIND_HOSE',
                 ALIGN: 'ALIGN',
-                ABORT: ABORT,
+                RTL: RTL,
                 SUCCEED: SUCCEED
             }
         )
