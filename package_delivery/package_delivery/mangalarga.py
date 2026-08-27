@@ -92,9 +92,10 @@ def main():
     except KeyboardInterrupt:
         if package_delivery_sm.is_running():
             package_delivery_sm.cancel_state()
-
-    if rclpy.ok():
-        rclpy.shutdown()
+    finally:
+        nectar.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()
