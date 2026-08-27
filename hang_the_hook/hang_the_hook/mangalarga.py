@@ -103,11 +103,11 @@ def mangalarga():
 
         nectar.use_executor(executor)
 
-        camera_node = CameraPublisher()
-        executor.add_node(camera_node)
+#        camera_node = CameraPublisher()
+#        executor.add_node(camera_node)
 
-        executor_thread = Thread(target=executor.spin, daemon=True)
-        executor_thread.start()
+#        executor_thread = Thread(target=executor.spin, daemon=True)
+#        executor_thread.start()
 
         mangalarga_sm = HangTheHookSM()
 
@@ -130,8 +130,8 @@ def mangalarga():
         print_exc()
 
     finally:
-        if camera_node is not None:
-            camera_node.destroy_node()
+#        if camera_node is not None:
+#            camera_node.destroy_node()
 
         if nectar.is_initialized():
             nectar.shutdown()

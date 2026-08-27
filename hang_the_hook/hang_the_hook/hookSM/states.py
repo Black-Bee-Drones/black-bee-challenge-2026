@@ -93,7 +93,7 @@ class Align(State):
         if not blackboard_check(
             blackboard=blackboard,
             args=(
-                'drone', 'camera', 'hose',
+                'drone', 'camera',
                 'pid_cx', 'pid_cy', 'pid_angle',
                 )
             ): return ABORT
@@ -134,7 +134,7 @@ class Align(State):
             # --- Delay isn't necessery due to take_photo
             frame = self.camera.take_photo(wait_for_new=True)
             detection = self.hosedetector.detect_line(frame, draw=False)
-            if detection is None or None in detection:
+            if detection is None:
                 self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
                 return FIND_HOSE
             else:
