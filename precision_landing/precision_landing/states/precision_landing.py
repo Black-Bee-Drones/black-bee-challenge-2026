@@ -7,7 +7,11 @@ from yasmin_ros.yasmin_node import YasminNode
 from rclpy.duration import Duration
 
 from nectar.vision import ImageHandler
+<<<<<<< HEAD
 from nectar.control import MavrosDrone, PIDController
+=======
+from nectar.control import MavrosDrone, MavlinkDrone, PIDController, MoveReference
+>>>>>>> 3aa4d87 (I milagroso e waypoint q n sei)
 from precision_landing.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
@@ -125,7 +129,7 @@ class Precision_landing(State):
                                 vz = output_z,
                                 vyaw = 0.0,
                             )
-                            drone.delay(0.4)
+                            drone.delay(0.3)
                             #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
                             break
 
@@ -149,7 +153,7 @@ class Precision_landing(State):
 
 =======
                         drone.move_velocity(vx=0,vy=0,vz=0)
-                        drone.move_to(z=MAX_ALTITUDE)
+                        drone.move_to(z=MAX_ALTITUDE, reference=MoveReference.TAKEOFF)
                     else:
                         #NÃO SEI OQUE FAZER AQUI
                         drone.move_velocity(vx=0,vy=0,vz=0)
