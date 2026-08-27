@@ -132,11 +132,6 @@ class Initialize(State):
                 model_source=self.config.box_model_source,
                 confidence_threshold=self.config.box_conf,
             )
-            yasmin.YASMIN_LOG_INFO('Initializing Detector(box)...')
-            self.detector_box = Detector(
-                model_source=self.config.box_model_source,
-                confidence_threshold=self.config.box_conf,
-            )
 
             yasmin.YASMIN_LOG_INFO('Load Detector(box)...')
             self.detector_box.load()
