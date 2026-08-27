@@ -75,6 +75,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
 
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
+<<<<<<< HEAD
                     
                         try:
                             aruco_shape = self.get_aruco_shape(frame, bbox)
@@ -84,11 +85,25 @@ class Search(State): #Sub-state that will only move around the arena until it de
                             drone.move_to(yaw=yaw_angle)
                             drone.move_to(x=1.0, reference=MoveReference.BODY)
 
+=======
+
+                        try:
+                            aruco_shape = self.get_aruco_shape(frame, bbox)
+                        except Exception as i:
+                            yasmin.YASMIN_LOG_INFO(f"DIDN'T DETECT shape..., retaking photo")
+                            yasmin.YASMIN_LOG_INFO(f"{i}")
+                            drone.move_to(yaw=yaw_angle)
+                            drone.move_to(x=1, reference=MoveReference.BODY)
+>>>>>>> b3aba2b (Arrumando bobeira da imagem cortada)
                             frame = camera.take_photo()
                             bbox2, id = aruco.detect(frame.image)
 
                             aruco_shape = self.get_aruco_shape(frame, bbox2)
+<<<<<<< HEAD
                             drone.move_to(yaw=-yaw_angle)
+=======
+
+>>>>>>> b3aba2b (Arrumando bobeira da imagem cortada)
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
 
