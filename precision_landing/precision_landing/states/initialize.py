@@ -14,7 +14,6 @@ from nectar.control import (
     MavlinkConfig,
     PoseSource,
     SITL_GAZEBO_CONFIG,
-    MAVLINK_SITL_GAZEBO_CONFIG,
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig

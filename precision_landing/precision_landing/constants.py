@@ -23,12 +23,12 @@ PRECISION_LANDING_TIME = 120
 
 MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
-WAYPOINTS = [(0,0), (-4,5), (-1,5), (3,5), (5,5), (5,3), (3,3), (0,3),
-(-2,3), (-4,3), (-4,1), (-2,1), (2,1), (5,1), (5,-2), (2,-2), (-1,-2), (-4,-2),
+WAYPOINTS = [(0,0), (-4,5), (-1,5), (1,5), (3,5), (5,5), (5,3), (3,3), (0,3),
+(-2,3), (-4,3), (-4,1), (-2,1), (0,1), (2,1), (5,1), (5,-2), (2,-2), (-1,-2), (-4,-2),
 (-4,-4), (-2,-4), (1,-4), (4,-4)]
 
 CONTROLER_P_XY = 0.250 if SIM_MODE else 0.123
-CONTROLER_I_XY = 0.0
+CONTROLER_I_XY = 0.0012
 CONTROLER_D_XY = 0.0
 CONTROLER_OUTPUT_LIMITS_XY = (-0.44, 0.44)
 CONTROLER_INTEGRAL_LIMITS_XY = (-0.01, 0.01)
@@ -41,4 +41,4 @@ CONTROLER_OUTPUT_LIMITS_Z = (-0.8, 0.8)
 CONTROLER_INTEGRAL_LIMITS_Z = (-0.1, 0.1)
 
 FINAL_LANDING_TOLERANCE = 0.2
-FINAL_LANDING_HEIGHT = 1.0
+FINAL_LANDING_HEIGHT = 1.2
