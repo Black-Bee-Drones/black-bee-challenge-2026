@@ -11,8 +11,8 @@ class Config:
     # )
     
     target_box: tuple = (
-        (-22.415295, -45.447955),     # box 1: lat, long
-        (-22.415355, -45.447970),     # box 2: lat, long
+        (-22.415356, -45.447944),     # box 1: lat, long
+        (-22.415540, -45.447980),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
 
@@ -72,8 +72,8 @@ class Config:
     # Gripper Controller
     has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
     servo_channel : int = 1         # AUX OUT number (1-8 -> FCU SERVO9-16)
-    servo_open_pwm : int = 1000     # padeiro deu os valores
-    servo_closed_pwm : int = 1500   # padeiro deu os valores
+    servo_open_pwm : int = 1500     # padeiro deu os valores
+    servo_closed_pwm : int = 1000   # padeiro deu os valores
     servo_retries: int = 3          # COMMAND_ACK can time out on serial; retry before abort
     servo_retry_delay: float = 0.5  # seconds between attempts
     servo_action_delay: float = 3.0 # settle time after a successful command
