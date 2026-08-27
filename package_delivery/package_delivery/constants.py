@@ -37,13 +37,14 @@ class Config:
     image_height: int = 480         # pixels
 
     # Approach
-    approach_timeout: int = 80         # seconds
-    approach_tolerance: float = 0.20   # meters
-    approach_tolerance_px: int = 100   # pixels
-    dropoff_altitude: float = 0.80     # meters
-    dropoff_tolerance: float = 0.20    # meters
+    approach_timeout: int = 80          # seconds
+    approach_tolerance: float = 0.20    # meters
+    approach_tolerance_px: int = 100    # pixels
+    dropoff_altitude: float = 1.0       # meters
+    dropoff_tolerance: float = 0.20     # meters
     required_frames: int = 3
     lost_tolerance: int = 13
+    claw_offset: float = 0.165          # meters
 
     altitude_inc: float = 0.8 # meters
     safe_altitude: float = 3 # meters

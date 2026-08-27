@@ -98,7 +98,9 @@ class Approach(State):
                         yasmin.YASMIN_LOG_WARN("Detection lost. Increasing altitude to restart search...")
                         fly_to: float = drone.get_altitude() + self.config.altitude_inc
                         if fly_to < self.config.max_altitude:
-                            drone.move_to(z=(drone.get_altitude() + self.config.altitude_inc))
+                            drone.move_to(z=fly_to)
+                        else:
+                            drone.move_velocity(0.0, 0.0, 0.0)
                         pid_cx.reset()
                         pid_cy.reset()
                         pid_cz.reset()
@@ -121,7 +123,7 @@ class Approach(State):
                 altitude = drone.get_altitude()
  
                 error_x = self.ppm(error_x_px, altitude, 86, self.config.image_width)
-                error_y = self.ppm(error_y_px, altitude, 47, self.config.image_height)
+                error_y = self.ppm(error_y_px, altitude, 47, self.config.image_height) + self.config.claw_offset
                 error_z = altitude - self.config.dropoff_altitude
  
                 vx = pid_cy.update(error_y)
@@ -133,7 +135,7 @@ class Approach(State):
                 aligned = max(abs(error_x), abs(error_y)) < self.config.approach_tolerance
                 
                 drone.move_velocity(vx, vy, vz)
-                
+
                 if aligned:
                     aligned_frames += 1
                     yasmin.YASMIN_LOG_INFO(
@@ -159,7 +161,6 @@ class Approach(State):
     def ppm(self, delta_pixel: int, altitude: float, fov_degrees: float, frame_px: int) -> float:
         angle_rad = math.radians(fov_degrees) / 2
         ratio = (math.tan(angle_rad) * altitude) / (frame_px // 2)
-
         return delta_pixel * ratio
     
     def timed_out(self) -> bool:
