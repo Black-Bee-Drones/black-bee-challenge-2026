@@ -23,7 +23,7 @@ class Takeoff(State):
             yasmin.YASMIN_LOG_INFO("Starting TAKEOFF...")
 
             try:
-                drone.takeoff(TAKEOFF_HEIGHT, max_retries=5, timeout=30.0, precision=0.2)
+                drone.takeoff(TAKEOFF_HEIGHT, max_retries=10, timeout=30.0, precision=0.2)
             except:
                 yasmin.YASMIN_LOG_INFO("TAKEOFF FAILED... ABORTING")
                 return ABORT

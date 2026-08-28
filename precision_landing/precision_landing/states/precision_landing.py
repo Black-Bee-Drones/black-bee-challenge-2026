@@ -28,6 +28,10 @@ from precision_landing.constants import (
     FINAL_LANDING_HEIGHT,
 )
 
+
+
+
+
 class Precision_landing(State):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
@@ -68,6 +72,8 @@ class Precision_landing(State):
 
 
     def execute(self, blackboard: Blackboard):
+        output_x = 0
+        output_y = 0
         try:
             if "drone" not in blackboard:
                 yasmin.YASMIN_LOG_ERROR("Drone not available...")
@@ -99,8 +105,8 @@ class Precision_landing(State):
 
                             TARGET_FOUND = True
                             h, w = result.image.shape[:2]
-                            target_x = shape.center[0]
-                            target_y = shape.center[1]
+                            target_x = shape.center[1]
+                            target_y = shape.center[0]
              
                             erro_x_pixel = target_x - w/2
                             erro_y_pixel = target_y - h/2
@@ -111,11 +117,10 @@ class Precision_landing(State):
              
                             output_x = self.pid_x.update(erro_x)
                             output_y = self.pid_y.update(erro_y)
-                            #output_z = self.pid_z.update(erro_z)
                             yasmin.YASMIN_LOG_INFO(f'Detection at: error_x={erro_x:.2f}, error_x_px={erro_x_pixel:.2f}, error_y={erro_y:.2f}, error_y_px={erro_y_pixel:.2f} output_x={output_x:.2f}, output_y={output_y:.2f}, drone_h={drone.get_altitude()}')
                             drone.move_velocity(
-                                vx = output_y,  
-                                vy = output_x,
+                                vx = output_x,  
+                                vy = output_y,
                                 vz = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0,
                                 vyaw = 0.0,
                             )
@@ -124,25 +129,22 @@ class Precision_landing(State):
                             break
 
                 if not TARGET_FOUND:
-
                     alt = drone.get_altitude()
 
                     if (alt <= FINAL_LANDING_HEIGHT) and (abs(erro_x) <= FINAL_LANDING_TOLERANCE and abs(erro_y) <= FINAL_LANDING_TOLERANCE):
                         #TAKES THE LAND WHEN DETECTION IS LOST
-                        #NOTE talvez até fazer uma função para tentar dar refind
                         yasmin.YASMIN_LOG_INFO("TAKING LAST LAND")
                         drone.move_velocity(vx=0,vy=0,vz=0)
                         drone.delay(1)
                         drone.land()
                         return SUCCEED
 
-                    elif alt < MAX_ALTITUDE -0.7:
-                        #TRY TO GO UP AFTER DONT FINDING THE TARGET
+                    elif alt < MAX_ALTITUDE:
+                        #TRY TO WAIT AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
-                        drone.move_velocity(vx=0,vy=0,vz=0)
-                    else:
-                        #NÃO SEI OQUE FAZER AQUI
-                        drone.move_velocity(vx=0,vy=0,vz=0)
+                        drone.move_velocity(vx=output_x,vy=output_y)
+                    drone.delay(0.5)
+
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"PRECISION_LANDING Failed: {e}")
