@@ -32,6 +32,10 @@ class Takeoff(State):
             yasmin.YASMIN_LOG_INFO("TAKEOFF completed.")
 
             return SUCCEED
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_INFO("ABORTING")
+            return ABORT
         
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"TAKEOFF Failed: {e}")

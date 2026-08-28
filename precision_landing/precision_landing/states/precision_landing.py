@@ -148,6 +148,10 @@ class Precision_landing(State):
             
             return TIMEOUT
 
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_INFO("ABORTING")
+            return ABORT
+
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"PRECISION_LANDING Failed: {e}")
             return ABORT
