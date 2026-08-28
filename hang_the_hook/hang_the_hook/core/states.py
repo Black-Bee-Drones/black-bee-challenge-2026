@@ -152,6 +152,7 @@ class Takeoff(State):
         self.drone: MavrosDrone | MavlinkDrone
 
     def execute(self, blackboard: Blackboard):
+        input('Press enter to Takeoff')
         if not blackboard_check(
             blackboard=blackboard,
             args=(
