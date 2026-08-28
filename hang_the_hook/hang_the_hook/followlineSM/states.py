@@ -234,7 +234,7 @@ class SeekLine(State):
 
             drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
             drone.move_to(yaw=-90)
-	    self.node.get_logger().warn("SeekLine: line lost — starting square search")
+            self.node.get_logger().warn("SeekLine: line lost — starting square search")
 
             counters = (0, 0)
 
@@ -301,7 +301,7 @@ class FollowBlueLine(State):
             self.node.get_logger().warn(f"FollowBlueLine: failed to write error log: {e}")
 
     def execute(self, blackboard: Blackboard):
-        drone: MavrosDrone | MavlinkDrone = None
+        drone: MavrosDrone | MavlinkDrone
         try:
             drone = blackboard["drone"]
             pid_cy: PIDController = blackboard["pid_cy"]
