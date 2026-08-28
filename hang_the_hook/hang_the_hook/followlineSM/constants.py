@@ -34,7 +34,7 @@ FOWARD_SPEED_BLUE_LINE = 0.5   # m/s – cruise speed while following blue line
 
 # ── Seek-Line Recovery (growing square search) ─────────────────────────────
 SEEK_SQUARE_BASE_SIDE = 2.0    # m – side length of the first square
-SEEK_SQUARE_SPEED     = 0.4    # m/s – forward speed during square legs
+SEEK_SQUARE_SPEED     = 0.367  # m/s – forward speed during square legs
 SEEK_MAX_SQUARES      = 3      # number of growing squares before aborting
 SEEK_SQUARE_GROWTH    = 1.5    # side-length multiplier per iteration
 MAX_LOST_FRAMES       = 15     # consecutive frames without detection to trigger seek

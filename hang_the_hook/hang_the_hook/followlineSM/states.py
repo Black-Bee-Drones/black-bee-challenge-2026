@@ -233,7 +233,8 @@ class SeekLine(State):
                 return ABORT
 
             drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
-            self.node.get_logger().warn("SeekLine: line lost — starting square search")
+            drone.move_to(yaw=-90)
+	    self.node.get_logger().warn("SeekLine: line lost — starting square search")
 
             counters = (0, 0)
 
