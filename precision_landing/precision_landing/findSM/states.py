@@ -91,8 +91,8 @@ class Search(State): #Sub-state that will only move around the arena until it de
                             bbox2, id = aruco.detect(frame.image)
 
                             aruco_shape = self.get_aruco_shape(frame, bbox2)
+                            drone.move_to(yaw=-yaw_angle)
                         
-                        drone.move_to(yaw=-yaw_angle)
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
                     
