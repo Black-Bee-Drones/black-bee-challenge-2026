@@ -221,7 +221,7 @@ class SeekLine(State):
                 if seen[1]:
                     drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
                     continue
-                
+
             drone.move_velocity(vx=SEEK_SQUARE_SPEED, vy=0.0, vz=0.0, vyaw=0.0,reference=MoveReference.BODY)
 
         drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
@@ -293,7 +293,7 @@ class FollowBlueLine(State):
     '''
 
     def __init__(self):
-        super().__init__(outcomes=[SEARCH, SEEK, ABORT])
+        super().__init__(outcomes=[SEARCH, SEEK, FOUND_RED, ABORT])
         self.node = YasminNode.get_instance()
 
     def _log_error(self, cx_error, angleBlue) -> None:
@@ -313,6 +313,7 @@ class FollowBlueLine(State):
             pid_cy: PIDController = blackboard["pid_cy"]
             pid_angle: PIDController = blackboard["pid_angle"]
             linedetector: LineDetector = blackboard["line_detect"]
+            hosedetector: LineDetector = blackboard["hose_detect"]
             camera: ImageHandler = blackboard["camera"]
             angle: float = blackboard["angle_blue"]
             cX: float = blackboard["center_x_blue"]
@@ -341,12 +342,19 @@ class FollowBlueLine(State):
                 if frame is None:
                     continue
 
+                resultRed, _, cxRed, _, _, _, _ = hosedetector.detect_line(frame, draw=False)
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
 
+                hose_detected = (
+                    cxRed is not None and not math_isnan(cxBlue)
+                )
                 line_detected = (
                     cxBlue is not None and not math_isnan(cxBlue)
                     and cyBlue is not None and not math_isnan(cyBlue)
                 )
+
+                if hose_detected:
+                    return FOUND_RED
 
                 if line_detected:
                     lost_frames = 0
