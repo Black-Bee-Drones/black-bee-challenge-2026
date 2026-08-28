@@ -25,7 +25,7 @@ CENTER_VARIATION         = 10    # pixels – max offset from center before corr
 MIN_BLUE_FRAMES          = 5     # consecutive frames to confirm blue line
 MIN_RED_FRAMES           = 10    # consecutive frames to confirm red line
 FRAMES_TO_CONFIRM_HOSE   = 5     # consecutive frames to confirm hose presence
-HOSE_COUNTER             = 0     # runtime counter (initial value)
+MAX_HOSE_COUNTER         = 5     # runtime counter (initial value)
 
 
 # ── Speed ────────────────────────────────────────────────────────────────────

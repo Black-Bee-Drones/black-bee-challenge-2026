@@ -20,31 +20,7 @@ from nectar.control import (
     MoveReference,
 )
 
-from hang_the_hook.followlineSM.constants import (
-    CENTER_VARIATION,
-    ANGLE_KD,
-    ANGLE_KI,
-    ANGLE_KP,
-    CX_KD,
-    CX_KI,
-    CX_KP,
-    FRAME_WIDTH,
-    FRAME_HEIGHT,
-    MIN_BLUE_FRAMES,
-    MIN_RED_FRAMES,
-    FOWARD_SPEED_BLUE_LINE,
-    HOSE_COUNTER,
-    FOUND_RED,
-    FOUND_BLUE,
-    SEARCH,
-    SEEK,
-    SEEK_SQUARE_BASE_SIDE,
-    SEEK_SQUARE_SPEED,
-    SEEK_MAX_SQUARES,
-    SEEK_SQUARE_GROWTH,
-    MAX_LOST_FRAMES,
-    SEARCH_TIMEOUT,
-)
+from hang_the_hook.followlineSM.constants import *
 
 # Absolute path so cv2.imwrite doesn't depend on the process's cwd.
 _IMAGES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "images"))
@@ -336,7 +312,7 @@ class FollowBlueLine(State):
             pid_angle.tune(ANGLE_KP, ANGLE_KI, ANGLE_KD)
 
             lost_frames = 0
-
+            red_counter = 0
             while True:
                 frame = camera.take_photo()
                 if frame is None:
@@ -354,6 +330,11 @@ class FollowBlueLine(State):
                 )
 
                 if hose_detected:
+                    red_counter += 1
+                else:
+                    red_counter = 0
+
+                if red_counter >= MAX_HOSE_COUNTER:
                     return FOUND_RED
 
                 if line_detected:
