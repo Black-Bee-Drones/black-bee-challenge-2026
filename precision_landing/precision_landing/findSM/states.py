@@ -105,6 +105,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                             aruco_shape = self.get_aruco_shape(frame, bbox2)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                             drone.move_to(yaw=-yaw_angle)
 =======
 
@@ -113,6 +114,10 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         
                         drone.move_to(yaw=-yaw_angle)
 >>>>>>> 53c9f01 (Esqueci de voltar o yaw)
+=======
+                            drone.move_to(yaw=-yaw_angle)
+                        
+>>>>>>> 8ce3d5b (Agora posso dormir em paz)
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
 
