@@ -18,6 +18,7 @@ from package_delivery.states import (
     SearchBox,
     Approach,
     Gripper,
+    Wait,
 )
 
 
@@ -30,17 +31,11 @@ class PackageDelivery(StateMachine):
             Initialize(),
             transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
         )
-        
-        # self.add_state(
-        #     "GRIP_PKG",
-        #     Gripper(target_has_pkg=True),
-        #     transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
-        # )
 
         self.add_state(
             "TAKEOFF",
             Takeoff(),
-            transitions={SUCCEED: "SEARCH_BOX", ABORT: "RTL"}
+            transitions={SUCCEED: "SEARCH_BOX", ABORT: "RTL", "END": SUCCEED}
 
         )
 
@@ -59,18 +54,24 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "DROP_PKG",
             Gripper(target_has_pkg=False),
-            transitions={SUCCEED: "RTL", ABORT: ABORT}
-        )
-        
-        self.add_state(
-            "LAND",
-            Land(),
-            transitions={SUCCEED: SUCCEED, ABORT: ABORT}
+            transitions={SUCCEED: "RTL", ABORT: "LAND"}
         )
 
         self.add_state(
             "RTL",
             Rtl(),
+            transitions={SUCCEED: "WAIT", ABORT: "LAND"}
+        )
+
+        self.add_state(
+            "WAIT",
+            Wait(),
+            transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
+        )
+
+        self.add_state(
+            "LAND",
+            Land(),
             transitions={SUCCEED: SUCCEED, ABORT: ABORT}
         )
 

@@ -12,8 +12,8 @@ class Config:
     
     target_box: tuple = (
         (-22.4153907, -45.447928),     # box 1: lat, long
-        (-22.415540, -45.447980),     # box 2: lat, long
-        (2, 2),     # box 3: lat, long
+        (-22.4154239, -45.447931),     # box 2: lat, long
+        (-22.4154685, -45.447962),     # box 3: lat, long
     )
 
     # Simulation
@@ -53,21 +53,21 @@ class Config:
     safe_altitude: float = 3.0 # meters
 >>>>>>> edef4e1 (fix: approach PID reset changes)
     max_altitude: float = 5.0  # meters
-    
+
     drone_type: str = 'mavlink'
     #connection_string: str = 'udp:127.0.0.1:14551' #STIL
     connection_string: str = '/dev/ttyAMA1' # '/dev/ttyAMA1' # "/dev/ttyTHS1" ou /dev/ttyUSB0, dependendo de como conectou (baud=921600 for tests)
-    
+
     # Takeoff and Land
     takeoff_altitude: float = safe_altitude
     rtl_altitude: float = 1.5   # meters
-    
+
     # Center
     center_threshold_xy: float = 0.2  # meters
     center_threshold_z: float = 0.2  # meters
     center_threshold_yaw: float = 5.0  # degrees
     land_altitude: float = 1.0  # meters
-    
+
     # Gripper Controller
     has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
     servo_channel : int = 2         # AUX OUT number (1-8 -> FCU SERVO9-16)
@@ -82,11 +82,11 @@ class Config:
     # PID xy
     xy_output_lim: tuple = (-1.0, 1.0)
     xy_integral_lim: tuple = (-1.0, 1.0)   
-    
+
     x_kp: float = 0.123
     x_ki: float = 0.0
     x_kd: float = 0.02    
-    
+
     y_kp: float = 0.123
     y_ki: float = 0.0
     y_kd: float = 0.02

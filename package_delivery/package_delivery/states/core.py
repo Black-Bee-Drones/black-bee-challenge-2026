@@ -33,9 +33,11 @@ class Initialize(State):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
         self.node = YasminNode.get_instance()
+        self.i_box = 0
 
     def execute(self, blackboard: Blackboard):
         blackboard['has_thePkg'] = self.config.has_thePkg
+        blackboard["i_box"] = self.i_box
         # Start Simulation Time
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Start time...')
@@ -51,7 +53,7 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Start time failed: {e}')
             return ABORT
-        
+
         # Drone
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Drone...')
@@ -147,7 +149,7 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
             return ABORT
 
-        # Camera (Image Handler)
+        Camera (Image Handler)
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Camera...')
             if (self.config.sim_mode):
@@ -184,7 +186,7 @@ class Initialize(State):
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
             return ABORT
-        
+
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
             return ABORT 
@@ -220,7 +222,7 @@ class Initialize(State):
 
 class Takeoff(State):
     def __init__(self, config: Config = Config):
-        super().__init__(outcomes=[SUCCEED, ABORT])
+        super().__init__(outcomes=[SUCCEED, ABORT, "END"])
         self.config = config
 
     def execute(self, blackboard: Blackboard):
@@ -235,8 +237,15 @@ class Takeoff(State):
             return ABORT
 
         try:
-            drone.takeoff(self.config.takeoff_altitude,max_retries=5, timeout=30.0, precision=0.2)
-            yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m...')
+            i_box: int = blackboard["i_box"]
+
+            yasmin.YASMIN_LOG_INFO(f'Delivered boxes: {i_box}/3.')
+            if (i_box < 3):
+                drone.takeoff(altitude=self.config.takeoff_altitude, max_retries=5, timeout=30.0, precision=0.2)
+                yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m...')
+            else:
+                yasmin.YASMIN_LOG_INFO(f'Last box delivered, finishing state machine...')
+                return "END"
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
@@ -251,8 +260,9 @@ class Takeoff(State):
 
 
 class Land(State):
-    def __init__(self):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
+        self.config = config
 
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
@@ -281,9 +291,8 @@ class Land(State):
 class Rtl(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
-        
         self.config = config
-    
+ 
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
             drone : MavrosDrone = blackboard.get('drone')
