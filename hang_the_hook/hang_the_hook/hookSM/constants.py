@@ -18,7 +18,7 @@ KI_YAW = 0.0
 KD_YAW = 0.0002
 
 # ── Tolerances ──────────────────────────────────────────────────────────────
-CENTER_TOLERANCE   = 70     # pixels
+CENTER_TOLERANCE   = 45     # pixels
 ANGULAR_TOLERANCE  = 20     # degrees
 
 # ── State-Machine Outcomes ──────────────────────────────────────────────────
