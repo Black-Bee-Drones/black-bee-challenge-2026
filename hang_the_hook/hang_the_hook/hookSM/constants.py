@@ -18,8 +18,8 @@ KI_YAW = 0.0
 KD_YAW = 0.0001
 
 # ── Tolerances ──────────────────────────────────────────────────────────────
-CENTER_TOLERANCE   = 30     # pixels
-ANGULAR_TOLERANCE  = 10     # degrees
+CENTER_TOLERANCE   = 70     # pixels
+ANGULAR_TOLERANCE  = 20     # degrees
 
 # ── State-Machine Outcomes ──────────────────────────────────────────────────
 FIND_HOSE = 'find_hose'
@@ -41,8 +41,8 @@ AUX_OUT   = 7
 PWM_VALUE = 1500
 
 # ── Counters ────────────────────────────────────────────────────────────────
-ALIGNMENT_MIN_FRAMES = 20
+ALIGNMENT_MIN_FRAMES = 5
 ALIGNMENT_MAX_LOSS = 20
-ALIGNMENT_MAX_RETRIES = 5
+ALIGNMENT_MAX_RETRIES = 50
 ALIGNMENT_MAX_NONE_LINE_DETECTION = 10
 DESCEND_MAX_NONE_LINE_DETECTION = 10
