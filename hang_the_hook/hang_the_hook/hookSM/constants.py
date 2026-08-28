@@ -37,7 +37,7 @@ ALIGNMENT_RETRY_PAUSE = 3.0    # seconds – time between each alignment retry i
 SHIFT     = 0.0                # previously requiring no hook-camera compensation
 
 # ── Servo / PWM ─────────────────────────────────────────────────────────────
-AUX_OUT   = 7
+AUX_OUT   = 1
 PWM_VALUE = 1500
 
 # ── Counters ────────────────────────────────────────────────────────────────

@@ -29,7 +29,7 @@ MAX_HOSE_COUNTER         = 5     # runtime counter (initial value)
 
 
 # ── Speed ────────────────────────────────────────────────────────────────────
-FOWARD_SPEED_BLUE_LINE = 0.5   # m/s – cruise speed while following blue line
+FOWARD_SPEED_BLUE_LINE = 0.37   # m/s – cruise speed while following blue line
 
 
 # ── Seek-Line Recovery (growing square search) ─────────────────────────────
