@@ -25,6 +25,7 @@ class FollowLineSM(StateMachine):
             transitions={
                 SEARCH: "SEARCH_BLUE_LINE",
                 SEEK: "SEEK_LINE",
+                FOUND_RED: SUCCEED,
                 ABORT: ABORT,
             }
         )

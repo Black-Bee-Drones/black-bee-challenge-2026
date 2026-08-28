@@ -109,8 +109,8 @@ class SearchBlueLine(State):
                 if frame is None:
                     continue
 
-                resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
-                resultRed, _, cxRed, cyRed, _, _, _ = hosedetector.detect_line(frame, draw=True)
+                resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=False)
+                resultRed, _, cxRed, cyRed, _, _, _ = hosedetector.detect_line(frame, draw=False)
 
                 any_detection = False
 
@@ -346,7 +346,7 @@ class FollowBlueLine(State):
                 resultBlue, _, cxBlue, cyBlue, angleBlue, _, _ = linedetector.detect_line(frame, draw=True)
 
                 hose_detected = (
-                    cxRed is not None and not math_isnan(cxBlue)
+                    cxRed is not None and not math_isnan(cxRed)
                 )
                 line_detected = (
                     cxBlue is not None and not math_isnan(cxBlue)
