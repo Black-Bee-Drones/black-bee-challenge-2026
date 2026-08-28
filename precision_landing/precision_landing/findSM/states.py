@@ -25,9 +25,10 @@ from precision_landing.constants import(
     MARKER_DICT,
     ARUCO_SIZE,
     WAYPOINTS,
+    FIND_BUFFER
 )
 
-
+T_P_F = False #TARGET PRE FOUND
 
 class Search(State): #Sub-state that will only move around the arena until it detects an ArUco
     def __init__(self):
@@ -36,6 +37,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
     def execute(self, blackboard: Blackboard):
         try:
+            global T_P_F
 
             if "drone" not in blackboard: #IFs que conferem se está tudo certo antes de iniciar o estado
                 yasmin.YASMIN_LOG_ERROR("Drone not Available... ")
@@ -56,14 +58,14 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
             start_time = self.node.get_clock().now() #gets the start time of the state
             search_time = Duration(seconds=SEARCH_TIME) #gets the max time in seconds before TIMEOUT
+
             idx = 0
 
             while (self.node.get_clock().now() - start_time) < search_time: #Executes this sub-state for a max of 2min
-
                 if drone.get_altitude() >= MAX_ALTITUDE: #Aborts if the drone gets past 6m of altitude
                     yasmin.YASMIN_LOG_ERROR('Failed: limit altitude reached.')
                     drone.move_velocity(0.0, 0.0, 0.0, 0.0)
-                    drone.delay(1.0)
+                    drone.delay(1.0)        
                     return ABORT
 
                 for _ in range(2): #Repeats the detection 2 times for security
@@ -75,24 +77,37 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         drone.move_velocity(vx=0.0, vy=0.0, vz=0.0)
                         yasmin.YASMIN_LOG_INFO("Detected the ArUco, moving closer... ")
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
-                        yasmin.YASMIN_LOG_INFO(f"Bbox of ARUCO: {bbox}")
                     
-                        yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
-                        #drone.move_to(yaw=-yaw_angle)
-                        #drone.move_to(x=0.7, reference= MoveReference.BODY)
-                        #Moves the drone a little bit closer to the aruco
                         frame = camera.take_photo()
                         bbox2, id = aruco.detect(frame.image, draw=True)
                     
                         aruco_shape = self.get_aruco_shape(frame, bbox2)
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
-                    
+
+                        #ve se está no buffer, caso estiver já vai direto
+                        search_key = f"{aruco_shape}{aruco_id}"
+                        yasmin.YASMIN_LOG_INFO(f"search_key: {search_key}")
+
+                        for item in FIND_BUFFER:
+                            if item.startswith(search_key):
+                                palavra, position = item.split(":", 1)
+
+                                position = position.strip("()")
+                                x, y = position.split(",")
+
+                                x = float(x)
+                                y = float(y)
+                                T_P_F = True
+                                yasmin.YASMIN_LOG_INFO("TARGET ALREADY PREFOUND, GOING TO HIM...")
+                                drone.move_to(x=x,y=y, reference=MoveReference.TAKEOFF)
+                                break
                         return SUCCEED
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
                     drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
+                    self.ADD_FINDING_BUFFER(camera=camera, waypoint=WAYPOINTS[idx], drone = drone)
                     idx += 1
                     drone.delay(0.5)
                 else:
@@ -116,6 +131,30 @@ class Search(State): #Sub-state that will only move around the arena until it de
         else:
             return None
 
+    def ADD_FINDING_BUFFER(self, camera, waypoint, drone):
+        pre_buffer = []
+
+        #analisa detecções na imagem para ter certeza que está certo oque está detectando
+        for _ in range(5):
+            yasmin.YASMIN_LOG_INFO("FAZENDO CAPTURAS...")
+            result = camera.take_photo()
+            for s in result.filter_by_class(['Triangle', 'Hexagon', 'Star']):
+                for n in result.filter_by_class(['3', '4', '5']):
+                    if(abs(s.center[0]-n.center[0])<=s.width/2 and abs(s.center[1] - n.center[1]) <= s.height/2):
+                        pre_buffer.append(f"{s.class_name + n.class_name}:{waypoint}")
+                        yasmin.YASMIN_LOG_INFO(f"DETECTANDO A CLASSE: {s.class_name}")
+            drone.delay(0.1)
+
+        #faz a limpa dos bufferes para ver se esta correto
+        for item in pre_buffer:
+            if pre_buffer.count(item) >= 4 and item not in FIND_BUFFER:
+                FIND_BUFFER.append(item)
+                while item in pre_buffer:
+                    pre_buffer.remove(item)
+        yasmin.YASMIN_LOG_INFO(f"FIND_BUFFER: {FIND_BUFFER}")                
+
+                        
+
     def bbox_center(self, bbox): #Function to get the center of the ArUco by its bbox
         corners = bbox[0][0]  # unwrap: tupla -> array (1,4,2) -> array (4,2)
     
@@ -136,6 +175,13 @@ class FindTargetBase(State):
     
     def execute(self, blackboard: Blackboard):
         try:
+
+            global T_P_F
+            #check if target was pre found
+            if T_P_F:
+                yasmin.YASMIN_LOG_INFO("TARGET ALREADY PREFOUD...")
+                return SUCCEED
+            
             drone: MavrosDrone = blackboard["drone"]
                     
             camera: ImageHandler = blackboard["camera"]
