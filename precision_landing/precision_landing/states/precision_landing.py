@@ -117,11 +117,12 @@ class Precision_landing(State):
              
                             output_x = self.pid_x.update(erro_x)
                             output_y = self.pid_y.update(erro_y)
+                            output_z = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0
                             yasmin.YASMIN_LOG_INFO(f'Detection at: error_x={erro_x:.2f}, error_x_px={erro_x_pixel:.2f}, error_y={erro_y:.2f}, error_y_px={erro_y_pixel:.2f} output_x={output_x:.2f}, output_y={output_y:.2f}, drone_h={drone.get_altitude()}')
                             drone.move_velocity(
                                 vx = output_x,  
                                 vy = output_y,
-                                vz = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0,
+                                vz = output_z,
                                 vyaw = 0.0,
                             )
                             drone.delay(0.5)
@@ -142,7 +143,7 @@ class Precision_landing(State):
                     elif alt < MAX_ALTITUDE:
                         #TRY TO WAIT AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
-                        drone.move_velocity(vx=output_x,vy=output_y)
+                        drone.move_velocity(vx=output_x,vy=output_y, vz = output_z)
                     drone.delay(0.5)
 
 
