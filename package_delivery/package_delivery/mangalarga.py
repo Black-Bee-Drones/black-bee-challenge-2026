@@ -28,14 +28,14 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "INITIALIZE",
             Initialize(),
-            transitions={SUCCEED: "GRIP_PKG", ABORT: ABORT}
-        )
-        
-        self.add_state(
-            "GRIP_PKG",
-            Gripper(target_has_pkg=True),
             transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
         )
+        
+        # self.add_state(
+        #     "GRIP_PKG",
+        #     Gripper(target_has_pkg=True),
+        #     transitions={SUCCEED: "TAKEOFF", ABORT: ABORT}
+        # )
 
         self.add_state(
             "TAKEOFF",

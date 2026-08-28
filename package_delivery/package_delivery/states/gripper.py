@@ -36,6 +36,8 @@ class Gripper(State):
             return ABORT
 
         try:
+            drone.move_to(z=drone.get_altitude() - 0.5)
+            drone.move_velocity(0.0, 0.0, 0.0)
             if not do_gripper(drone, self.config, self.target_has_pkg):
                 return ABORT
         except KeyboardInterrupt:

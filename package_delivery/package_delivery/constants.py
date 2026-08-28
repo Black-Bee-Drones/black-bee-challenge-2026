@@ -11,7 +11,7 @@ class Config:
     # )
     
     target_box: tuple = (
-        (-22.415356, -45.447944),     # box 1: lat, long
+        (-22.4153907, -45.447928),     # box 1: lat, long
         (-22.415540, -45.447980),     # box 2: lat, long
         (2, 2),     # box 3: lat, long
     )
@@ -40,7 +40,7 @@ class Config:
     approach_timeout: int = 80          # seconds
     approach_tolerance: float = 0.20    # meters
     approach_tolerance_px: int = 100    # pixels
-    dropoff_altitude: float = 2.0       # meters
+    dropoff_altitude: float = 2.5       # meters
     required_frames: int = 3
     lost_tolerance: int = 13
     claw_offset: float = 0.20          # meters (before = 0.165)
