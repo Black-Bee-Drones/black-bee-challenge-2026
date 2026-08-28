@@ -187,21 +187,24 @@ class SeekLine(State):
         _, _, cxBlue, _, angleBlue, _, _ = linedetector.detect_line(frame, draw=False)
         _, _, cxRed, _, _, _, _ = hosedetector.detect_line(frame, draw=False)
 
-        if cxBlue is not None and not math_isnan(cxBlue):
+        blue_seen = cxBlue is not None and not math_isnan(cxBlue)
+        red_seen = cxRed is not None and not math_isnan(cxRed)
+
+        if blue_seen:
             blue_count += 1
             if blue_count >= MIN_BLUE_FRAMES:
-                return (FOUND_BLUE, angleBlue, cxBlue), (blue_count, red_count)
+                return (FOUND_BLUE, angleBlue, cxBlue), (blue_count, red_count), (blue_seen, red_seen)
         else:
             blue_count = 0
 
-        if cxRed is not None and not math_isnan(cxRed):
+        if red_seen:
             red_count += 1
-            if red_count >= MIN_RED_FRAMES:
-                return (FOUND_RED, None, None), (blue_count, red_count)
+            if red_count >= 2:
+                return (FOUND_RED, None, None), (blue_count, red_count), (blue_seen, red_seen)
         else:
             red_count = 0
 
-        return None, (blue_count, red_count)
+        return None, (blue_count, red_count), (blue_seen,red_seen)
 
     def _fly_leg(self, drone, camera, linedetector, hosedetector,
                  leg_duration, counters):
@@ -209,21 +212,24 @@ class SeekLine(State):
         while (time() - leg_start) < leg_duration:
             frame = camera.take_photo()
             if frame is not None:
-                result, counters = self._check_lines(
+                result, counters, seen = self._check_lines(
                     frame, linedetector, hosedetector, counters
                 )
                 if result is not None:
                     return result, counters
-            drone.move_velocity(
-                vx=SEEK_SQUARE_SPEED, vy=0.0, vz=0.0, vyaw=0.0,
-                reference=MoveReference.BODY,
-            )
+
+                if seen[1]:
+                    drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
+                    continue
+                
+            drone.move_velocity(vx=SEEK_SQUARE_SPEED, vy=0.0, vz=0.0, vyaw=0.0,reference=MoveReference.BODY)
+
         drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0)
         return None, counters
 
     def execute(self, blackboard: Blackboard):
         try:
-            drone: MavrosDrone | MavlinkDrone = blackboard["drone"]
+            drone: MavlinkDrone = blackboard["drone"]
             camera: ImageHandler = blackboard["camera"]
             linedetector: LineDetector = blackboard["line_detect"]
             hosedetector: LineDetector = blackboard["hose_detect"]
