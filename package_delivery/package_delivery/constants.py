@@ -40,8 +40,8 @@ class Config:
     approach_timeout: int = 80          # seconds
     approach_tolerance: float = 0.20    # meters
     approach_tolerance_px: int = 100    # pixels
-    dropoff_altitude: float = 2.5       # meters
-    required_frames: int = 3
+    dropoff_altitude: float = 2.2       # meters
+    required_frames: int = 6
     lost_tolerance: int = 13
     claw_offset: float = 0.20          # meters (before = 0.165)
 
