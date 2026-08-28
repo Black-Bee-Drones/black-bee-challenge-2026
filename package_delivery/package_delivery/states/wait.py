@@ -10,11 +10,18 @@ class Wait(State):
         self.config = config
 
     def execute(self, blackboard: Blackboard):
-        try:
-            if (input("Type 'yes' when manually fixed the package: ") == "yes"):
-                return SUCCEED
-            else:
+        while True:
+            try:
+                answer = input("Type 'yes' when manually fixed the package: ").strip().lower()
+                if answer == "yes":
+                    blackboard['has_thePkg'] = True
+                    return SUCCEED
+                print("Type exactally 'yes' to continue or (Ctrl + C) to ABORT.")
+            
+            except KeyboardInterrupt:
+                yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
                 return ABORT
-        except Exception as e:
-            yasmin.YASMIN_LOG_ERROR(f"Waiting failed: {e}")
-            return ABORT            
+            
+            except Exception as e:
+                yasmin.YASMIN_LOG_ERROR(f"Waiting failed: {e}")
+                return ABORT           

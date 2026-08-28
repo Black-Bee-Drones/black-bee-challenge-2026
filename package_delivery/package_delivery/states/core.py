@@ -149,7 +149,7 @@ class Initialize(State):
             yasmin.YASMIN_LOG_ERROR(f'Detector(box) failed: {e}')
             return ABORT
 
-        Camera (Image Handler)
+        # Camera (Image Handler)
         try:
             yasmin.YASMIN_LOG_INFO('Initializing Camera...')
             if (self.config.sim_mode):
@@ -239,8 +239,8 @@ class Takeoff(State):
         try:
             i_box: int = blackboard["i_box"]
 
-            yasmin.YASMIN_LOG_INFO(f'Delivered boxes: {i_box}/3.')
-            if (i_box < 3):
+            yasmin.YASMIN_LOG_INFO(f'Delivered boxes: {i_box}/{len(self.config.target_box)}.')
+            if (i_box < len(self.config.target_box)):
                 drone.takeoff(altitude=self.config.takeoff_altitude, max_retries=5, timeout=30.0, precision=0.2)
                 yasmin.YASMIN_LOG_INFO(f'Taking off to altitude: {self.config.takeoff_altitude} m...')
             else:

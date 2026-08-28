@@ -27,17 +27,17 @@ class SearchBox(State):
             target_box = self.config.target_box
 
         try:
-            self.i_box = blackboard["i_box"]
+            i_box : int = blackboard.get("i_box")
             drone.move_to_gps(
-                latitude=target_box[self.i_box][0],
-                longitude=target_box[self.i_box][1],
+                latitude=target_box[i_box][0],
+                longitude=target_box[i_box][1],
                 altitude=self.config.safe_altitude,
             )
 
-            self.i_box += 1
-            blackboard["i_box"] = self.i_box
+            i_box += 1
+            blackboard["i_box"] = i_box
 
-            yasmin.YASMIN_LOG_INFO(f'Completed successfully. Box {self.i_box}/3.')
+            yasmin.YASMIN_LOG_INFO(f'Completed successfully. Box {i_box}/{len(target_box)}.')
             return SUCCEED
 
         except Exception as e:
