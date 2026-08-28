@@ -147,6 +147,10 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
             return TIMEOUT
 
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_INFO("ABORTING")
+            return ABORT
+
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"SEARCH SUB-STATE FAILED: {e}")
             return ABORT
@@ -256,6 +260,10 @@ class FindTargetBase(State):
                     return FAIL
                     
             return TIMEOUT
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_INFO("ABORTING")
+            return ABORT
         
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"GET_TARGET_BASE SUB-STATE FAILED: {e}")
