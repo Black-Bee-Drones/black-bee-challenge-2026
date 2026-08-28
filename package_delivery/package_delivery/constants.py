@@ -43,7 +43,7 @@ class Config:
     dropoff_altitude: float = 2.2       # meters
     required_frames: int = 6
     lost_tolerance: int = 13
-    claw_offset: float = 0.20          # meters (before = 0.165)
+    claw_offset: float = -0.20          # meters (before = 0.165)
 
 <<<<<<< HEAD
     altitude_inc: float = 0.8 # meters
