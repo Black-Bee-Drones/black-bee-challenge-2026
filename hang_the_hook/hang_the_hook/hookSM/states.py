@@ -4,7 +4,7 @@ from nectar.vision import LineDetector
 from nectar.control import PIDController, MavrosDrone, MavlinkDrone
 from nectar.control.types import MoveReference
 
-from yasmin import State, Blackboard, YASMIN_LOG_DEBUG
+from yasmin import State, Blackboard, YASMIN_LOG_INFO
 from yasmin_ros.basic_outcomes import SUCCEED
 
 from hang_the_hook.core.constants import(
@@ -64,34 +64,34 @@ class FindHose(State):
             if is_valid_line:
                 return ALIGN
             else:
-                YASMIN_LOG_DEBUG('No valid line found, searching...')
+                YASMIN_LOG_INFO('No valid line found, searching...')
 
             # --- If the line is invalid, increase altitude and draws a cross to obtain a wider field of view.
             match self.searching_step:
                 case 0:
                     altitude = self.drone.get_altitude()
                     if altitude is not None and (altitude + ALT_INCR < MAX_ALT):
-                        YASMIN_LOG_DEBUG(f'Ascending to {altitude + ALT_INCR}m')
+                        YASMIN_LOG_INFO(f'Ascending to {altitude + ALT_INCR}m')
                         self.drone.move_to(z=ALT_INCR)
                     self.searching_step += 1
                 case 1:
-                    YASMIN_LOG_DEBUG(f'Moving {SEARCHING_STEP_DISTANCE}m forward from origin')
+                    YASMIN_LOG_INFO(f'Moving {SEARCHING_STEP_DISTANCE}m forward from origin')
                     self.drone.move_to(x=SEARCHING_STEP_DISTANCE)
                     self.searching_step += 1
                 case 2:
-                    YASMIN_LOG_DEBUG(f'Moving {SEARCHING_STEP_DISTANCE}m backward from origin')
+                    YASMIN_LOG_INFO(f'Moving {SEARCHING_STEP_DISTANCE}m backward from origin')
                     self.drone.move_to(x=-(2*SEARCHING_STEP_DISTANCE))
                     self.searching_step += 1
                 case 3:
-                    YASMIN_LOG_DEBUG(f'Moving {SEARCHING_STEP_DISTANCE}m leftward from origin')
+                    YASMIN_LOG_INFO(f'Moving {SEARCHING_STEP_DISTANCE}m leftward from origin')
                     self.drone.move_to(x=SEARCHING_STEP_DISTANCE, y=SEARCHING_STEP_DISTANCE)
                     self.searching_step += 1
                 case 4:
-                    YASMIN_LOG_DEBUG(f'Moving {SEARCHING_STEP_DISTANCE}m rightward from origin')
+                    YASMIN_LOG_INFO(f'Moving {SEARCHING_STEP_DISTANCE}m rightward from origin')
                     self.drone.move_to(y=-(2*SEARCHING_STEP_DISTANCE))
                     self.searching_step += 1
                 case 5:
-                    YASMIN_LOG_DEBUG(f'Searching failed, no hose found, returning to launch')
+                    YASMIN_LOG_INFO(f'Searching failed, no hose found, returning to launch')
                     break
 
         return RTL
@@ -165,11 +165,11 @@ class Align(State):
         self.pid_cy.set_setpoint(target_y)
         self.pid_angle.set_setpoint(0.0)
 
-        YASMIN_LOG_DEBUG('PID set, values:\n')
-        YASMIN_LOG_DEBUG(f'Y (drives vx - Pitch): KP = {KP_Y}, KD = {KD_Y}, KI = {KI_Y}')
-        YASMIN_LOG_DEBUG(f'X (drives vy - Roll): KP = {KP_X}, KD = {KD_X}, KI = {KI_X}')
-        YASMIN_LOG_DEBUG(f'YAW: KP = {KP_YAW}, KD = {KD_YAW}, KI = {KI_YAW}')
-        YASMIN_LOG_DEBUG('Starting ALIGN iteration')
+        YASMIN_LOG_INFO('PID set, values:\n')
+        YASMIN_LOG_INFO(f'Y (drives vx - Pitch): KP = {KP_Y}, KD = {KD_Y}, KI = {KI_Y}')
+        YASMIN_LOG_INFO(f'X (drives vy - Roll): KP = {KP_X}, KD = {KD_X}, KI = {KI_X}')
+        YASMIN_LOG_INFO(f'YAW: KP = {KP_YAW}, KD = {KD_YAW}, KI = {KI_YAW}')
+        YASMIN_LOG_INFO('Starting ALIGN iteration')
 
         while True:
 
@@ -191,10 +191,10 @@ class Align(State):
                 hose_loss_counter = 0
             else:
                 hose_loss_counter += 1
-                YASMIN_LOG_DEBUG(f'While aligning there was no valid line found, losses: {hose_loss_counter}')
+                YASMIN_LOG_INFO(f'While aligning there was no valid line found, losses: {hose_loss_counter}')
 
             if hose_loss_counter >= ALIGNMENT_MAX_NONE_LINE_DETECTION:
-                YASMIN_LOG_DEBUG(f'Hose lost, attempts of static search: {hose_loss_counter}')
+                YASMIN_LOG_INFO(f'Hose lost, attempts of static search: {hose_loss_counter}')
                 self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
                 return FIND_HOSE
 
@@ -208,11 +208,11 @@ class Align(State):
             # --- If so, increment the counter so subsequent iterations confirm stability.
             if max(error_x, error_y) <= CENTER_TOLERANCE and abs(hose_yaw) < ANGULAR_TOLERANCE:
                 alignment_counter += 1
-                YASMIN_LOG_DEBUG(f'Seems aligned, alignment_counter = {alignment_counter}')
+                YASMIN_LOG_INFO(f'Seems aligned, alignment_counter = {alignment_counter}')
             elif alignment_counter > 0:
                 alignment_counter = 0
                 alignment_loss_counter += 1
-                YASMIN_LOG_DEBUG(f'Aligment lost, retrying to align... loss_counter = {alignment_loss_counter}')
+                YASMIN_LOG_INFO(f'Aligment lost, retrying to align... loss_counter = {alignment_loss_counter}')
 
             # --- If alignment is lost too often, the PID response may be too aggressive.
             # --- Stop the drone briefly before retrying the alignment.
@@ -223,17 +223,17 @@ class Align(State):
                 self.pid_angle.reset()
                 alignment_loss_counter = 0
                 alignment_retry_counter += 1
-                YASMIN_LOG_DEBUG(f'Lost too many alignments, PID may be too aggressive, pausing drone to retry. Current attempt: {alignment_retry_counter}')
+                YASMIN_LOG_INFO(f'Lost too many alignments, PID may be too aggressive, pausing drone to retry. Current attempt: {alignment_retry_counter}')
                 continue
 
             # --- If realignment does not succeed within the retry limit, return to launch.
             if alignment_retry_counter >= ALIGNMENT_MAX_RETRIES:
-                YASMIN_LOG_DEBUG('Too much attempts of realign, returning to launch...')
+                YASMIN_LOG_INFO('Too much attempts of realign, returning to launch...')
                 return RTL
 
             # --- The drone appears stable, so it is safe to descend.
             if alignment_counter >= ALIGNMENT_MIN_FRAMES:
-                YASMIN_LOG_DEBUG('Drone aligned')
+                YASMIN_LOG_INFO('Drone aligned')
                 self.drone.move_velocity(vx=0.0, vy=0.0, vz=0.0, vyaw=0.0, duration=0.5)
                 return DESCEND
 
@@ -301,10 +301,10 @@ class Descend(State):
                 hose_loss_counter = 0
             else:
                 hose_loss_counter += 1
-                YASMIN_LOG_DEBUG(f'While descending there was no valid line found, losses: {hose_loss_counter}')
+                YASMIN_LOG_INFO(f'While descending there was no valid line found, losses: {hose_loss_counter}')
 
             if hose_loss_counter >= DESCEND_MAX_NONE_LINE_DETECTION:
-                YASMIN_LOG_DEBUG(f'Hose lost, attempts of static search: {hose_loss_counter}, switching to dynamic search')
+                YASMIN_LOG_INFO(f'Hose lost, attempts of static search: {hose_loss_counter}, switching to dynamic search')
                 self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
                 return FIND_HOSE
 
@@ -316,7 +316,7 @@ class Descend(State):
 
             if max(error_x, error_y) > CENTER_TOLERANCE or abs(hose_yaw) > ANGULAR_TOLERANCE:
                 self.drone.move_velocity(vx=0, vy=0, vz=0, vyaw=0)
-                YASMIN_LOG_DEBUG('Hose is out of alignment, switching to ALIGN state')
+                YASMIN_LOG_INFO('Hose is out of alignment, switching to ALIGN state')
                 return ALIGN
 
             altitude = self.drone.get_altitude()
