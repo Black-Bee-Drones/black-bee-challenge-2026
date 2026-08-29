@@ -55,7 +55,7 @@ class Initialize(State):
             )
             drone = DroneFactory.create("mavlink", config, node._executor)
 
-            self.drone.do_servo(
+            self.drone.do_servo( #type: ignore
                 aux_out= AUX_OUT,
                 pwm_value= PWM_VALUE_CLOSE,
             )

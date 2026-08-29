@@ -321,7 +321,6 @@ class Descend(State):
                 return ALIGN
 
             altitude = self.drone.get_altitude()
-            blackboard['flag_do_servo'] = False
 
             # --- If the drone is close enough to the hose, release the hook.
             if altitude is not None:
