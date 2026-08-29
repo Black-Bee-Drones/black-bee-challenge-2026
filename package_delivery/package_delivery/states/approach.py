@@ -96,12 +96,11 @@ class Approach(State):
  
                     if lost >= self.config.lost_tolerance:
                         yasmin.YASMIN_LOG_WARN("Detection lost. Increasing altitude to restart search...")
-                        fly_to: float = drone.get_altitude() + self.config.altitude_inc
-                        if fly_to < self.config.max_altitude:
-                            drone.move_to(z=fly_to)
+                        if drone.get_altitude() < self.config.max_altitude:
+                            drone.move_to(z=0.8)
                         else:
                             yasmin.YASMIN_LOG_WARN("Detection lost. Max altitude reached, decreasing 20 cm...")
-                            drone.move_to(z=drone.get_altitude()-self.config.altitude_inc/2)
+                            drone.move_to(z=-0.8)
                         pid_cx.reset()
                         pid_cy.reset()
                         pid_cz.reset()
