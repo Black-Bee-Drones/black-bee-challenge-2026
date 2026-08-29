@@ -10,6 +10,7 @@ from yasmin_ros.basic_outcomes import SUCCEED
 from hang_the_hook.core.constants import(
     IMAGE_HEIGHT,
     IMAGE_WIDTH,
+    PWM_VALUE_CLOSE
 )
 
 from hang_the_hook.hookSM.constants import *
@@ -320,14 +321,22 @@ class Descend(State):
                 return ALIGN
 
             altitude = self.drone.get_altitude()
+            blackboard['flag_do_servo'] = False
 
             # --- If the drone is close enough to the hose, release the hook.
             if altitude is not None:
                 if altitude <= DROP_DIST:
-                    self.drone.do_servo(
-                        aux_out= AUX_OUT,
-                        pwm_value= PWM_VALUE,
-                    )
+                    blackboard['flag_do_servo'] = True
+                    for _ in range(11):
+                        self.drone.do_servo(
+                            aux_out= AUX_OUT,
+                            pwm_value= PWM_VALUE_OPEN,
+                        )
+                        self.drone.delay(0.5)
+                        self.drone.do_servo(
+                            aux_out= AUX_OUT,
+                            pwm_value= PWM_VALUE_CLOSE,
+                        )
                     return SUCCEED
                 else:
                     # --- Otherwise, continue descending.

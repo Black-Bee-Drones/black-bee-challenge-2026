@@ -14,6 +14,7 @@ from yasmin_ros.yasmin_node import YasminNode
 from hang_the_hook.utils.blackboard_utils import blackboard_check
 
 from hang_the_hook.core.constants import *
+from hang_the_hook.hookSM.constants import AUX_OUT, PWM_VALUE_OPEN
 
 from nectar.control import(
     DroneFactory,
@@ -53,6 +54,11 @@ class Initialize(State):
                 else MavlinkConfig(connection_string="/dev/ttyAMA1")
             )
             drone = DroneFactory.create("mavlink", config, node._executor)
+
+            self.drone.do_servo(
+                aux_out= AUX_OUT,
+                pwm_value= PWM_VALUE_CLOSE,
+            )
 
             # ---- Line Detector ----
             linedetector = LineDetector(
@@ -137,6 +143,7 @@ class Initialize(State):
             blackboard["pid_cx"]      = pid_cx
             blackboard["pid_cy"]      = pid_cy
             blackboard["pid_angle"]   = pid_angle
+            blackboard['flag_do_servo'] = False
 
             return SUCCEED
 
@@ -161,11 +168,13 @@ class Takeoff(State):
             ): return ABORT
 
         self.drone = blackboard["drone"]
+        altitude = self.drone.get_altitude()
 
         try:
             YASMIN_LOG_INFO(f"Taking off to {TAKEOFF_HEIGHT}m...")
             ok = self.drone.takeoff(altitude=TAKEOFF_HEIGHT, max_retries=5, adjust_altitude=False)
-            ok = self.drone.move_to(x=0.0,y=0.0,z=(2.0 - self.drone.get_altitude()))
+            if altitude is not None:
+                ok = self.drone.move_to(x=0.0,y=0.0,z=(2.0 - altitude))
 
             YASMIN_LOG_INFO("Takeoff complete.")
             return SUCCEED if ok else ABORT
@@ -192,6 +201,17 @@ class ReturnToLaunch(State):
         self.drone = blackboard["drone"]
 
         try:
+            if not blackboard['flag_do_servo']:
+                for _ in range(14):
+                    self.drone.do_servo(
+                        aux_out=AUX_OUT,
+                        pwm_value=PWM_VALUE_OPEN,
+                    )
+                    self.drone.delay(0.5)
+                    self.drone.do_servo(
+                        aux_out=AUX_OUT,
+                        pwm_value=PWM_VALUE_CLOSE
+                    )
             YASMIN_LOG_INFO(f"Returning to launch at {RTL_ALTITUDE}m...")
             self.drone.rtl(
                 altitude=RTL_ALTITUDE,

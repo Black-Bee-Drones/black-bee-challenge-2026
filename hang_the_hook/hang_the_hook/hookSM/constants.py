@@ -38,7 +38,7 @@ SHIFT     = 0.0                # previously requiring no hook-camera compensatio
 
 # ── Servo / PWM ─────────────────────────────────────────────────────────────
 AUX_OUT   = 1
-PWM_VALUE = 1500
+PWM_VALUE_OPEN = 1700
 
 # ── Counters ────────────────────────────────────────────────────────────────
 ALIGNMENT_MIN_FRAMES = 5
