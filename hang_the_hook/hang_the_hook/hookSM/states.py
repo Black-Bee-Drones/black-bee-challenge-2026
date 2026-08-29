@@ -112,7 +112,7 @@ class Align(State):
         self.pid_cx: PIDController
         self.pid_cy: PIDController
         self.pid_angle: PIDController
-        self.hosedetector: ineDetector
+        self.hosedetector: LineDetector
 
     def execute(self, blackboard: Blackboard) -> str:
         if not blackboard_check(
