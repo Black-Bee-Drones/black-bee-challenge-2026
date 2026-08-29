@@ -18,7 +18,7 @@ TAKEOFF_HEIGHT = 5 #Meters
 MAX_ALTITUDE = 6 #meters
 
 SEARCH_TIME = 160 #seconds (2min 40s)
-FIND_TIME = 160 #seconds (2min)
+FIND_TIME = 160 #seconds (2min 40s)
 PRECISION_LANDING_TIME = 120
 
 MARKER_DICT = 5 #ArUco of 5x5
