@@ -106,6 +106,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                             drone.move_to(yaw=-yaw_angle)
 =======
 
@@ -116,6 +117,9 @@ class Search(State): #Sub-state that will only move around the arena until it de
 >>>>>>> 53c9f01 (Esqueci de voltar o yaw)
 =======
                             drone.move_to(yaw=-yaw_angle)
+=======
+                            drone.move_to(yaw=0, reference=MoveReference.TAKEOFF)
+>>>>>>> da5bf1c (Yolo neles)
                         
 >>>>>>> 8ce3d5b (Agora posso dormir em paz)
                         blackboard["aruco_shape"] = aruco_shape

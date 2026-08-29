@@ -19,6 +19,7 @@ MAX_ALTITUDE = 6 #meters
 
 SEARCH_TIME = 160 #seconds (2min 40s)
 <<<<<<< HEAD
+<<<<<<< HEAD
 FIND_TIME = 120 #seconds (2min)
 <<<<<<< HEAD
 PRECISION_LANDING_TIME = 600
@@ -31,6 +32,9 @@ WAYPOINTS = [(0, 0),  (0,3), (3, 0), (0, -3), (3, -3)]
 =======
 FIND_TIME = 160 #seconds (2min)
 >>>>>>> 103defb (feat: telo obedeceu pedro aguas belas e commitou)
+=======
+FIND_TIME = 160 #seconds (2min 40s)
+>>>>>>> da5bf1c (Yolo neles)
 PRECISION_LANDING_TIME = 120
 
 MARKER_DICT = 5 #ArUco of 5x5
