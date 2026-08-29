@@ -100,7 +100,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
-                    drone.move_to(x=x, y=y, reference=MoveReference.TAKEOFF)
+                    drone.move_to(x=x, y=y, z=0, yaw=0, reference=MoveReference.TAKEOFF)
                     idx += 1
                     drone.delay(0.5)
                 else:
@@ -184,7 +184,7 @@ class FindTargetBase(State):
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
-                    drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
+                    drone.move_to(x=x, y=y, z=0, yaw=0, reference=MoveReference.TAKEOFF)
                     idx += 1
                     drone.delay(0.5)
                 else:
