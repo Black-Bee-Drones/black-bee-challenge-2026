@@ -73,8 +73,8 @@ class Config:
     # Gripper Controller
     has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
     servo_channel : int = 2         # AUX OUT number (1-8 -> FCU SERVO9-16)
-    servo_open_pwm : int = 1200     # padeiro deu os valores
-    servo_closed_pwm : int = 1600   # padeiro deu os valores
+    servo_open_pwm : int = 1400     # padeiro deu os valores
+    servo_closed_pwm : int = 1900   # padeiro deu os valores
     servo_retries: int = 3          # COMMAND_ACK can time out on serial; retry before abort
     servo_retry_delay: float = 0.5  # seconds between attempts
     servo_action_delay: float = 3.0 # settle time after a successful command
