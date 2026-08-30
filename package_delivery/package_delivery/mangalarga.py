@@ -48,13 +48,13 @@ class PackageDelivery(StateMachine):
         self.add_state(
             "APPROACH",
             Approach(),
-            transitions={SUCCEED: "DROP_PKG", ABORT: "LAND"}
+            transitions={SUCCEED: "DROP_PKG", ABORT: "RTL"}
         )
 
         self.add_state(
             "DROP_PKG",
             Gripper(target_has_pkg=False),
-            transitions={SUCCEED: "RTL", ABORT: "LAND"}
+            transitions={SUCCEED: "RTL", ABORT: "RTL"}
         )
 
         self.add_state(

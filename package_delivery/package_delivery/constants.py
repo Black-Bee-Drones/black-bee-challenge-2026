@@ -31,10 +31,10 @@ class Config:
     # Model - v3 box - 
     box_model_source: str = os.path.join(get_package_share_directory('package_delivery'), 'models', 'best.pt')
     box_class_name: str = "box"
-    box_conf: float = 0.45      # before: 0.25
+    box_conf: float = 0.35      # before: 0.25
 
     # Camera
-    image_source : str = 'webcam'
+    image_source : str = '/image_raw/compressed'
     image_width: int = 640          # pixels
     image_height: int = 480         # pixels
 

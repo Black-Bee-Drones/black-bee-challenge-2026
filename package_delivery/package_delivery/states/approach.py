@@ -79,12 +79,14 @@ class Approach(State):
             while not self.timed_out():
                 
                 result: DetectionResult = camera.take_photo()
+                yasmin.YASMIN_LOG_INFO(result)
                 
                 if result is None:
                     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle")
                     continue
                 
                 detections = result.filter_by_class([self.config.box_class_name])
+                
                 
                 # Box Not Detect!
                 if not detections:

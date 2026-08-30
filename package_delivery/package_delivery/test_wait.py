@@ -54,7 +54,6 @@ class Wait(State):
     def execute(self, blackboard: Blackboard):
         while True:
             try:
-                blackboard['has_thePkg'] = False
                 answer = input("Type 'yes' when manually fixed the package: ").strip().lower()
                 if answer == "yes":
                     blackboard['has_thePkg'] = True
