@@ -10,10 +10,14 @@ CAMERA_SOURCE = "/down_camera" #We will use "webcam" for the drone
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 DETECTOR_CONFIDENCE_THRESHOLD = 0.3
 =======
 DETECTOR_CONFIDENCE_THRESHOLD = 0.4
 >>>>>>> 93f4451 (change of constants for better precision (AVANTE))
+=======
+DETECTOR_CONFIDENCE_THRESHOLD = 0.6
+>>>>>>> 737876a (Escutando o Professor)
 
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
@@ -79,8 +83,12 @@ CONTROLER_INTEGRAL_LIMITS_XY = (-0.10, 0.10)
 PRECISE_DOWN_TOLERANCE_PX = 100
 =======
 CONTROLER_INTEGRAL_LIMITS_XY = (-0.01, 0.01)
+<<<<<<< HEAD
 PRECISE_DOWN_TOLERANCE_M = 0.15
 >>>>>>> 93f4451 (change of constants for better precision (AVANTE))
+=======
+PRECISE_DOWN_TOLERANCE_PX = 100
+>>>>>>> 737876a (Escutando o Professor)
 
 CONTROLER_P_Z = 0.20
 CONTROLER_I_Z = 0.0
