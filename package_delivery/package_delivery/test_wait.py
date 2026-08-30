@@ -39,7 +39,7 @@ class Initialize(State):
             drone = DroneFactory.create('mavlink', drone_config)
             blackboard['drone'] = drone
             yasmin.YASMIN_LOG_INFO('Successful start Drone("mavlink")!')
-        
+            return SUCCEED
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
             return ABORT
@@ -54,6 +54,7 @@ class Wait(State):
     def execute(self, blackboard: Blackboard):
         while True:
             try:
+                blackboard['has_thePkg'] = False
                 answer = input("Type 'yes' when manually fixed the package: ").strip().lower()
                 if answer == "yes":
                     blackboard['has_thePkg'] = True
@@ -140,7 +141,7 @@ class TestWait(StateMachine):
         self.add_state(
             "GRIPPER",
             Gripper(target_has_pkg=False),
-            transitions={SUCCEED: SUCCEED, ABORT: "WAIT", "END": SUCCEED}
+            transitions={SUCCEED: "WAIT", ABORT: "WAIT", "END": SUCCEED}
         )
 
         self.set_start_state("INITIALIZE")
