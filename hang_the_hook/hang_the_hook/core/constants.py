@@ -12,7 +12,7 @@ SIM_MODE = False
 RTL_ALTITUDE   = 2.0   # Return-to-launch altitude (meters)
 TAKEOFF_HEIGHT = 2.0   # Default take-off height   (meters)
 MAX_ALTITUDE_REFERENCE_LOSS = 10 # Total of tries drone can take to verify altitude source
-PWM_VALUE_CLOSE = 1200
+PWM_VALUE_CLOSE = 1000
 
 
 # ── Image Handler ────────────────────────────────────────────────────────────

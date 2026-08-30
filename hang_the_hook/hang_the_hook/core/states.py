@@ -54,12 +54,6 @@ class Initialize(State):
                 else MavlinkConfig(connection_string="/dev/ttyAMA1")
             )
             drone = DroneFactory.create("mavlink", config, node._executor)
-
-            self.drone.do_servo( #type: ignore
-                aux_out= AUX_OUT,
-                pwm_value= PWM_VALUE_CLOSE,
-            )
-
             # ---- Line Detector ----
             linedetector = LineDetector(
                 color="blue_line",
