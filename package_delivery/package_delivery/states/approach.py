@@ -79,7 +79,7 @@ class Approach(State):
             while not self.timed_out():
                 
                 result: DetectionResult = camera.take_photo()
-                yasmin.YASMIN_LOG_INFO(result)
+                # yasmin.YASMIN_LOG_INFO(result)
                 
                 if result is None:
                     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle")

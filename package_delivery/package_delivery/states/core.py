@@ -167,7 +167,7 @@ class Initialize(State):
 
             camera = ImageHandler(
                 image_source=image_source,
-                config=None,
+                config=cam_config,
                 image_processing_callback=self.detector_box_callback,
             )
 

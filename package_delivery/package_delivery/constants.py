@@ -11,16 +11,16 @@ class Config:
     # )
     
     target_box: tuple = (
-        (-22.414096, -45.446703),     # box 1: lat, long
-        (-22.414084, -45.446728),     # box 2: lat, long
-        (-22.414066, -45.446755)     # box 3: lat, long
+        (-22.414096, -45.446703),   # box 1: lat, long
+        (-22.414084, -45.446728),   # box 2: lat, long
+        (-22.414066, -45.446755),   # box 3: lat, long
     )
 
     # Simulation
     # RENAN SANTOS - the REAL GOAT - fuck you painho!
     # Papoi!
     sim_mode: bool = False
-    sim_image_source: str = "/down_camera"
+    sim_image_source: str = "webcam"
     sim_image_compressed: bool = False
     sim_target_box: tuple = (
         (-35.363292, 149.165253),   # box 1: lat, long
