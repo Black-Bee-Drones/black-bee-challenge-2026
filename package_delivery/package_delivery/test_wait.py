@@ -9,10 +9,47 @@ from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin import State, Blackboard
 from package_delivery.constants import Config
 
-class Wait(State):
-    def __init__(self, config: Config = Config, ):
+from nectar.control import (
+    MavlinkConfig,
+    PoseSource,
+    DroneFactory,
+)
+
+
+class Initialize(State):
+    def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
+        self.node = YasminNode.get_instance()
+        self.i_box = 0
+
+    def execute(self, blackboard: Blackboard):
+        blackboard['has_thePkg'] = self.config.has_thePkg
+        blackboard["i_box"] = self.i_box
+
+        # Drone
+        try:
+            yasmin.YASMIN_LOG_INFO('Initializing Drone...')
+            drone_config = MavlinkConfig(
+                pose_source=PoseSource.GPS,
+                connection_string=self.config.connection_string,
+                arm_timeout=15.0,
+            )
+
+            drone = DroneFactory.create('mavlink', drone_config)
+            blackboard['drone'] = drone
+            yasmin.YASMIN_LOG_INFO('Successful start Drone("mavlink")!')
+        
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
+            return ABORT
+
+
+class Wait(State):
+    def __init__(self, config: Config = Config, ):
+        super().__init__(outcomes=[SUCCEED, ABORT, "END"])
+        self.config = config
+        self.i_box = 1
 
     def execute(self, blackboard: Blackboard):
         while True:
@@ -48,7 +85,7 @@ def do_gripper(drone, config: Config, closed: bool) -> bool:
 
 class Gripper(State):
     def __init__(self, target_has_pkg: bool, config: Config = Config):
-        super().__init__(outcomes=[SUCCEED, ABORT])
+        super().__init__(outcomes=[SUCCEED, ABORT, "END"])
         self.config = config
         self.target_has_pkg = target_has_pkg
 
@@ -74,27 +111,39 @@ class Gripper(State):
             yasmin.YASMIN_LOG_ERROR(f"Gripper failed: {e}")
             return ABORT
 
+        self.i_box = blackboard["i_box"]
         blackboard["has_thePkg"] = self.target_has_pkg
-        yasmin.YASMIN_LOG_INFO("Completed successfully.")
-        return SUCCEED
+        self.i_box += 1
+        blackboard["i_box"] = self.i_box
+        yasmin.YASMIN_LOG_INFO(f"Completed successfully. Boxes: {self.i_box}/3.")
+        if (self.i_box < 3):
+            return SUCCEED
+        return "END"
+
 
 class TestWait(StateMachine):
     def __init__(self):
         super().__init__(outcomes=[SUCCEED, ABORT])
 
         self.add_state(
+            "INITIALIZE",
+            Initialize(),
+            transitions={SUCCEED: "WAIT", ABORT: ABORT}
+        )
+
+        self.add_state(
             "WAIT",
             Wait(),
-            transitions={SUCCEED: "GRIPPER", ABORT: ABORT, "END": SUCCEED}
+            transitions={SUCCEED: "GRIPPER", ABORT: ABORT}
         )
 
         self.add_state(
             "GRIPPER",
             Gripper(target_has_pkg=False),
-            transitions={SUCCEED: SUCCEED, ABORT: "WAIT"}
+            transitions={SUCCEED: SUCCEED, ABORT: "WAIT", "END": SUCCEED}
         )
 
-        self.set_start_state("WAIT")
+        self.set_start_state("INITIALIZE")
 
 
 def main():
