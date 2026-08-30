@@ -22,7 +22,7 @@ from precision_landing.constants import (
     CONTROLER_D_Z,
     CONTROLER_OUTPUT_LIMITS_Z,
     CONTROLER_INTEGRAL_LIMITS_Z,
-    PRECISE_DOWN_TOLERANCE_M,
+    PRECISE_DOWN_TOLERANCE_PX,
     MAX_ALTITUDE,
     TAKEOFF_HEIGHT,
     FINAL_LANDING_TOLERANCE,
@@ -112,7 +112,11 @@ class Precision_landing(State):
              
                             output_x = self.pid_x.update(erro_x)
                             output_y = self.pid_y.update(erro_y)
-                            output_z = -0.5 if (abs(erro_x) <= PRECISE_DOWN_TOLERANCE_M and abs(erro_y) <= PRECISE_DOWN_TOLERANCE_M and erro_z >= 0) else 0.0
+                            if (drone.get_altitude() > 2.0):
+                                output_z = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0
+                            else:
+                                output_z = -0.5 if (abs(erro_x_pixel) <= 30 and abs(erro_y_pixel) <= 30 and erro_z >= 0) else 0.0
+                            
                             #output_z = self.pid_z.update(erro_z)
                             yasmin.YASMIN_LOG_INFO(f'Detection at: error_x={erro_x:.2f}, error_x_px={erro_x_pixel:.2f}, error_y={erro_y:.2f}, error_y_px={erro_y_pixel:.2f} output_x={output_x:.2f}, output_y={output_y:.2f}, drone_h={drone.get_altitude()}')
                             drone.move_velocity(
