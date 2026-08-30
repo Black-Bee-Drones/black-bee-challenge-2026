@@ -11,12 +11,14 @@ class Config:
     # )
     
     target_box: tuple = (
-        (-22.4153636, -45.4479902),     # box 1: lat, long
-        (-22.4153636, -45.4479902),     # box 2: lat, long
-        (-22.4153636, -45.4479902)     # box 3: lat, long
+        (-22.414096, -45.446703),     # box 1: lat, long
+        (-22.414084, -45.446728),     # box 2: lat, long
+        (-22.414066, -45.446755)     # box 3: lat, long
     )
 
     # Simulation
+    # RENAN SANTOS - the REAL GOAT - fuck you painho!
+    # Papoi!
     sim_mode: bool = False
     sim_image_source: str = "/down_camera"
     sim_image_compressed: bool = False
@@ -71,7 +73,7 @@ class Config:
     # Gripper Controller
     has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
     servo_channel : int = 2         # AUX OUT number (1-8 -> FCU SERVO9-16)
-    servo_open_pwm : int = 1100     # padeiro deu os valores
+    servo_open_pwm : int = 1200     # padeiro deu os valores
     servo_closed_pwm : int = 1600   # padeiro deu os valores
     servo_retries: int = 3          # COMMAND_ACK can time out on serial; retry before abort
     servo_retry_delay: float = 0.5  # seconds between attempts
