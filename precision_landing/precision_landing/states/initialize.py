@@ -1,20 +1,16 @@
-import os
+
 import datetime
-import cv2
 
 import yasmin
 from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT
 from yasmin_ros.yasmin_node import YasminNode
 
-import nectar
 from nectar.control import (
     DroneFactory,
     MavrosConfig,
-    MavlinkConfig,
     PoseSource,
     SITL_GAZEBO_CONFIG,
-    MAVLINK_SITL_GAZEBO_CONFIG,
 )
 from nectar.vision import ImageHandler, OpenCVConfig
 from nectar.vision.camera import ROSConfig
@@ -85,8 +81,6 @@ class Initialize(State):
                 image_source=CAMERA_SOURCE,
                 config=cam_config,
                 image_processing_callback=self.camera_callback,
-                #NOTE: There are other ways of doing the continuously image processing,
-                #this is one of them, but we can discuss this later
             )
             
             camera.open()
@@ -107,23 +101,9 @@ class Initialize(State):
 
     def camera_callback(self, image): #Runs everytime we call camera.take_photo()
         try:
-            #os.makedirs(self.photos_folder, exist_ok=True)
-            
-            timestamp = self.node.get_clock().now().nanoseconds
-            
-            #os.makedirs(os.path.join(self.photos_folder, 'images'), exist_ok=True)
-            #raw_path = os.path.join(self.photos_folder, 'images', f'{timestamp}.png') #Saves the frames in a folder
-            #cv2.imwrite(raw_path, image)
-            
             result = self.detector.detect(image) #Runs the detector on the frame
             result.image = image
             
-            annotated = self.detector.draw_detections(image, result) #Annotates the frames
-            #os.makedirs(os.path.join(self.photos_folder, 'annotated'), exist_ok=True)
-            #ann_path = os.path.join(self.photos_folder, 'annotated', f'{timestamp}-annotated.png') #Saves the annotaded frames
-            #cv2.imwrite(ann_path, annotated)
-            #NOTE: We will only use this folders for debugging purposes
-
             return result
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Detector not working: {e}")

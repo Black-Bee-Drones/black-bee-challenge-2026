@@ -1,15 +1,11 @@
-import cv2
-
 from nectar.vision import(
     ImageHandler,
     Aruco,
 )
 from nectar.control import(
     MavrosDrone,
-    MavlinkDrone,
     MoveReference,
 )
-from nectar.ai import Detector
 
 from rclpy.duration import Duration
 
@@ -25,7 +21,7 @@ from precision_landing.constants import(
     MARKER_DICT,
     ARUCO_SIZE,
     WAYPOINTS,
-    FIND_BUFFER
+    FIND_BUFFER,
 )
 
 T_P_F = False #TARGET PRE FOUND
@@ -96,7 +92,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
 
-                        #ve se está no buffer, caso estiver já vai direto
+                        #sees if it's in the buffer, if so it goes instantly
                         search_key = f"{aruco_shape}{aruco_id}"
                         yasmin.YASMIN_LOG_INFO(f"search_key: {search_key}")
 
@@ -219,7 +215,6 @@ class FindTargetBase(State):
                 for _ in range(2):
                     frame = camera.take_photo()
 
-                    #NOTE: Also incertain about this one, need to test
                     for s in frame.filter_by_class([blackboard["aruco_shape"]]):
                         for n in frame.filter_by_class([blackboard["aruco_id"]]):
                             if (abs(n.center[0] - s.center[0]) <= s.width/2) and (abs(n.center[1] - s.center[1]) <= s.height/2):

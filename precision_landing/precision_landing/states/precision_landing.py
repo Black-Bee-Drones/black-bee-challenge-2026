@@ -7,7 +7,7 @@ from yasmin_ros.yasmin_node import YasminNode
 from rclpy.duration import Duration
 
 from nectar.vision import ImageHandler
-from nectar.control import MavrosDrone, MavlinkDrone, PIDController
+from nectar.control import MavrosDrone, PIDController
 from precision_landing.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
