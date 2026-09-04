@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1afae8a (fix: deleting unused stuff)
 import datetime
 
 import yasmin

@@ -8,10 +8,14 @@ from rclpy.duration import Duration
 
 from nectar.vision import ImageHandler
 <<<<<<< HEAD
+<<<<<<< HEAD
 from nectar.control import MavrosDrone, PIDController
 =======
 from nectar.control import MavrosDrone, MavlinkDrone, PIDController, MoveReference
 >>>>>>> 3aa4d87 (I milagroso e waypoint q n sei)
+=======
+from nectar.control import MavrosDrone, PIDController
+>>>>>>> 1afae8a (fix: deleting unused stuff)
 from precision_landing.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,

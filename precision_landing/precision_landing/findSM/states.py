@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1afae8a (fix: deleting unused stuff)
 from nectar.vision import(
     ImageHandler,
     Aruco,
