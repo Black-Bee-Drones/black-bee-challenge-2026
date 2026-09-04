@@ -3,13 +3,13 @@
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
-SIM_MODE = True
+SIM_MODE = False
 
-CAMERA_SOURCE = "/down_camera" #We will use "webcam" for the drone
+CAMERA_SOURCE = "webcam"
 
 DETECTOR_MODEL_SOURCE = str(Path(get_package_share_directory("precision_landing")) / "models" / "best_detector1.pt")
 
-DETECTOR_CONFIDENCE_THRESHOLD = 0.3
+DETECTOR_CONFIDENCE_THRESHOLD = 0.6
 
 IMAGE_WIDTH = 640
 IMAGE_HEIGHT = 640
@@ -17,18 +17,21 @@ IMAGE_HEIGHT = 640
 TAKEOFF_HEIGHT = 5 #Meters
 MAX_ALTITUDE = 6 #meters
 
-SEARCH_TIME = 120 #seconds (2min)
-FIND_TIME = 120 #seconds (2min)
-PRECISION_LANDING_TIME = 600
+SEARCH_TIME = 160 #seconds (2min 40s)
+FIND_TIME = 160 #seconds (2min 40s)
+PRECISION_LANDING_TIME = 120
 FIND_BUFFER = []
 
 MARKER_DICT = 5 #ArUco of 5x5
 ARUCO_SIZE = 0.25 #ArUco size
-WAYPOINTS = [(0, 0),  (0,3), (3, 0), (0, -3), (3, -3)]
+WAYPOINTS = [(0,0), (-4,5), (-1,4), (1,5), (3,5), (5,5), (5, 3),
+             (3,3), (0,3), (-2,3), (-4,3), (-4,1), (-2,1), (0,1),
+             (2,1), (5,1), (5,-2), (2,-2), (-1,-2), (-4,-2), (-4,-4),
+             (-2,-4), (1,-4), (4,-4)]
 
-CONTROLER_P_XY = 0.350 if SIM_MODE else 0.123
-CONTROLER_I_XY = 0.103
-CONTROLER_D_XY = 0.05
+CONTROLER_P_XY = 0.250 if SIM_MODE else 0.123
+CONTROLER_I_XY = 0.0012
+CONTROLER_D_XY = 0.0
 CONTROLER_OUTPUT_LIMITS_XY = (-0.44, 0.44)
 CONTROLER_INTEGRAL_LIMITS_XY = (-0.10, 0.10)
 PRECISE_DOWN_TOLERANCE_PX = 100

@@ -42,7 +42,7 @@ class PL(StateMachine):
         self.add_state(
             "PRECISION_LANDING",
             Precision_landing(),
-            transitions={SUCCEED:SUCCEED, ABORT:"LAND"},
+            transitions={SUCCEED:SUCCEED, ABORT:"LAND", TIMEOUT: "LAND"},
         )
 
         self.add_state(

@@ -75,11 +75,11 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
 
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
-                    
+
                         try:
                             aruco_shape = self.get_aruco_shape(frame, bbox)
                         except Exception as i:
-                            yasmin.YASMIN_LOG_INFO("ERRO AO DETECTAR ARUCO")
+                            yasmin.YASMIN_LOG_INFO(f"DIDN'T DETECT shape..., retaking photo")
                             yasmin.YASMIN_LOG_INFO(f"{i}")
                             drone.move_to(yaw=yaw_angle)
                             drone.move_to(x=1.0, reference=MoveReference.BODY)
@@ -88,7 +88,7 @@ class Search(State): #Sub-state that will only move around the arena until it de
                             bbox2, id = aruco.detect(frame.image)
 
                             aruco_shape = self.get_aruco_shape(frame, bbox2)
-                            drone.move_to(yaw=-yaw_angle)
+                            drone.move_to(yaw=0, reference=MoveReference.TAKEOFF)
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
 
@@ -122,6 +122,10 @@ class Search(State): #Sub-state that will only move around the arena until it de
                     return FAIL
 
             return TIMEOUT
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_INFO("ABORTING")
+            return ABORT
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"SEARCH SUB-STATE FAILED: {e}")
@@ -224,7 +228,7 @@ class FindTargetBase(State):
 
                 if idx < len(WAYPOINTS):
                     x, y = WAYPOINTS[idx]
-                    drone.move_to(x=x, y=y, z=0, reference=MoveReference.TAKEOFF)
+                    drone.move_to(x=x, y=y, z=0, yaw=0, reference=MoveReference.TAKEOFF)
                     idx += 1
                     drone.delay(0.5)
                 else:
@@ -232,6 +236,10 @@ class FindTargetBase(State):
                     return FAIL
                     
             return TIMEOUT
+
+        except KeyboardInterrupt:
+            yasmin.YASMIN_LOG_INFO("ABORTING")
+            return ABORT
         
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"GET_TARGET_BASE SUB-STATE FAILED: {e}")

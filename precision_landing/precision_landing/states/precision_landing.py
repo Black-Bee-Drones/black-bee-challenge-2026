@@ -1,7 +1,7 @@
 import math
 import yasmin
 from yasmin import State, Blackboard
-from yasmin_ros.basic_outcomes import SUCCEED, ABORT
+from yasmin_ros.basic_outcomes import SUCCEED, ABORT, TIMEOUT
 from yasmin_ros.yasmin_node import YasminNode
 
 from rclpy.duration import Duration
@@ -34,7 +34,7 @@ from precision_landing.constants import (
 
 class Precision_landing(State):
     def __init__(self):
-        super().__init__(outcomes=[SUCCEED, ABORT])
+        super().__init__(outcomes=[SUCCEED, ABORT, TIMEOUT])
         self.node = YasminNode.get_instance()
         
         self.pid_x = PIDController(
@@ -117,15 +117,20 @@ class Precision_landing(State):
              
                             output_x = self.pid_x.update(erro_x)
                             output_y = self.pid_y.update(erro_y)
-                            output_z = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0
+                            if (drone.get_altitude() > 2.0):
+                                output_z = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0
+                            else:
+                                output_z = -0.5 if (abs(erro_x_pixel) <= 30 and abs(erro_y_pixel) <= 30 and erro_z >= 0) else 0.0
+                            
+                            #output_z = self.pid_z.update(erro_z)
                             yasmin.YASMIN_LOG_INFO(f'Detection at: error_x={erro_x:.2f}, error_x_px={erro_x_pixel:.2f}, error_y={erro_y:.2f}, error_y_px={erro_y_pixel:.2f} output_x={output_x:.2f}, output_y={output_y:.2f}, drone_h={drone.get_altitude()}')
                             drone.move_velocity(
-                                vx = output_x,  
-                                vy = output_y,
+                                vx = output_y,  
+                                vy = output_x,
                                 vz = output_z,
                                 vyaw = 0.0,
                             )
-                            drone.delay(0.5)
+                            drone.delay(0.3)
                             #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
                             break
 
@@ -144,7 +149,7 @@ class Precision_landing(State):
                         #TRY TO WAIT AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
                         drone.move_velocity(vx=output_x,vy=output_y, vz = output_z)
-                    drone.delay(0.5)
+                    drone.delay(0.2)
 
 
         except Exception as e:
