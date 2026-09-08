@@ -7,15 +7,8 @@ from yasmin_ros.yasmin_node import YasminNode
 from rclpy.duration import Duration
 
 from nectar.vision import ImageHandler
-<<<<<<< HEAD
-<<<<<<< HEAD
 from nectar.control import MavrosDrone, PIDController
-=======
-from nectar.control import MavrosDrone, MavlinkDrone, PIDController, MoveReference
->>>>>>> 3aa4d87 (I milagroso e waypoint q n sei)
-=======
-from nectar.control import MavrosDrone, PIDController
->>>>>>> 1afae8a (fix: deleting unused stuff)
+
 from precision_landing.constants import (
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
@@ -35,10 +28,6 @@ from precision_landing.constants import (
     FINAL_LANDING_TOLERANCE,
     FINAL_LANDING_HEIGHT,
 )
-
-
-
-
 
 class Precision_landing(State):
     def __init__(self):
@@ -125,32 +114,19 @@ class Precision_landing(State):
              
                             output_x = self.pid_x.update(erro_x)
                             output_y = self.pid_y.update(erro_y)
-<<<<<<< HEAD
-<<<<<<< HEAD
-                            output_z = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0
-                            yasmin.YASMIN_LOG_INFO(f'Detection at: error_x={erro_x:.2f}, error_x_px={erro_x_pixel:.2f}, error_y={erro_y:.2f}, error_y_px={erro_y_pixel:.2f} output_x={output_x:.2f}, output_y={output_y:.2f}, drone_h={drone.get_altitude()}')
-                            drone.move_velocity(
-                                vx = output_x,  
-                                vy = output_y,
-=======
-                            output_z = -0.5 if (abs(erro_x) <= PRECISE_DOWN_TOLERANCE_M and abs(erro_y) <= PRECISE_DOWN_TOLERANCE_M and erro_z >= 0) else 0.0
-=======
                             if (drone.get_altitude() > 2.0):
                                 output_z = -0.5 if (abs(erro_x_pixel) <= PRECISE_DOWN_TOLERANCE_PX and abs(erro_y_pixel) <= PRECISE_DOWN_TOLERANCE_PX and erro_z >= 0) else 0.0
                             else:
                                 output_z = -0.5 if (abs(erro_x_pixel) <= 30 and abs(erro_y_pixel) <= 30 and erro_z >= 0) else 0.0
-                            
->>>>>>> 737876a (Escutando o Professor)
-                            #output_z = self.pid_z.update(erro_z)
                             yasmin.YASMIN_LOG_INFO(f'Detection at: error_x={erro_x:.2f}, error_x_px={erro_x_pixel:.2f}, error_y={erro_y:.2f}, error_y_px={erro_y_pixel:.2f} output_x={output_x:.2f}, output_y={output_y:.2f}, drone_h={drone.get_altitude()}')
+
                             drone.move_velocity(
-                                vx = output_y,  
-                                vy = output_x,
->>>>>>> 93f4451 (change of constants for better precision (AVANTE))
+                                vx = output_x,  
+                                vy = output_y,
                                 vz = output_z,
-                                vyaw = 0.0,
-                            )
-                            drone.delay(0.3)
+                                vyaw=0.0)
+
+                            drone.delay(0.2)
                             #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
                             break
 
@@ -168,23 +144,12 @@ class Precision_landing(State):
                     elif alt < MAX_ALTITUDE:
                         #TRY TO WAIT AFTER DONT FINDING THE TARGET
                         yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
-<<<<<<< HEAD
-<<<<<<< HEAD
                         drone.move_velocity(vx=output_x,vy=output_y, vz = output_z)
-                    drone.delay(0.5)
-
-=======
-                        drone.move_velocity(vx=0,vy=0,vz=0)
-                        drone.move_to(z=MAX_ALTITUDE, reference=MoveReference.TAKEOFF)
-=======
-                        drone.move_velocity(vx=output_x,vy=output_y,vz=output_z)
->>>>>>> 93f4451 (change of constants for better precision (AVANTE))
                     else:
                         #NÃO SEI OQUE FAZER AQUI
                         drone.move_velocity(vx=0,vy=0,vz=0)
             
             return TIMEOUT
->>>>>>> 5a18978 (Third day testing changes)
 
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_INFO("ABORTING")

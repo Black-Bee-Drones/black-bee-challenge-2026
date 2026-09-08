@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-
->>>>>>> 1afae8a (fix: deleting unused stuff)
 from nectar.vision import(
     ImageHandler,
     Aruco,
@@ -79,7 +75,6 @@ class Search(State): #Sub-state that will only move around the arena until it de
                         yasmin.YASMIN_LOG_INFO(f"ARUCO ID: {aruco_id}")
 
                         yaw_angle = aruco.calculateYawFromCorners(bbox=bbox)
-<<<<<<< HEAD
                     
                         try:
                             aruco_shape = self.get_aruco_shape(frame, bbox)
@@ -88,44 +83,12 @@ class Search(State): #Sub-state that will only move around the arena until it de
                             yasmin.YASMIN_LOG_INFO(f"{i}")
                             drone.move_to(yaw=yaw_angle)
                             drone.move_to(x=1.0, reference=MoveReference.BODY)
-
-=======
-
-                        try:
-                            aruco_shape = self.get_aruco_shape(frame, bbox)
-                        except Exception as i:
-                            yasmin.YASMIN_LOG_INFO(f"DIDN'T DETECT shape..., retaking photo")
-                            yasmin.YASMIN_LOG_INFO(f"{i}")
-                            drone.move_to(yaw=yaw_angle)
-                            drone.move_to(x=1, reference=MoveReference.BODY)
-<<<<<<< HEAD
->>>>>>> b3aba2b (Arrumando bobeira da imagem cortada)
-=======
-                            
->>>>>>> 53c9f01 (Esqueci de voltar o yaw)
                             frame = camera.take_photo()
                             bbox2, id = aruco.detect(frame.image)
 
                             aruco_shape = self.get_aruco_shape(frame, bbox2)
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-                            drone.move_to(yaw=-yaw_angle)
-=======
-
->>>>>>> b3aba2b (Arrumando bobeira da imagem cortada)
-=======
-                        
-                        drone.move_to(yaw=-yaw_angle)
->>>>>>> 53c9f01 (Esqueci de voltar o yaw)
-=======
-                            drone.move_to(yaw=-yaw_angle)
-=======
                             drone.move_to(yaw=0, reference=MoveReference.TAKEOFF)
->>>>>>> da5bf1c (Yolo neles)
-                        
->>>>>>> 8ce3d5b (Agora posso dormir em paz)
+
                         blackboard["aruco_shape"] = aruco_shape
                         yasmin.YASMIN_LOG_INFO(f"Aruco shape detected: {aruco_shape}")
 
