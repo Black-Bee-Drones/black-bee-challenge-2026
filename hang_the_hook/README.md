@@ -170,7 +170,7 @@ Behavior is tuned entirely through three `constants.py` files rather than hard-c
 `mangalarga.py` is guarded by `if __name__ == "__main__":`, so at minimum it can be run directly:
 
 ```bash
-ros2 run hang_the_hook mangalarga
+python3 hang_the_hook/mangalarga.py
 ```
 
 If `hang_the_hook` is set up as an installed ROS 2 / colcon package, it would typically also be runnable via `ros2 run hang_the_hook mangalarga` or an installed console-script entry point — check your `setup.py` / `package.xml` for the exact name, since that isn't visible from the states/mission files alone.
