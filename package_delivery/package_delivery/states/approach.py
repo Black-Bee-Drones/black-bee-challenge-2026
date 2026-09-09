@@ -71,7 +71,7 @@ class Approach(State):
         pid_cy.set_setpoint(0.0)
         pid_cz.set_setpoint(0.0)
         
-        drone.delay(1)
+        # drone.delay(1)
 
         try:
             lost : int = 0
@@ -100,13 +100,11 @@ class Approach(State):
                         if fly_to < self.config.max_altitude:
                             drone.move_to(z=fly_to)
                         else:
-                            drone.move_velocity(0.0, 0.0, 0.0)
+                            yasmin.YASMIN_LOG_WARN("Detection lost. Max altitude reached, decreasing 20 cm...")
+                            drone.move_to(z=drone.get_altitude()-self.config.altitude_inc/2)
                         pid_cx.reset()
                         pid_cy.reset()
                         pid_cz.reset()
-                        pid_cx.set_setpoint(0.0)
-                        pid_cy.set_setpoint(0.0)
-                        pid_cz.set_setpoint(0.0)
                         yasmin.YASMIN_LOG_INFO("Restarting box detection")
                         lost = 0
                         aligned_frames = 0

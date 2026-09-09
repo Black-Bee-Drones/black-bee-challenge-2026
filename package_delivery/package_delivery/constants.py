@@ -46,8 +46,13 @@ class Config:
     lost_tolerance: int = 13
     claw_offset: float = 0.165          # meters
 
+<<<<<<< HEAD
     altitude_inc: float = 0.8 # meters
     safe_altitude: float = 3 # meters
+=======
+    altitude_inc: float = 0.5 # meters
+    safe_altitude: float = 3.0 # meters
+>>>>>>> edef4e1 (fix: approach PID reset changes)
     max_altitude: float = 5.0  # meters
     
     drone_type: str = 'mavlink'
