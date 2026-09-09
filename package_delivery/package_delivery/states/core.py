@@ -10,7 +10,6 @@ from yasmin_ros.yasmin_node import YasminNode
 
 from datetime import datetime
 
-import nectar
 from nectar.control import (
     DroneFactory,
     MavrosDrone,
@@ -80,7 +79,7 @@ class Initialize(State):
 
             blackboard['drone'] = drone
             yasmin.YASMIN_LOG_INFO(f'Successful start Drone("{self.config.drone_type}")!')
-        
+
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
             return ABORT
@@ -88,7 +87,7 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'DroneFactory failed: {e}')
             return ABORT
-        
+
         # PID controller
         try:
             yasmin.YASMIN_LOG_INFO("Initializing PID Controller...")
@@ -117,7 +116,7 @@ class Initialize(State):
             blackboard["pid_cy"] = pid_cy
             blackboard["pid_cz"] = pid_cz
             yasmin.YASMIN_LOG_INFO(f'Successful start PID (x, y and z)!')
-        
+
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
             return ABORT
@@ -125,7 +124,6 @@ class Initialize(State):
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'PID failed: {e}')
             return ABORT
-
 
         # Detector - box
         try:
@@ -155,13 +153,13 @@ class Initialize(State):
             if (self.config.sim_mode):
                 image_source = self.config.sim_image_source
                 cam_config = ROSConfig(
-                    topic=self.config.sim_image_source, 
+                    topic=self.config.sim_image_source,
                     compressed=self.config.sim_image_compressed,
                 )
             else:
                 image_source = self.config.image_source
                 cam_config = OpenCVConfig(
-                    width=self.config.image_width, 
+                    width=self.config.image_width,
                     height=self.config.image_height,
                 )
 
@@ -182,14 +180,14 @@ class Initialize(State):
 
             blackboard['camera'] = camera
             yasmin.YASMIN_LOG_INFO('Successful start camera!')
-        
+
         except KeyboardInterrupt:
             yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
             return ABORT
 
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f'Camera failed: {e}')
-            return ABORT 
+            return ABORT
         return SUCCEED
 
 
@@ -228,10 +226,10 @@ class Takeoff(State):
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
             drone : MavrosDrone = blackboard.get('drone')
-        
+
         elif self.config.drone_type == 'mavlink':
             drone : MavlinkDrone = blackboard.get('drone')
-        
+
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT
@@ -270,7 +268,7 @@ class Land(State):
 
         elif self.config.drone_type == 'mavlink':
             drone : MavlinkDrone = blackboard.get('drone')
-        
+
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT
@@ -292,14 +290,14 @@ class Rtl(State):
     def __init__(self, config: Config = Config):
         super().__init__(outcomes=[SUCCEED, ABORT])
         self.config = config
- 
+
     def execute(self, blackboard: Blackboard):
         if self.config.drone_type == 'mavros':
             drone : MavrosDrone = blackboard.get('drone')
 
         elif self.config.drone_type == 'mavlink':
             drone : MavlinkDrone = blackboard.get('drone')
-        
+
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
             return ABORT

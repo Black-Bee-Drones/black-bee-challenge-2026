@@ -6,7 +6,6 @@ from yasmin import State, Blackboard
 from yasmin_ros.basic_outcomes import SUCCEED, ABORT, FAIL, TIMEOUT
 from yasmin_ros.yasmin_node import YasminNode
 
-import nectar
 from nectar.control import (
     MavrosDrone,
     MavlinkDrone,
@@ -31,14 +30,14 @@ class Approach(State):
         self.state_start_time = self.node.get_clock().now()
         if "drone" not in blackboard:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
-            return ABORT 
+            return ABORT
 
         if self.config.drone_type == 'mavros':
             drone : MavrosDrone = blackboard.get('drone')
 
         elif self.config.drone_type == 'mavlink':
             drone : MavlinkDrone = blackboard.get('drone')
-           
+
         if "camera" not in blackboard:
             yasmin.YASMIN_LOG_ERROR("Camera not available.")
             return ABORT
@@ -70,32 +69,29 @@ class Approach(State):
         pid_cx.set_setpoint(0.0)
         pid_cy.set_setpoint(0.0)
         pid_cz.set_setpoint(0.0)
-        
-        # drone.delay(1)
 
         try:
             lost : int = 0
             aligned_frames : int = 0
             while not self.timed_out():
-                
+
                 result: DetectionResult = camera.take_photo()
                 # yasmin.YASMIN_LOG_INFO(result)
-                
+
                 if result is None:
                     yasmin.YASMIN_LOG_WARN("Failed to get frame from camera, skipping cycle")
                     continue
-                
+
                 detections = result.filter_by_class([self.config.box_class_name])
-                
-                
+
                 # Box Not Detect!
                 if not detections:
                     lost += 1
                     aligned_frames = 0
                     yasmin.YASMIN_LOG_WARN(f"Box not detected ({lost}/{self.config.lost_tolerance}) Holding position...")
-                    
+
                     drone.move_velocity(0.0, 0.0, 0.0)
- 
+
                     if lost >= self.config.lost_tolerance:
                         yasmin.YASMIN_LOG_WARN("Detection lost. Increasing altitude to restart search...")
                         if drone.get_altitude() < self.config.max_altitude:
@@ -115,12 +111,12 @@ class Approach(State):
                 lost = 0
                 best_det = max(detections, key=lambda d: d.confidence)
                 target_x, target_y = best_det.center
- 
+
                 error_x_px = target_x - self.config.image_width // 2
                 error_y_px = target_y - self.config.image_height // 2
- 
+
                 altitude = drone.get_altitude()
- 
+
                 error_x = self.ppm(error_x_px, altitude, 60, self.config.image_width)
                 error_y = self.ppm(error_y_px, altitude, 47, self.config.image_height) + self.config.claw_offset
                 error_z = altitude - self.config.dropoff_altitude
@@ -143,7 +139,7 @@ class Approach(State):
                     aligned_frames = 0
 
                 drone.move_velocity(vx, vy, vz)
- 
+
                 if (abs(error_z) <= 0) and aligned_frames >= self.config.required_frames:
                     drone.move_velocity(0.0, 0.0, 0.0)
                     yasmin.YASMIN_LOG_INFO(f"Approach confirmed with {aligned_frames} consecutive aligned frames. Stopping drone before delivery.")
@@ -151,7 +147,7 @@ class Approach(State):
 
             yasmin.YASMIN_LOG_ERROR("Approaching box timed out.")
             return ABORT
-          
+
         except Exception as e:
             yasmin.YASMIN_LOG_ERROR(f"Approaching box failed: {e}")
             return ABORT

@@ -59,14 +59,14 @@ class Wait(State):
                     blackboard['has_thePkg'] = True
                     return SUCCEED
                 print("Type exactally 'yes' to continue or (Ctrl + C) to ABORT.")
-            
+
             except KeyboardInterrupt:
                 yasmin.YASMIN_LOG_WARN('Execution interrupted by user.')
                 return ABORT
-            
+
             except Exception as e:
                 yasmin.YASMIN_LOG_ERROR(f"Waiting failed: {e}")
-                return ABORT           
+                return ABORT
 
 def do_gripper(drone, config: Config, closed: bool) -> bool:
     pwm = config.servo_closed_pwm if closed else config.servo_open_pwm

@@ -16,10 +16,10 @@ class SearchBox(State):
 
         elif self.config.drone_type == 'mavlink':
             drone : MavlinkDrone = blackboard.get('drone')
-        
+
         else:
             yasmin.YASMIN_LOG_ERROR("Drone Type (MavrosDrone or MavlinkDrone) Not Find")
-            return ABORT 
+            return ABORT
 
         if self.config.sim_mode:
             target_box = self.config.sim_target_box

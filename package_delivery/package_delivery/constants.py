@@ -1,15 +1,9 @@
 import os
 from ament_index_python.packages import get_package_share_directory
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 @dataclass
 class Config:
-    # target_box: tuple = (
-    #     (0, 0),     # box 1: lat, long
-    #     (1, 1),     # box 2: lat, long
-    #     (2, 2),     # box 3: lat, long
-    # )
-    
     target_box: tuple = (
         (-22.414096, -45.446703),   # box 1: lat, long
         (-22.414084, -45.446728),   # box 2: lat, long
@@ -28,7 +22,7 @@ class Config:
         (-35.363291, 149.165307),   # box 3: lat, long
     )
 
-    # Model - v3 box - 
+    # Model - v3 box -
     box_model_source: str = os.path.join(get_package_share_directory('package_delivery'), 'models', 'best.pt')
     box_class_name: str = "box"
     box_conf: float = 0.35      # before: 0.25
@@ -71,7 +65,7 @@ class Config:
     land_altitude: float = 1.0  # meters
 
     # Gripper Controller
-    has_thePkg : bool = True        # flag to verify if the drone has the package (True)              
+    has_thePkg : bool = True        # flag to verify if the drone has the package (True)
     servo_channel : int = 2         # AUX OUT number (1-8 -> FCU SERVO9-16)
     servo_open_pwm : int = 1400     # padeiro deu os valores
     servo_closed_pwm : int = 1900   # padeiro deu os valores
@@ -83,18 +77,18 @@ class Config:
     # PIDController ###
     # PID xy
     xy_output_lim: tuple = (-1.0, 1.0)
-    xy_integral_lim: tuple = (-1.0, 1.0)   
+    xy_integral_lim: tuple = (-1.0, 1.0)
 
     x_kp: float = 0.123
     x_ki: float = 0.0
-    x_kd: float = 0.02    
+    x_kd: float = 0.02
 
     y_kp: float = 0.123
     y_ki: float = 0.0
     y_kd: float = 0.02
 
     # PID z
-    z_kp: float = 0.45        
+    z_kp: float = 0.45
     z_ki: float = 0.0
     z_kd: float = 0.0                       # zero — é o eixo mais sensível a overshot
     z_output_lim: tuple = (-0.3, 0.15)      # desce mais devagar que sobe
@@ -108,4 +102,3 @@ class Config:
     # controller_yaw_output_max: float = 1.0
     # controller_yaw_integral_min: float = -1.0
     # controller_yaw_integral_max: float = 1.0
-    
