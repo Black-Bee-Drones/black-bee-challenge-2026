@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="box_50x50x20">
+    <static>true</static>
+    <link name="link">
+
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>meshes/box_50x50x20.obj</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>meshes/box_50x50x20.obj</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </collision>
+
+    </link>
+  </model>
+</sdf>
