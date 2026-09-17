@@ -60,7 +60,6 @@ class Precision_landing(State):
 
     def PIXEL_POR_METRO (self, altitude_m: float, fov_deg: float, width: float):
             #PIXEL PER METER CALCULATION
-            #NOTE verificar se fov está certo
             half_fov_rad = math.radians(fov_deg/2.0)
             return width / (2.0 * altitude_m * math.tan(half_fov_rad))
 
