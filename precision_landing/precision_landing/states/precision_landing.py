@@ -64,9 +64,6 @@ class Precision_landing(State):
             half_fov_rad = math.radians(fov_deg/2.0)
             return width / (2.0 * altitude_m * math.tan(half_fov_rad))
 
-    def REGAIN_TARGET(self):
-        print("ola")
-
 
     def execute(self, blackboard: Blackboard):
         output_x = 0
@@ -127,7 +124,7 @@ class Precision_landing(State):
                                 vyaw=0.0)
 
                             drone.delay(0.2)
-                            #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PITURE
+                            #THIS BREAK IS IN CASE THERE ARE MORE OF THE ANSWERS IN THE PICTURE
                             break
 
                 if not TARGET_FOUND:
@@ -143,11 +140,8 @@ class Precision_landing(State):
 
                     elif alt < MAX_ALTITUDE:
                         #TRY TO WAIT AFTER DONT FINDING THE TARGET
-                        yasmin.YASMIN_LOG_INFO("TARGET LOST... WAITING")
+                        yasmin.YASMIN_LOG_INFO("TARGET LOST... DRIFTING TILL FIND")
                         drone.move_velocity(vx=output_x,vy=output_y, vz = output_z)
-                    else:
-                        #NÃO SEI OQUE FAZER AQUI
-                        drone.move_velocity(vx=0,vy=0,vz=0)
             
             return TIMEOUT
 
