@@ -1,0 +1,25 @@
+# EditorConfig ajuda desenvolvedores a definir e manter estilos de codificação consistentes entre diferentes editores e IDEs.
+# Veja https://editorconfig.org
+
+root = true
+
+# Configurações globais para todos os arquivos
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+
+# Configurações específicas para arquivos Python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Configurações específicas para arquivos YAML (.yml e .yaml)
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Configurações para arquivos Markdown (documentação)
+[*.md]
+trim_trailing_whitespace = false
