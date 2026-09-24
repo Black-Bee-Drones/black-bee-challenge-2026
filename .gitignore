@@ -207,10 +207,6 @@ sae_hook_arena_*.sdf
 
 # --- Models: KEEP tracked (.pt weights live here on purpose) ---
 # share/models/*.pt is committed
-
-# --- Documentation ---
-*.md
-# ...except the top-level README, which now lives at the repo root
-# (moved from mapping/) and should be tracked/committed like the rest of
-# the code.
-!/README.md
+*.png
+*.csv
+myenv/
